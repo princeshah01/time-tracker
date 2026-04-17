@@ -6,8 +6,8 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
-    "format": "turbo run format",
-    "format:check": "turbo run format:check",
+    "format": "pnpm exec biome format --write . && turbo run format",
+    "format:check": "pnpm exec biome check --write . && turbo run format:check",
     "check-types": "turbo run check-types"
   },
   "devDependencies": {

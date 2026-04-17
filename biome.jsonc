@@ -6,6 +6,8 @@
     "includes": [
       "apps/*/src/**",
       "packages/*/src/**",
+      "**/*.json",
+      "**/*.jsonc",
       "*.ts",
       "*.tsx",
       "*.js",
@@ -101,11 +103,11 @@
           "level": "on",
           "options": {
             "groups": [
-            [":NODE:"],
-            [":PACKAGE:"],
-            ":BLANK_LINE:",
-            [":ALIAS:"],
-            [":PATH:"]
+              [":NODE:"],
+              [":PACKAGE:"],
+              ":BLANK_LINE:",
+              [":ALIAS:"],
+              [":PATH:"]
             ]
           }
         }
