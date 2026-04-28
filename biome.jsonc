@@ -21,7 +21,11 @@
       "*.js",
       "*.json",
       "*.jsonc",
-      "*.mjs"
+      "*.mjs",
+      "!**/.turbo",
+      "!**/.next",
+      "!**/node_modules",
+      "!**/dist"
     ]
   },
   "formatter": {
