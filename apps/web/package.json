@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/web",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome check --write .",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@workspace/env": "workspace:*",
+    "@workspace/ui": "workspace:*",
+    "next": "16.2.4",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@workspace/typescript-config": "workspace:*",
+    "typescript": "^5.9.3"
+  }
+}
