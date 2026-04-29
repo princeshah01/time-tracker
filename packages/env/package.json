@@ -15,11 +15,13 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@workspace/typescript-config": "workspace:*",
     "@types/node": "catalog:",
+    "@workspace/typescript-config": "workspace:*",
+    "vite": "catalog:",
     "typescript": "catalog:"
   },
   "exports": {
+    ".": "./src/index.ts",
     "./node": "./src/node.ts",
     "./react": "./src/react.ts",
     "./next": "./src/next.ts",

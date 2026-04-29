@@ -5,9 +5,11 @@
     "plugins": [{ "name": "next" }],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "allowJs": true,
     "jsx": "preserve",
+    "allowJs": true,
     "noEmit": true,
+    "incremental": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node"]
   }
 }

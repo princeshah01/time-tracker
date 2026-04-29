@@ -1,5 +1,4 @@
-import { createNextEnv } from "@workspace/env/next";
-import { nonEmptyString, url } from "@workspace/env/schema";
+import { createNextEnv, nonEmptyString, url } from "@workspace/env";
 
 export const env = createNextEnv({
   client: {

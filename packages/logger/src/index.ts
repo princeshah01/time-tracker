@@ -1,3 +1,5 @@
+export type LogLevel = "info" | "error" | "warning";
+
 export class Logger {
   private context: string;
 
@@ -5,16 +7,21 @@ export class Logger {
     this.context = context;
   }
 
+  private format(level: LogLevel, message: string) {
+    const time = new Date().toISOString();
+    return `[${time}] [${this.context}] ${level.toUpperCase()}: ${message}`;
+  }
+
   info(message: string, ...args: unknown[]) {
-    console.log(`[${this.context}] INFO: ${message}`, ...args);
+    console.log(this.format("info", message), ...args);
   }
 
   error(message: string, ...args: unknown[]) {
-    console.error(`[${this.context}] ERROR: ${message}`, ...args);
+    console.error(this.format("error", message), ...args);
   }
 
   warning(message: string, ...args: unknown[]) {
-    console.warn(`[${this.context}] WARN: ${message}`, ...args);
+    console.warn(this.format("warning", message), ...args);
   }
 
   warn(message: string, ...args: unknown[]) {

@@ -7,10 +7,11 @@
     "start": "next start",
     "lint": "biome lint .",
     "format": "biome format --write .",
-    "format:check": "biome check --write .",
+    "format:check": "biome check .",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@workspace/db": "workspace:*",
     "@workspace/env": "workspace:*",
     "@workspace/ui": "workspace:*",
     "next": "16.2.4",

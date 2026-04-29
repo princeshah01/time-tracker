@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import "@workspace/ui/globals.css";
 
-import { env } from "../env";
+import { env } from "@/env";
 
 export const metadata: Metadata = {
   title: env.NEXT_PUBLIC_APP_NAME,

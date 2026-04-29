@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Button } from "@workspace/ui";
 
-import { env } from "../env";
+import { env } from "@/env";
 
 const highlights = [
   "Next.js 16 App Router setup",
