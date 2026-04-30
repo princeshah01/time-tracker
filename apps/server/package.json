@@ -1,5 +1,5 @@
 {
-  "name": "@workspace/server",
+  "name": "server",
   "version": "0.0.0",
   "author": "Prince Shah",
   "type": "module",
@@ -17,7 +17,7 @@
     "@workspace/env": "workspace:*",
     "better-auth": "^1.6.9",
     "cors": "^2.8.6",
-    "date-fns": "^4.1.0",
+    "date-fns": "catalog:",
     "express": "^5.2.1"
   },
   "devDependencies": {
