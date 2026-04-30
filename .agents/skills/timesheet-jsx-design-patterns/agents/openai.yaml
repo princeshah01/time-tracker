@@ -1,0 +1,4 @@
+interface:
+  display_name: "Timesheet JSX Design Patterns"
+  short_description: "Triage-style JSX patterns for timesheets"
+  default_prompt: "Use $timesheet-jsx-design-patterns to build a timesheet app page with the shared UI package."

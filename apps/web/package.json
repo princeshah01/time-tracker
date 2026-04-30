@@ -1,5 +1,5 @@
 {
-  "name": "@workspace/web",
+  "name": "web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,10 +13,18 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
     "@tailwindcss/vite": "^4.2.4",
+    "@tanstack/react-query": "^5.100.6",
+    "@tanstack/react-query-devtools": "^5.100.6",
+    "@workspace/env": "workspace:*",
     "@workspace/ui": "workspace:*",
+    "lucide-react": "catalog:",
+    "next-themes": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.14.2",
     "tailwindcss": "catalog:"
   },
   "devDependencies": {

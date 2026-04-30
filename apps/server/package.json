@@ -5,6 +5,9 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/main.js",
     "build": "tsc",
@@ -18,9 +21,17 @@
     "better-auth": "^1.6.9",
     "cors": "^2.8.6",
     "date-fns": "catalog:",
-    "express": "^5.2.1"
+    "drizzle-orm": "catalog:",
+    "express": "^5.2.1",
+    "pg": "^8.20.0",
+    "postgres": "catalog:"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "catalog:",
+    "dotenv": "catalog:",
+    "@types/express": "^5.0.6",
     "@types/node": "catalog:",
     "@workspace/typescript-config": "workspace:*",
     "tsx": "^4.21.0"

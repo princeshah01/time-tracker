@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Feature Patterns"
+  short_description: "Workspace UI and feature structure rules"
+  default_prompt: "Use $frontend-feature-patterns to build a frontend feature with workspace UI components, app icons, zod forms, and lazy-loadable pages."

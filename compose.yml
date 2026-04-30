@@ -1,9 +1,9 @@
-name: pern-monorepo
+name: time_sheet_services
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: monorepo-postgres
+    container_name: time_sheet_postgres
     restart: unless-stopped
     env_file:
       - ./.env
@@ -23,7 +23,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: monorepo-redis
+    container_name: time_sheet_redis
     restart: unless-stopped
     env_file:
       - ./.env
@@ -40,19 +40,29 @@ services:
       - redis-data:/data
 
   redis-commander:
-    image: rediscommander/redis-commander
-    container_name: monorepo-redis-commander
-    profiles: ["debug"]
+    image: rediscommander/redis-commander:latest
+    container_name: time_sheet_redis-commander
+    restart: unless-stopped
+    profiles:
+      - debug
     env_file:
       - ./.env
     ports:
       - "${REDISCOMMANDER_PORT}:8081"
     environment:
-      REDIS_HOSTS: monorepo-redis:${REDIS_HOST}:${REDIS_PORT}
+      REDIS_HOSTS: local:redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
       redis:
         condition: service_healthy
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: time_sheet_mailhog
+    restart: unless-stopped
+    ports:
+      - 1025:1025
+      - 8025:8025
 
 volumes:
   postgres-data:

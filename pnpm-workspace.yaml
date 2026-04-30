@@ -14,10 +14,11 @@ catalog:
   "@vitejs/plugin-react": "^5.1.0"
   class-variance-authority: "^0.7.1"
   clsx: "^2.1.1"
+  date-fns: "^4.1.0"
   dotenv: "^17.4.2"
   drizzle-kit: "^0.31.10"
   drizzle-orm: "^0.45.2"
-  lucide-react: "^1.8.0"
+  lucide-react: "^1.14.0"
   next: "16.2.4"
   next-themes: "^0.4.6"
   postgres: "^3.4.9"
@@ -31,5 +32,3 @@ catalog:
   typescript: "5.9.2"
   vite: "^8.0.10"
   zod: "^4.3.6"
-  date-fns: "^4.1.0"
-
