@@ -5,7 +5,9 @@ import { sql } from "drizzle-orm";
 
 import { auth } from "./auth";
 import { env } from "./env";
-import { db } from "@/db";
+import { db } from "@/lib/db";
+import { connectRedis } from "./lib/redis";
+import { startQueueWorkers } from "./workers";
 
 const app = express();
 
@@ -60,6 +62,10 @@ async function bootstrap() {
   console.log("Bootstrapping server...");
 
   await assertDatabaseConnection();
+
+  await connectRedis();
+
+  startQueueWorkers();
 
   app.listen(env.PORT, () => {
     console.log(`Server listening on port ${env.PORT}`);

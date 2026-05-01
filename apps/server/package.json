@@ -8,7 +8,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "dev": "tsx watch src/index.ts",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:worker\"",
+    "dev:server": "tsx watch src/index.ts",
+    "dev:worker": "tsx watch src/workers/index.ts",
     "start": "node dist/main.js",
     "build": "tsc",
     "lint": "biome lint .",
@@ -17,23 +19,30 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@better-auth/api-key": "^1.6.9",
     "@workspace/env": "workspace:*",
-    "better-auth": "^1.6.9",
+    "better-auth": "catalog:",
+    "bullmq": "^5.76.4",
     "cors": "^2.8.6",
     "date-fns": "catalog:",
     "drizzle-orm": "catalog:",
     "express": "^5.2.1",
+    "ioredis": "^5.10.1",
+    "nodemailer": "^8.0.7",
     "pg": "^8.20.0",
-    "postgres": "catalog:"
+    "postgres": "catalog:",
+    "redis": "^5.12.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
-    "@types/pg": "^8.20.0",
-    "drizzle-kit": "catalog:",
-    "dotenv": "catalog:",
     "@types/express": "^5.0.6",
     "@types/node": "catalog:",
+    "@types/nodemailer": "^8.0.0",
+    "@types/pg": "^8.20.0",
     "@workspace/typescript-config": "workspace:*",
+    "concurrently": "^9.2.1",
+    "dotenv": "catalog:",
+    "drizzle-kit": "catalog:",
     "tsx": "^4.21.0"
   }
 }

@@ -1,9 +1,20 @@
 import { Button } from "@workspace/ui/components/button";
+import { Loader } from "lucide-react";
+import { authClient } from "@/auth-client";
 
 function MicrosoftAuthButton() {
+
+  const isLoading = false;
+  async function handleSignInWithMicrosoft() {
+    await authClient.signIn.social({
+      provider: "microsoft",
+      callbackURL:"http://localhost:5173/dashboard",
+    })
+  }
+
   return (
-    <Button variant="outline" className="h-9 w-full gap-2 text-[13px]">
-      <svg
+    <Button onClick={handleSignInWithMicrosoft} disabled={isLoading}  variant="outline" className="h-9 w-full gap-2 text-[13px]">
+     {isLoading ? <Loader className="size-12 animate-spin"/>  : ( <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 48 48"
         width="18"
@@ -26,7 +37,7 @@ function MicrosoftAuthButton() {
           d="M6 26H22V42H6z"
           transform="rotate(-180 14 34)"
         />
-      </svg>
+      </svg>)}
       Continue with Microsoft
     </Button>
   );
