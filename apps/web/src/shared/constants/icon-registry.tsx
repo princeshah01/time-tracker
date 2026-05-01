@@ -14,6 +14,10 @@ export const ICON_REGISTRY: Record<string, SvgIcon> = {
   Loader: lazy(() =>
     import("lucide-react").then((m) => ({ default: m.Loader }))
   ),
+  CheckCircle2: lazy(() =>
+    import("lucide-react").then((m) => ({ default: m.CheckCircle2 }))
+  ),
+  Mail: lazy(() => import("lucide-react").then((m) => ({ default: m.Mail }))),
 };
 
 export const DEFAULT_ICON: SvgIcon = lazy(() =>

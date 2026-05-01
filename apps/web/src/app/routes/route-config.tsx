@@ -1,4 +1,9 @@
-import { AuthPage } from "@/features/auth/page";
+import {
+  AcceptInvitePage,
+  AuthPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+} from "@/features/auth/pages";
 import type { AppRoute } from "@/shared/types";
 
 export const appRoutes: AppRoute[] = [
@@ -13,17 +18,17 @@ export const appRoutes: AppRoute[] = [
   {
     path: "/accept-invite",
     label: "Accept Invite",
-    element: <div>Accept Invite Page</div>,
+    element: <AcceptInvitePage />,
   },
   {
     path: "/forgot-password",
     label: "Forgot Password",
-    element: <div>Forgot Password Page</div>,
+    element: <ForgotPasswordPage />,
   },
   {
     path: "/reset-password",
     label: "Reset Password",
-    element: <div>Reset Password Page</div>,
+    element: <ResetPasswordPage />,
   },
 
   // --------------------
