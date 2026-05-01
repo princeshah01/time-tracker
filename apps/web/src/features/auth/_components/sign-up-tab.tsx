@@ -10,8 +10,12 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
+
+import { signUpWithEmail } from "../service/auth-service";
 
 const signUpSchema = z
   .object({
@@ -31,6 +35,8 @@ const signUpSchema = z
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 function SignUpTab() {
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -42,8 +48,16 @@ function SignUpTab() {
     },
   });
 
-  function onSubmit(_values: SignUpFormValues) {
-    return Promise.resolve();
+  async function onSubmit(values: SignUpFormValues) {
+    setError(null);
+    const result = await signUpWithEmail(values);
+
+    if (result.error) {
+      setError(result.error.message ?? "Sign up failed");
+      return;
+    }
+
+    navigate(`/signup-otp?email=${encodeURIComponent(values.email)}`);
   }
 
   return (
@@ -156,8 +170,9 @@ function SignUpTab() {
         />
 
         <Button type="submit" className="h-9 w-full text-[13px]">
-          Create account
+          {form.formState.isSubmitting ? "Creating..." : "Create account"}
         </Button>
+        {error ? <p className="text-[12px] text-destructive">{error}</p> : null}
       </form>
     </Form>
   );

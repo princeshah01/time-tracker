@@ -1,24 +1,32 @@
 import { type Job, Worker } from "bullmq";
-import { sendEmail } from "@/lib/email/send-email";
+
 import { bullmqConnection } from "@/lib/queues/bullmq-connection";
-import { QUEUE_NAMES } from "@/lib/queues/queue-names";
 import type { EmailJobData, EmailJobName } from "@/lib/queues/email";
 import { EMAIL_QUEUE_PREFIX } from "@/lib/queues/email";
+import { QUEUE_NAMES } from "@/lib/queues/queue-names";
 
 type EmailWorkerJob = Job<EmailJobData, void, EmailJobName>;
 
-function buildEmailPayload(data: EmailJobData) {
-  return {
-    to: data.to,
-    subject: data.type,
-    body: JSON.stringify(data, null, 2),
-  };
-}
-
 async function processEmailJob(job: EmailWorkerJob) {
-  const email = buildEmailPayload(job.data);
-
-  await sendEmail(email.to, email.subject, email.body);
+  switch (job.data.type) {
+    case "send-auth-otp-email":
+      console.log(
+        `[auth-email] ${job.data.purpose} OTP for ${job.data.to}: ${job.data.otp}`
+      );
+      return;
+    case "send-password-reset-email":
+      console.log(
+        `[auth-email] password reset OTP for ${job.data.to}: ${job.data.otp}`
+      );
+      return;
+    case "send-invite-email":
+      console.log(
+        `[auth-email] invite for ${job.data.to}: ${job.data.inviteUrl}`
+      );
+      return;
+    default:
+      console.log("[email]", JSON.stringify(job.data, null, 2));
+  }
 }
 
 export function createEmailWorker() {

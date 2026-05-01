@@ -1,11 +1,13 @@
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+
 import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import {
   clearUser,
   setAuthLoading,
   setUser,
 } from "@/app/store/slices/user-slice";
+import { getMe } from "@/features/auth/service/auth-service";
 
 export function useAuth() {
   const dispatch = useAppDispatch();
@@ -13,12 +15,9 @@ export function useAuth() {
 
   const { data, isPending, isSuccess, isError, refetch } = useQuery({
     queryKey: ["auth", "me"],
-    queryFn: async () => {
-      // Simulate an API call to fetch the current user's authentication status
-      return null;
-    },
+    queryFn: getMe,
     retry: false,
-    staleTime: Infinity,
+    staleTime: 60_000,
   });
 
   useEffect(() => {

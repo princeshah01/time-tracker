@@ -1,9 +1,9 @@
-import { AppProviders } from "./providers";
 import { RouterProvider } from "react-router-dom";
-import { createAppRouter } from "./routes";
-import { useAuth } from "@/shared/hooks";
-import { Loader } from "lucide-react";
+
 import { PageLoader } from "@/shared/components/loaders";
+import { useAuth } from "@/shared/hooks";
+import { AppProviders } from "./providers";
+import { createAppRouter } from "./routes";
 
 const router = createAppRouter();
 

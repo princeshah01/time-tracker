@@ -1,7 +1,8 @@
 import { Navigate } from "react-router-dom";
+
+import { PageLoader } from "@/shared/components/loaders";
 import { useAuth } from "@/shared/hooks/use-auth";
 import { hasPermission } from "@/shared/lib";
-import { PageLoader } from "@/shared/components/loaders";
 
 type Props = {
   children: React.ReactNode;
@@ -9,12 +10,16 @@ type Props = {
 };
 
 export function ProtectedRoute({ children, requiredPermissions }: Props) {
-  const { permissions, isHydrated, isLoading } = useAuth();
+  const { permissions, isAuthenticated, isHydrated, isLoading } = useAuth();
   const userPermissions = permissions;
   const allowed = hasPermission(userPermissions, requiredPermissions);
 
   if (!isHydrated || isLoading) {
     return <PageLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
   }
 
   if (!allowed) {

@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import {
@@ -10,9 +11,12 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
+
+import { getMe, signInWithEmail } from "../service/auth-service";
 
 const signInSchema = z.object({
   email: z.email("Enter a valid work email"),
@@ -23,6 +27,9 @@ const signInSchema = z.object({
 type SignInFormValues = z.infer<typeof signInSchema>;
 
 function SignInTab() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -32,8 +39,25 @@ function SignInTab() {
     },
   });
 
-  function onSubmit(_values: SignInFormValues) {
-    return Promise.resolve();
+  async function onSubmit(values: SignInFormValues) {
+    setError(null);
+    const result = await signInWithEmail(values);
+
+    if (result.error) {
+      setError(result.error.message ?? "Sign in failed");
+      return;
+    }
+
+    if ("twoFactorRedirect" in (result.data ?? {})) {
+      navigate("/two-factor");
+      return;
+    }
+
+    await queryClient.fetchQuery({
+      queryKey: ["auth", "me"],
+      queryFn: getMe,
+    });
+    navigate("/dashboard");
   }
 
   return (
@@ -108,8 +132,9 @@ function SignInTab() {
         />
 
         <Button type="submit" className="h-9 w-full text-[13px]">
-          Sign in
+          {form.formState.isSubmitting ? "Signing in..." : "Sign in"}
         </Button>
+        {error ? <p className="text-[12px] text-destructive">{error}</p> : null}
       </form>
     </Form>
   );

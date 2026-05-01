@@ -5,5 +5,6 @@ export type AppRoute = {
   icon?: string | React.ComponentType;
   permissions?: string[];
   showInSidebar?: boolean;
+  public?: boolean;
   children?: AppRoute[];
 };

@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { User, Permission } from "@/shared/types";
+
+import type { Permission, User } from "@/shared/types";
 
 export interface UserState {
   user: User | null;
@@ -7,6 +8,7 @@ export interface UserState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isHydrated: boolean;
+  role: User["role"] | null;
 }
 
 const initialState: UserState = {
@@ -15,6 +17,7 @@ const initialState: UserState = {
   isAuthenticated: false,
   isLoading: false,
   isHydrated: false,
+  role: null,
 };
 
 const userSlice = createSlice({
@@ -29,6 +32,7 @@ const userSlice = createSlice({
       action: PayloadAction<{ user: User; permissions: Permission[] }>
     ) => {
       state.user = action.payload.user;
+      state.role = action.payload.user.role ?? null;
       state.permissions = action.payload.permissions;
       state.isAuthenticated = true;
       state.isLoading = false;
@@ -37,6 +41,7 @@ const userSlice = createSlice({
     clearUser: (state) => {
       state.user = null;
       state.permissions = [];
+      state.role = null;
       state.isAuthenticated = false;
       state.isLoading = false;
       state.isHydrated = true;

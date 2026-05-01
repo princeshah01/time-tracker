@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { AuthDoneState, AuthLayout, ResetPasswordForm } from "../_components";
 
 function ResetPasswordPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const email = searchParams.get("email") ?? "";
   const [isDone, setIsDone] = useState(false);
 
   if (isDone) {
@@ -23,9 +25,11 @@ function ResetPasswordPage() {
   return (
     <AuthLayout
       eyebrow="Reset password"
-      description="Create a new password from your secure magic link."
+      description={
+        email ? `Enter the OTP sent to ${email}` : "Enter your reset OTP."
+      }
     >
-      <ResetPasswordForm onDone={() => setIsDone(true)} />
+      <ResetPasswordForm email={email} onDone={() => setIsDone(true)} />
     </AuthLayout>
   );
 }

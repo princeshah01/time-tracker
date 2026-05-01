@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import {
   Form,
@@ -9,9 +10,11 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { acceptInvite, getMe } from "../service/auth-service";
 import { PasswordFields } from "./password-fields";
 
 const acceptInviteSchema = z
@@ -28,10 +31,13 @@ const acceptInviteSchema = z
 type AcceptInviteFormValues = z.infer<typeof acceptInviteSchema>;
 
 type AcceptInviteFormProps = {
+  token: string;
   onDone: () => void;
 };
 
-function AcceptInviteForm({ onDone }: AcceptInviteFormProps) {
+function AcceptInviteForm({ token, onDone }: AcceptInviteFormProps) {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<AcceptInviteFormValues>({
     resolver: zodResolver(acceptInviteSchema),
     defaultValues: {
@@ -41,9 +47,24 @@ function AcceptInviteForm({ onDone }: AcceptInviteFormProps) {
     },
   });
 
-  function onSubmit(_values: AcceptInviteFormValues) {
-    onDone();
-    return Promise.resolve();
+  async function onSubmit(values: AcceptInviteFormValues) {
+    setError(null);
+    try {
+      await acceptInvite({
+        token,
+        name: values.name,
+        password: values.password,
+      });
+      await queryClient.fetchQuery({
+        queryKey: ["auth", "me"],
+        queryFn: getMe,
+      });
+      onDone();
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Unable to accept invite"
+      );
+    }
   }
 
   return (
@@ -55,15 +76,15 @@ function AcceptInviteForm({ onDone }: AcceptInviteFormProps) {
           render={({ field }) => (
             <FormItem>
               <div className="flex flex-col justify-between gap-2">
-              <FormLabel className="text-[12px]">Full name</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Alex Morgan"
-                  className="h-9 text-[13px]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage className="text-[12px]" />
+                <FormLabel className="text-[12px]">Full name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Alex Morgan"
+                    className="h-9 text-[13px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-[12px]" />
               </div>
             </FormItem>
           )}
@@ -74,6 +95,7 @@ function AcceptInviteForm({ onDone }: AcceptInviteFormProps) {
         <Button type="submit" className="h-9 w-full text-[13px]">
           Accept invite
         </Button>
+        {error ? <p className="text-[12px] text-destructive">{error}</p> : null}
       </form>
     </Form>
   );

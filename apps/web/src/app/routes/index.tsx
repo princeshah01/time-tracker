@@ -1,12 +1,15 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
-import { appRoutes } from "./route-config";
+
 import { ProtectedRoute } from "./protected-route";
+import { appRoutes } from "./route-config";
 
 function mapRoutes(routes: typeof appRoutes) {
   return routes.flatMap((route) => {
     const parentRoute = {
       path: route.path,
-      element: (
+      element: route.public ? (
+        route.element
+      ) : (
         <ProtectedRoute requiredPermissions={route.permissions}>
           {route.element}
         </ProtectedRoute>
@@ -16,7 +19,9 @@ function mapRoutes(routes: typeof appRoutes) {
     const childRoutes =
       route.children?.map((child) => ({
         path: child.path,
-        element: (
+        element: child.public ? (
+          child.element
+        ) : (
           <ProtectedRoute requiredPermissions={child.permissions}>
             {child.element}
           </ProtectedRoute>

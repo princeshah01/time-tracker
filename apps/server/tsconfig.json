@@ -1,6 +1,9 @@
 {
   "extends": "@workspace/typescript-config/node.json",
   "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "composite": false,
     "outDir": "dist",
     "rootDir": "src",
     "paths": {

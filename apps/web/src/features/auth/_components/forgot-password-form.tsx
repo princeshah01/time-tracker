@@ -9,9 +9,12 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 
+import { requestPasswordResetOtp } from "../service/auth-service";
 import { AuthPageLink, AuthResendNotice } from "./auth-layout";
 
 const forgotPasswordSchema = z.object({
@@ -21,6 +24,8 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 function ForgotPasswordForm() {
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
@@ -29,8 +34,14 @@ function ForgotPasswordForm() {
   });
   const isSubmitted = form.formState.isSubmitSuccessful;
 
-  function onSubmit(_values: ForgotPasswordFormValues) {
-    return Promise.resolve();
+  async function onSubmit(values: ForgotPasswordFormValues) {
+    setError(null);
+    try {
+      await requestPasswordResetOtp(values.email);
+      navigate(`/reset-password?email=${encodeURIComponent(values.email)}`);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to send OTP");
+    }
   }
 
   return (
@@ -48,26 +59,32 @@ function ForgotPasswordForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                                <div className="flex flex-col justify-between gap-2">
-
-                  <FormLabel className="text-[12px]">Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="name@company.com"
-                      className="h-9 text-[13px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-[12px]" />
+                  <div className="flex flex-col justify-between gap-2">
+                    <FormLabel className="text-[12px]">Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="name@company.com"
+                        className="h-9 text-[13px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-[12px]" />
                   </div>
                 </FormItem>
               )}
             />
 
-            <Button type="submit" variant="secondary" className="h-9 w-full text-[13px]">
-              Send reset link
+            <Button
+              type="submit"
+              variant="secondary"
+              className="h-9 w-full text-[13px]"
+            >
+              Send reset OTP
             </Button>
+            {error ? (
+              <p className="text-[12px] text-destructive">{error}</p>
+            ) : null}
           </form>
         </Form>
       )}

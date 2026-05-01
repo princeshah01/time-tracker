@@ -1,5 +1,15 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  unique,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -7,6 +17,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -73,9 +84,126 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)]
 );
 
+export const twoFactor = pgTable(
+  "two_factor",
+  {
+    id: text("id").primaryKey(),
+    secret: text("secret").notNull(),
+    backupCodes: text("backup_codes").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    verified: boolean("verified").default(true).notNull(),
+  },
+  (table) => [
+    index("two_factor_secret_idx").on(table.secret),
+    index("two_factor_userId_idx").on(table.userId),
+  ]
+);
+
+export const roles = pgTable(
+  "roles",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    isDefault: boolean("is_default").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [uniqueIndex("roles_name_unique").on(table.name)]
+);
+
+export const permissions = pgTable(
+  "permissions",
+  {
+    id: serial("id").primaryKey(),
+    key: text("key").notNull(),
+    description: text("description"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [uniqueIndex("permissions_key_unique").on(table.key)]
+);
+
+export const rolePermissions = pgTable(
+  "role_permissions",
+  {
+    id: serial("id").primaryKey(),
+    roleId: integer("role_id")
+      .notNull()
+      .references(() => roles.id, { onDelete: "cascade" }),
+    permissionId: integer("permission_id")
+      .notNull()
+      .references(() => permissions.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("role_permissions_role_id_permission_id_unique").on(
+      table.roleId,
+      table.permissionId
+    ),
+    index("role_permissions_role_id_idx").on(table.roleId),
+    index("role_permissions_permission_id_idx").on(table.permissionId),
+  ]
+);
+
+export const userRoles = pgTable(
+  "user_roles",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    roleId: integer("role_id")
+      .notNull()
+      .references(() => roles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("user_roles_user_id_role_id_unique").on(table.userId, table.roleId),
+    index("user_roles_user_id_idx").on(table.userId),
+    index("user_roles_role_id_idx").on(table.roleId),
+  ]
+);
+
+export const userInvites = pgTable(
+  "user_invites",
+  {
+    id: serial("id").primaryKey(),
+    email: text("email").notNull(),
+    roleId: integer("role_id")
+      .notNull()
+      .references(() => roles.id, { onDelete: "restrict" }),
+    tokenHash: text("token_hash").notNull(),
+    invitedBy: text("invited_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    expiresAt: timestamp("expires_at").notNull(),
+    acceptedAt: timestamp("accepted_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("user_invites_token_hash_unique").on(table.tokenHash),
+    index("user_invites_email_idx").on(table.email),
+  ]
+);
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  userRoles: many(userRoles),
+  invitesSent: many(userInvites),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -88,6 +216,59 @@ export const sessionRelations = relations(session, ({ one }) => ({
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+export const twoFactorRelations = relations(twoFactor, ({ one }) => ({
+  user: one(user, {
+    fields: [twoFactor.userId],
+    references: [user.id],
+  }),
+}));
+
+export const rolesRelations = relations(roles, ({ many }) => ({
+  rolePermissions: many(rolePermissions),
+  userRoles: many(userRoles),
+  invites: many(userInvites),
+}));
+
+export const permissionsRelations = relations(permissions, ({ many }) => ({
+  rolePermissions: many(rolePermissions),
+}));
+
+export const rolePermissionsRelations = relations(
+  rolePermissions,
+  ({ one }) => ({
+    role: one(roles, {
+      fields: [rolePermissions.roleId],
+      references: [roles.id],
+    }),
+    permission: one(permissions, {
+      fields: [rolePermissions.permissionId],
+      references: [permissions.id],
+    }),
+  })
+);
+
+export const userRolesRelations = relations(userRoles, ({ one }) => ({
+  user: one(user, {
+    fields: [userRoles.userId],
+    references: [user.id],
+  }),
+  role: one(roles, {
+    fields: [userRoles.roleId],
+    references: [roles.id],
+  }),
+}));
+
+export const userInvitesRelations = relations(userInvites, ({ one }) => ({
+  role: one(roles, {
+    fields: [userInvites.roleId],
+    references: [roles.id],
+  }),
+  invitedByUser: one(user, {
+    fields: [userInvites.invitedBy],
     references: [user.id],
   }),
 }));

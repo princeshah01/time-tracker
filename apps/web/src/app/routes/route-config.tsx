@@ -3,7 +3,10 @@ import {
   AuthPage,
   ForgotPasswordPage,
   ResetPasswordPage,
+  SignupOtpPage,
+  TwoFactorPage,
 } from "@/features/auth/pages";
+import { ProfileSettingsPage, SecuritySettingsPage } from "@/features/profile";
 import type { AppRoute } from "@/shared/types";
 
 export const appRoutes: AppRoute[] = [
@@ -14,21 +17,37 @@ export const appRoutes: AppRoute[] = [
     path: "/auth",
     label: "Auth",
     element: <AuthPage />,
+    public: true,
   },
   {
     path: "/accept-invite",
     label: "Accept Invite",
     element: <AcceptInvitePage />,
+    public: true,
   },
   {
     path: "/forgot-password",
     label: "Forgot Password",
     element: <ForgotPasswordPage />,
+    public: true,
   },
   {
     path: "/reset-password",
     label: "Reset Password",
     element: <ResetPasswordPage />,
+    public: true,
+  },
+  {
+    path: "/signup-otp",
+    label: "Verify Email",
+    element: <SignupOtpPage />,
+    public: true,
+  },
+  {
+    path: "/two-factor",
+    label: "Two Factor",
+    element: <TwoFactorPage />,
+    public: true,
   },
 
   // --------------------
@@ -50,6 +69,7 @@ export const appRoutes: AppRoute[] = [
     label: "Clients",
     icon: "Users",
     element: <div>Clients Overview</div>,
+    permissions: ["client:view"],
     showInSidebar: true,
   },
   {
@@ -57,6 +77,7 @@ export const appRoutes: AppRoute[] = [
     label: "Create Client",
     icon: "Plus",
     element: <div>Create Client</div>,
+    permissions: ["client:create"],
     showInSidebar: false,
   },
   {
@@ -64,6 +85,7 @@ export const appRoutes: AppRoute[] = [
     label: "Client Details",
     icon: "Users",
     element: <div>Client Details</div>,
+    permissions: ["client:view"],
     showInSidebar: false,
   },
   // --------------------
@@ -74,6 +96,7 @@ export const appRoutes: AppRoute[] = [
     label: "Projects",
     icon: "FolderKanban",
     element: <div>Projects Overview</div>,
+    permissions: ["project:view"],
     showInSidebar: true,
   },
   {
@@ -81,6 +104,7 @@ export const appRoutes: AppRoute[] = [
     label: "Create Project",
     icon: "Plus",
     element: <div>Create Project</div>,
+    permissions: ["project:create"],
     showInSidebar: false,
   },
   {
@@ -88,6 +112,7 @@ export const appRoutes: AppRoute[] = [
     label: "Project Details",
     icon: "FolderKanban",
     element: <div>Project Details</div>,
+    permissions: ["project:view"],
     showInSidebar: false,
   },
   // --------------------
@@ -123,6 +148,7 @@ export const appRoutes: AppRoute[] = [
     label: "Timesheets",
     icon: "Clock",
     element: <div>Timesheets Overview</div>,
+    permissions: ["timesheet:view:own"],
     showInSidebar: true,
   },
   {
@@ -130,6 +156,7 @@ export const appRoutes: AppRoute[] = [
     label: "Create Timesheet",
     icon: "Plus",
     element: <div>Create Timesheet</div>,
+    permissions: ["timesheet:create"],
     showInSidebar: false,
   },
   {
@@ -137,6 +164,7 @@ export const appRoutes: AppRoute[] = [
     label: "Timesheet Details",
     icon: "Clock",
     element: <div>Timesheet Details</div>,
+    permissions: ["timesheet:view:own"],
     showInSidebar: false,
   },
   // --------------------
@@ -157,8 +185,15 @@ export const appRoutes: AppRoute[] = [
     path: "/settings",
     label: "Settings",
     icon: "Settings",
-    element: <div>Settings Overview</div>,
+    element: <ProfileSettingsPage />,
     showInSidebar: true,
+  },
+  {
+    path: "/settings/security",
+    label: "Security",
+    icon: "Shield",
+    element: <SecuritySettingsPage />,
+    showInSidebar: false,
   },
 
   // --------------------
@@ -170,6 +205,7 @@ export const appRoutes: AppRoute[] = [
     icon: "ShieldAlert",
     element: <div>Unauthorized</div>,
     showInSidebar: false,
+    public: true,
   },
   {
     path: "*",
@@ -177,5 +213,6 @@ export const appRoutes: AppRoute[] = [
     icon: "SearchX",
     element: <div>Not Found</div>,
     showInSidebar: false,
+    public: true,
   },
 ];

@@ -15,6 +15,7 @@ export const env = createNodeEnv({
   MICROSOFT_CLIENT_ID: nonEmptyString,
   MICROSOFT_CLIENT_SECRET: nonEmptyString,
   MICROSOFT_TENANT_ID: nonEmptyString,
+  MICROSOFT_ALLOWED_DOMAIN: nonEmptyString,
   BETTER_AUTH_SECRET: nonEmptyString,
   BETTER_AUTH_URL: url,
   CLIENT_URL: url,

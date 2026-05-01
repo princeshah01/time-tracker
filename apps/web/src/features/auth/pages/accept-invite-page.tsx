@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { AcceptInviteForm, AuthDoneState, AuthLayout } from "../_components";
 
 function AcceptInvitePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token") ?? "";
   const [isDone, setIsDone] = useState(false);
 
   if (isDone) {
@@ -12,9 +14,9 @@ function AcceptInvitePage() {
       <AuthLayout eyebrow="Invite accepted">
         <AuthDoneState
           title="Your account is ready"
-          description="Sign in with the password you just created."
-          actionLabel="Go to sign in"
-          onAction={() => navigate("/auth")}
+          description="Your invite has been accepted."
+          actionLabel="Open dashboard"
+          onAction={() => navigate("/dashboard")}
         />
       </AuthLayout>
     );
@@ -25,7 +27,7 @@ function AcceptInvitePage() {
       eyebrow="Accept invite"
       description="Finish your account setup from the admin invite link."
     >
-      <AcceptInviteForm onDone={() => setIsDone(true)} />
+      <AcceptInviteForm token={token} onDone={() => setIsDone(true)} />
     </AuthLayout>
   );
 }

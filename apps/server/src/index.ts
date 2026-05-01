@@ -1,11 +1,15 @@
-import express from "express";
-import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
+import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import { sql } from "drizzle-orm";
+import express from "express";
 
+import { db } from "@/lib/db";
+import { invitesRouter } from "@/modules/invites/invites.routes";
+import { profileRouter } from "@/modules/profile/profile.routes";
+import { securityRouter } from "@/modules/security/security.routes";
+import { errorHandler } from "@/shared/http/error-handler";
 import { auth } from "./auth";
 import { env } from "./env";
-import { db } from "@/lib/db";
 import { connectRedis } from "./lib/redis";
 import { startQueueWorkers } from "./workers";
 
@@ -22,29 +26,11 @@ app.all("/api/auth/{*any}", toNodeHandler(auth));
 
 app.use(express.json());
 
-app.get("/api/me", async (req, res) => {
-  const session = await auth.api.getSession({
-    headers: fromNodeHeaders(req.headers),
-  });
+app.use("/api/profile", profileRouter);
+app.use("/api/invites", invitesRouter);
+app.use("/api/security", securityRouter);
 
-  if (!session?.user) {
-    return res.status(401).json({
-      message: "Unauthorized",
-    });
-  }
-
-  const user = session.user as Record<string, unknown>;
-  const permissions = Array.isArray(user.permissions)
-    ? user.permissions.filter(
-        (permission): permission is string => typeof permission === "string"
-      )
-    : [];
-
-  return res.json({
-    user,
-    permissions,
-  });
-});
+app.use(errorHandler);
 
 async function assertDatabaseConnection() {
   console.log("Checking database connection...");

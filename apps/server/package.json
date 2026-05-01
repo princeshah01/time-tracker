@@ -7,6 +7,7 @@
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx src/lib/db/seeds/auth.seed.ts",
     "db:studio": "drizzle-kit studio",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:worker\"",
     "dev:server": "tsx watch src/index.ts",

@@ -1,4 +1,4 @@
-import { emailQueue, type EmailJobData } from "./email.queue";
+import { type EmailJobData, emailQueue } from "./email.queue";
 
 export async function addEmailJob(data: EmailJobData) {
   return emailQueue.add(data.type, data);
@@ -7,7 +7,12 @@ export async function addEmailJob(data: EmailJobData) {
 export async function addAuthOtpEmailJob(input: {
   to: string;
   otp: string;
-  purpose: "sign-up" | "email-verification" | "two-factor";
+  purpose:
+    | "sign-in"
+    | "sign-up"
+    | "email-verification"
+    | "change-email"
+    | "two-factor";
 }) {
   return emailQueue.add("send-auth-otp-email", {
     type: "send-auth-otp-email",
@@ -21,8 +26,8 @@ export async function addPasswordResetOtpEmailJob(input: {
   to: string;
   otp: string;
 }) {
-  return emailQueue.add("send-password-reset-otp-email", {
-    type: "send-password-reset-otp-email",
+  return emailQueue.add("send-password-reset-email", {
+    type: "send-password-reset-email",
     to: input.to,
     otp: input.otp,
   });
