@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 
-import { db } from "@/lib/db";
-import { account, roles, user, userInvites } from "@/lib/db/schema";
+import { db } from "@/db";
+import { account, roles, user, userInvites } from "@/db/schema";
+import { AppError } from "@/shared/utils";
 
 export type InviteRecord = typeof userInvites.$inferSelect;
 
@@ -17,7 +18,11 @@ export class InvitesRepository {
     const [invite] = await db.insert(userInvites).values(input).returning();
 
     if (!invite) {
-      throw new Error("Failed to create invite");
+      throw new AppError({
+        message: "Failed to create invite",
+        code: "INTERNAL_SERVER_ERROR",
+        isOperational: false,
+      });
     }
 
     return invite;
@@ -72,7 +77,11 @@ export class InvitesRepository {
       .returning();
 
     if (!createdUser) {
-      throw new Error("Failed to create invited user");
+      throw new AppError({
+        message: "Failed to create invited user",
+        code: "INTERNAL_SERVER_ERROR",
+        isOperational: false,
+      });
     }
 
     return createdUser;

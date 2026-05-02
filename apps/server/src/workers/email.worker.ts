@@ -1,41 +1,46 @@
 import { type Job, Worker } from "bullmq";
 
-import { bullmqConnection } from "@/lib/queues/bullmq-connection";
-import type { EmailJobData, EmailJobName } from "@/lib/queues/email";
-import { EMAIL_QUEUE_PREFIX } from "@/lib/queues/email";
-import { QUEUE_NAMES } from "@/lib/queues/queue-names";
+import { env } from "@/config";
+import { QUEUE_NAMES,
+  bullMqConnection,
+type EmailJobData, type EmailJobName
+ } from "@/infrastructure/queue";
+import { loggerWorker } from "@/shared/utils";
 
 type EmailWorkerJob = Job<EmailJobData, void, EmailJobName>;
 
 async function processEmailJob(job: EmailWorkerJob) {
   switch (job.data.type) {
     case "send-auth-otp-email":
-      console.log(
-        `[auth-email] ${job.data.purpose} OTP for ${job.data.to}: ${job.data.otp}`
+      loggerWorker.info(
+        `OTP for ${job.data.to}: ${job.data.otp}`
       );
       return;
     case "send-password-reset-email":
-      console.log(
-        `[auth-email] password reset OTP for ${job.data.to}: ${job.data.otp}`
+      loggerWorker.info(
+        `password reset OTP for ${job.data.to}: ${job.data.otp}`
       );
       return;
     case "send-invite-email":
-      console.log(
-        `[auth-email] invite for ${job.data.to}: ${job.data.inviteUrl}`
+      loggerWorker.info(
+        `invite for ${job.data.to}: ${job.data.inviteUrl}`
       );
       return;
     default:
-      console.log("[email]", JSON.stringify(job.data, null, 2));
+      loggerWorker.info("[email]", JSON.stringify(job.data, null, 2));
   }
 }
 
-export function createEmailWorker() {
+function createEmailWorker() {
+  loggerWorker.info("Starting email worker...");
   return new Worker<EmailJobData, void, EmailJobName>(
     QUEUE_NAMES.EMAIL,
     processEmailJob,
     {
-      connection: bullmqConnection,
-      prefix: EMAIL_QUEUE_PREFIX,
+      connection: bullMqConnection,
+      prefix: env.QUEUE_PREFIX,
     }
   );
 }
+
+export { createEmailWorker };

@@ -7,9 +7,9 @@
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx src/lib/db/seeds/auth.seed.ts",
+    "db:seed": "tsx src/db/seeds/role-permissions.ts",
     "db:studio": "drizzle-kit studio",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:worker\"",
+    "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:worker\"",
     "dev:server": "tsx watch src/index.ts",
     "dev:worker": "tsx watch src/workers/index.ts",
     "start": "node dist/main.js",
@@ -22,8 +22,10 @@
   "dependencies": {
     "@better-auth/api-key": "^1.6.9",
     "@workspace/env": "workspace:*",
+    "@workspace/logger": "workspace:*",
     "better-auth": "catalog:",
     "bullmq": "^5.76.4",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "date-fns": "catalog:",
     "drizzle-orm": "catalog:",
@@ -32,9 +34,11 @@
     "nodemailer": "^8.0.7",
     "pg": "^8.20.0",
     "postgres": "catalog:",
-    "redis": "^5.12.1"
+    "redis": "^5.12.1",
+    "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "catalog:",

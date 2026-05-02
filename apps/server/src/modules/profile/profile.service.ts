@@ -1,25 +1,7 @@
 import { permissionsService } from "@/modules/permissions/permissions.service";
-import { HttpError } from "@/shared/http/http-error";
+import { AppError } from "@/shared/utils";
 import { ProfileRepository } from "./profile.repository";
-
-export type ProfileMe = {
-  userInfo: {
-    id: string;
-    email: string;
-    name: string;
-    image: string | null;
-    emailVerified: boolean;
-    twoFactorEnabled: boolean;
-    hasPassword: boolean;
-    hasMicrosoftAccount: boolean;
-  };
-  role: {
-    id: number;
-    name: string;
-    description: string | null;
-  } | null;
-  permissions: string[];
-};
+import type { ProfileMe, UpdateProfileInput } from "./profile.types";
 
 export class ProfileService {
   constructor(private readonly profileRepository = new ProfileRepository()) {}
@@ -32,7 +14,10 @@ export class ProfileService {
     ]);
 
     if (!user) {
-      throw new HttpError(404, "User not found");
+      throw new AppError({
+        message: "User not found",
+        code: "NOT_FOUND",
+      });
     }
 
     return {
@@ -44,7 +29,8 @@ export class ProfileService {
         emailVerified: user.emailVerified,
         twoFactorEnabled: user.twoFactorEnabled,
         hasPassword: accounts.some(
-          (account) => account.providerId === "credential" && account.password
+          (account) =>
+            account.providerId === "credential" && Boolean(account.password)
         ),
         hasMicrosoftAccount: accounts.some(
           (account) => account.providerId === "microsoft"
@@ -57,15 +43,27 @@ export class ProfileService {
 
   async updateMe(
     userId: string,
-    input: { name?: string; image?: string | null }
-  ) {
+    input: UpdateProfileInput
+  ): Promise<ProfileMe> {
+    const hasUpdateData = input.name !== undefined || input.image !== undefined;
+
+    if (!hasUpdateData) {
+      throw new AppError({
+        message: "No profile fields provided for update",
+        code: "BAD_REQUEST",
+      });
+    }
+
     const updatedUser = await this.profileRepository.updateUserProfile(
       userId,
       input
     );
 
     if (!updatedUser) {
-      throw new HttpError(404, "User not found");
+      throw new AppError({
+        message: "User not found",
+        code: "NOT_FOUND",
+      });
     }
 
     return this.getMe(userId);

@@ -1,31 +1,46 @@
 import { Router } from "express";
 
-import { asyncHandler } from "@/shared/http/async-handler";
-import { securityController } from "./security.controller";
+import { requireAuth, validate } from "@/shared/middlewares";
+import { securityController } from "./security.controllers";
+import {
+  changePasswordSchema,
+  setPasswordSchema,
+  twoFactorPasswordSchema,
+  verifyTwoFactorSchema,
+} from "./security.validation";
 
-export const securityRouter = Router();
+const securityRouter = Router();
+
+securityRouter.use(requireAuth);
 
 securityRouter.post(
   "/change-password",
-  asyncHandler((req, res) => securityController.changePassword(req, res))
+  validate(changePasswordSchema),
+  securityController.changePassword
 );
 
 securityRouter.post(
   "/set-password",
-  asyncHandler((req, res) => securityController.setPassword(req, res))
+  validate(setPasswordSchema),
+  securityController.setPassword
 );
 
 securityRouter.post(
   "/two-factor/setup",
-  asyncHandler((req, res) => securityController.enableTwoFactor(req, res))
+  validate(twoFactorPasswordSchema),
+  securityController.enableTwoFactor
 );
 
 securityRouter.post(
   "/two-factor/verify",
-  asyncHandler((req, res) => securityController.verifyTwoFactor(req, res))
+  validate(verifyTwoFactorSchema),
+  securityController.verifyTwoFactor
 );
 
 securityRouter.post(
   "/two-factor/disable",
-  asyncHandler((req, res) => securityController.disableTwoFactor(req, res))
+  validate(twoFactorPasswordSchema),
+  securityController.disableTwoFactor
 );
+
+export { securityRouter };

@@ -1,15 +1,21 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 
-import { env } from "@/env";
-import { addInviteEmailJob } from "@/lib/queues/email";
+import { env } from "@/config";
+import { addInviteEmailJob } from "@/infrastructure/queue";
 import { permissionsService } from "@/modules/permissions/permissions.service";
-import {
-  INVITE_EXPIRY_DAYS,
-  INVITE_TOKEN_BYTES,
-} from "@/shared/constants/auth.constants";
-import { HttpError } from "@/shared/http/http-error";
+import { AppError } from "@/shared/utils";
 import { InvitesRepository } from "./invites.repository";
+import type {
+  AcceptedInvite,
+  AcceptInviteInput,
+  CreatedInvite,
+  CreateInviteInput,
+  InviteDetails,
+} from "./invites.types";
+
+const INVITE_TOKEN_BYTES = 32;
+const INVITE_EXPIRY_DAYS = 7;
 
 function hashInviteToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -26,17 +32,15 @@ function getInviteUrl(token: string) {
 export class InvitesService {
   constructor(private readonly invitesRepository = new InvitesRepository()) {}
 
-  async createInvite(input: {
-    email: string;
-    roleId: number;
-    invitedBy: string;
-    invitedByName?: string;
-  }) {
+  async createInvite(input: CreateInviteInput): Promise<CreatedInvite> {
     const email = input.email.trim().toLowerCase();
     const roleRecord = await permissionsService.getRoleById(input.roleId);
 
     if (!roleRecord) {
-      throw new HttpError(404, "Role not found");
+      throw new AppError({
+        message: "Role not found",
+        code: "NOT_FOUND",
+      });
     }
 
     const token = createInviteToken();
@@ -72,7 +76,7 @@ export class InvitesService {
     };
   }
 
-  async getInvite(token: string) {
+  async getInvite(token: string): Promise<InviteDetails> {
     const invite = await this.assertInviteToken(token);
 
     return {
@@ -86,7 +90,7 @@ export class InvitesService {
     };
   }
 
-  async acceptInvite(input: { token: string; name: string; password: string }) {
+  async acceptInvite(input: AcceptInviteInput): Promise<AcceptedInvite> {
     const invite = await this.assertInviteToken(input.token);
     const email = invite.email.toLowerCase();
     const existingUser = await this.invitesRepository.findUserByEmail(email);
@@ -120,7 +124,10 @@ export class InvitesService {
 
   private async assertInviteToken(token: string) {
     if (!token) {
-      throw new HttpError(400, "Invite token is required");
+      throw new AppError({
+        message: "Invite token is required",
+        code: "BAD_REQUEST",
+      });
     }
 
     const invite = await this.invitesRepository.findInviteByTokenHash(
@@ -128,15 +135,24 @@ export class InvitesService {
     );
 
     if (!invite) {
-      throw new HttpError(404, "Invite not found");
+      throw new AppError({
+        message: "Invite not found",
+        code: "NOT_FOUND",
+      });
     }
 
     if (invite.acceptedAt) {
-      throw new HttpError(409, "Invite was already accepted");
+      throw new AppError({
+        message: "Invite was already accepted",
+        code: "CONFLICT",
+      });
     }
 
     if (invite.expiresAt.getTime() < Date.now()) {
-      throw new HttpError(410, "Invite has expired");
+      throw new AppError({
+        message: "Invite has expired",
+        code: "UNPROCESSABLE_ENTITY",
+      });
     }
 
     return invite;

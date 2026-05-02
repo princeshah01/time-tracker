@@ -1,17 +1,11 @@
 import { authClient } from "@/auth-client";
 import { env } from "@/shared/config";
-import type { Permission, Role, User } from "@/shared/types";
-
-export type MeResponse = {
-  userInfo: User;
-  role: Role | null;
-  permissions: Permission[];
-};
-
-export type AuthStatePayload = {
-  user: User;
-  permissions: Permission[];
-};
+import type {
+  ApiResponse,
+  AuthStatePayload,
+  ProfileMeResponse,
+  Role,
+} from "@/shared/types";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${env.VITE_API_BASE_URL}${path}`, {
@@ -41,7 +35,14 @@ async function authFetch<T>(path: string, body: Record<string, unknown>) {
 }
 
 export async function getMe(): Promise<AuthStatePayload> {
-  const me = await apiFetch<MeResponse>("/api/profile/me");
+  const response =
+    await apiFetch<ApiResponse<ProfileMeResponse>>("/api/profile/me");
+
+  if (!response.success) {
+    throw new Error(response.message);
+  }
+
+  const me = response.data;
 
   return {
     user: {
@@ -99,24 +100,37 @@ export async function acceptInvite(input: {
   name: string;
   password: string;
 }) {
-  return apiFetch<{ accepted: boolean; email: string }>(
-    `/api/invites/${encodeURIComponent(input.token)}/accept`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        name: input.name,
-        password: input.password,
-      }),
-    }
-  );
+  const response = await apiFetch<
+    ApiResponse<{ accepted: boolean; email: string }>
+  >(`/api/invites/${encodeURIComponent(input.token)}/accept`, {
+    method: "POST",
+    body: JSON.stringify({
+      name: input.name,
+      password: input.password,
+    }),
+  });
+
+  if (!response.success) {
+    throw new Error(response.message);
+  }
+
+  return response.data;
 }
 
 export async function getInvite(token: string) {
-  return apiFetch<{
-    email: string;
-    role: Role;
-    expiresAt: string;
-  }>(`/api/invites/${encodeURIComponent(token)}`);
+  const response = await apiFetch<
+    ApiResponse<{
+      email: string;
+      role: Role;
+      expiresAt: string;
+    }>
+  >(`/api/invites/${encodeURIComponent(token)}`);
+
+  if (!response.success) {
+    throw new Error(response.message);
+  }
+
+  return response.data;
 }
 
 export async function signOut() {

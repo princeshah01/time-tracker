@@ -1,8 +1,8 @@
 import {
-  DEFAULT_ROLE_NAME,
+  defaultRoleName,
   type PermissionKey,
-} from "@/shared/constants/auth.constants";
-import { HttpError } from "@/shared/http/http-error";
+} from "@/shared/constants/role-permission";
+import { AppError } from "@/shared/utils";
 import { PermissionsRepository } from "./permissions.repository";
 
 export type UserRole = {
@@ -15,6 +15,11 @@ export type UserAuthorization = {
   role: UserRole | null;
   permissions: string[];
 };
+
+export type PermissionInput =
+  | PermissionKey
+  | string
+  | readonly (PermissionKey | string)[];
 
 export class PermissionsService {
   constructor(
@@ -43,20 +48,29 @@ export class PermissionsService {
     };
   }
 
-  async checkPermission(userId: string, permission: PermissionKey | string) {
+  async checkPermission(userId: string, permissions: PermissionInput) {
     const authorization = await this.getUserAuthorization(userId);
-    return authorization.permissions.includes(permission);
+    const requiredPermissions = Array.isArray(permissions)
+      ? permissions
+      : [permissions];
+
+    return requiredPermissions.some((requiredPermission) =>
+      authorization.permissions.includes(requiredPermission)
+    );
   }
 
   async getRoleById(roleId: number) {
     return this.permissionsRepository.findRoleById(roleId);
   }
 
-  async requirePermission(userId: string, permission: PermissionKey | string) {
-    const hasPermission = await this.checkPermission(userId, permission);
+  async requirePermission(userId: string, permissions: PermissionInput) {
+    const hasPermission = await this.checkPermission(userId, permissions);
 
     if (!hasPermission) {
-      throw new HttpError(403, "Forbidden");
+      throw new AppError({
+        message: "Forbidden",
+        code: "FORBIDDEN",
+      });
     }
   }
 
@@ -69,10 +83,14 @@ export class PermissionsService {
 
     const defaultRole =
       (await this.permissionsRepository.findDefaultRole()) ??
-      (await this.permissionsRepository.findRoleByName(DEFAULT_ROLE_NAME));
+      (await this.permissionsRepository.findRoleByName(defaultRoleName));
 
     if (!defaultRole) {
-      throw new Error(`Default role '${DEFAULT_ROLE_NAME}' was not seeded`);
+      throw new AppError({
+        message: `Default role '${defaultRoleName}' was not seeded`,
+        code: "INTERNAL_SERVER_ERROR",
+        isOperational: false,
+      });
     }
 
     await this.permissionsRepository.insertUserRole(userId, defaultRole.id);
@@ -83,7 +101,10 @@ export class PermissionsService {
     const role = await this.permissionsRepository.findRoleById(roleId);
 
     if (!role) {
-      throw new HttpError(404, "Role not found");
+      throw new AppError({
+        message: "Role not found",
+        code: "NOT_FOUND",
+      });
     }
 
     if (replace) {

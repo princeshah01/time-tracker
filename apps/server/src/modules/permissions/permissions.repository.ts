@@ -1,12 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 
-import { db } from "@/lib/db";
-import {
-  permissions,
-  rolePermissions,
-  roles,
-  userRoles,
-} from "@/lib/db/schema";
+import { db } from "@/db";
+import { permissions, rolePermissions, roles, userRoles } from "@/db/schema";
 
 export type RoleRecord = typeof roles.$inferSelect;
 

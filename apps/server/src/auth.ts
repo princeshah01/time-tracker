@@ -4,14 +4,15 @@ import { emailOTP } from "better-auth/plugins/email-otp";
 import { genericOAuth } from "better-auth/plugins/generic-oauth";
 import { twoFactor } from "better-auth/plugins/two-factor";
 
-import { db } from "@/lib/db";
 import {
-  addAuthOtpEmailJob,
-  addPasswordResetOtpEmailJob,
-} from "@/lib/queues/email";
-import { betterAuthSecondaryStorage } from "@/lib/redis/secondary-storage";
+    addAuthOtpEmailJob,
+    addPasswordResetOtpEmailJob,
+} from "@/infrastructure/queue";
+import { betterAuthRedisStorage } from "@/infrastructure/redis";
 import { permissionsService } from "@/modules/permissions/permissions.service";
-import { env } from "./env";
+
+import { env } from "@/config";
+import { db } from "@/db";
 
 type MicrosoftProfile = {
   sub?: string;
@@ -83,7 +84,7 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
 
   trustedOrigins: [env.CLIENT_URL],
-  secondaryStorage: betterAuthSecondaryStorage,
+  secondaryStorage: betterAuthRedisStorage,
 
   plugins: [
     emailOTP({

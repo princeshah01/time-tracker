@@ -1,16 +1,19 @@
 import { Router } from "express";
 
-import { asyncHandler } from "@/shared/http/async-handler";
-import { profileController } from "./profile.controller";
+import { requireAuth, validate } from "@/shared/middlewares";
+import { profileController } from "./profile.controllers";
+import { updateProfileSchema } from "./profile.validators";
 
-export const profileRouter = Router();
+const profileRouter = Router();
 
-profileRouter.get(
-  "/me",
-  asyncHandler((req, res) => profileController.me(req, res))
-);
+profileRouter.use(requireAuth);
+
+profileRouter.get("/me", profileController.me);
 
 profileRouter.patch(
   "/me",
-  asyncHandler((req, res) => profileController.updateMe(req, res))
+  validate(updateProfileSchema),
+  profileController.updateMe
 );
+
+export { profileRouter };
