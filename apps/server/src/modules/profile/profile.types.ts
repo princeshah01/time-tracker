@@ -16,7 +16,7 @@ export type ProfileRole = {
 };
 
 export type ProfileMe = {
-  userInfo: ProfileUserInfo;
+  user: ProfileUserInfo;
   role: ProfileRole | null;
   permissions: string[];
 };

@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 
 import { auth } from "@/auth";
 import type { ValidatedRequest } from "@/shared/middlewares";
-import { AppError, runAuthApi, sendSuccess } from "@/shared/utils";
+import { runAuthApi, sendSuccess } from "@/shared/utils";
 import { invitesService } from "./invites.service";
 import type {
   acceptInviteSchema,
@@ -11,16 +11,7 @@ import type {
   inviteTokenSchema,
 } from "./invites.validation";
 
-function requireRouteUser(req: Request) {
-  if (!req.user) {
-    throw new AppError({
-      message: "Please log in to access this resource.",
-      code: "UNAUTHORIZED",
-    });
-  }
-
-  return req.user;
-}
+import { requireRouteUser } from "@/shared/session";
 
 function appendAuthHeaders(res: Response, headers?: Headers) {
   if (!headers) {

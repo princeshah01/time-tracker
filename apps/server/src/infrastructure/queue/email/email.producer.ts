@@ -22,14 +22,14 @@ export async function addAuthOtpEmailJob(input: {
   });
 }
 
-export async function addPasswordResetOtpEmailJob(input: {
+export async function addPasswordResetEmailJob(input: {
   to: string;
-  otp: string;
+  url: string;
 }) {
   return emailQueue.add("send-password-reset-email", {
     type: "send-password-reset-email",
     to: input.to,
-    otp: input.otp,
+    url: input.url,
   });
 }
 

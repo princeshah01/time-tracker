@@ -25,7 +25,7 @@ export type EmailJobData =
   | {
       type: "send-password-reset-email";
       to: string;
-      otp: string;
+      url: string;
     }
   | {
       type: "send-invite-email";
@@ -53,6 +53,6 @@ export const emailQueue = new Queue<EmailJobData, void, EmailJobName>(
   {
     connection: bullMqConnection,
     prefix: env.QUEUE_PREFIX,
-    defaultJobOptions: bullMqConfig.defaultJobOptions, 
+    defaultJobOptions: bullMqConfig.defaultJobOptions,
   }
 );

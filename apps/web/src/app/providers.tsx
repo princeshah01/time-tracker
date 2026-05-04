@@ -5,7 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { Provider } from "react-redux";
 
 import { store } from "@/app/store";
-import { AuthProvider } from "@/features/auth";
+import { AuthBootstrap } from "./auth-bootstrap";
 
 const queryClient = new QueryClient();
 
@@ -14,7 +14,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <ThemeProvider defaultTheme="system" enableSystem attribute="class">
       <QueryClientProvider client={queryClient}>
         <Provider store={store}>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthBootstrap />
+          {children}
           <Toaster />
           <ReactQueryDevtools initialIsOpen={false} />
         </Provider>

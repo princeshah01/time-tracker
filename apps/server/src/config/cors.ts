@@ -2,9 +2,7 @@ import type { CorsOptions } from "cors";
 
 import { env } from "@/config";
 
-const allowedOrigins = [
-  env.CLIENT_URL,
-].filter(Boolean);
+const allowedOrigins = [env.CLIENT_URL].filter(Boolean);
 
 const corsOptions: CorsOptions = {
   origin(origin, callback) {

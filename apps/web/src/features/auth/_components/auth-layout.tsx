@@ -1,7 +1,6 @@
 import { Button } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { AppIcon } from "@/shared/components/app-icon";
 import { StackedLogo } from "@/shared/components/stacked-logo";
@@ -55,7 +54,8 @@ type AuthDoneStateProps = {
   title: string;
   description: string;
   actionLabel: string;
-  onAction: () => void;
+  onAction?: () => void;
+  to?: string;
 };
 
 function AuthDoneState({
@@ -63,7 +63,21 @@ function AuthDoneState({
   description,
   actionLabel,
   onAction,
+  to,
 }: AuthDoneStateProps) {
+  const navigate = useNavigate();
+
+  function handleAction() {
+    if (onAction) {
+      onAction();
+      return;
+    }
+
+    if (to) {
+      navigate(to);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 rounded-md border border-border bg-muted/30 p-4">
@@ -83,67 +97,9 @@ function AuthDoneState({
       <Button
         type="button"
         className="h-9 w-full text-[13px]"
-        onClick={onAction}
+        onClick={handleAction}
       >
         {actionLabel}
-      </Button>
-    </div>
-  );
-}
-
-type AuthResendNoticeProps = {
-  email: string;
-  onResend: () => void;
-};
-
-function AuthResendNotice({ email, onResend }: AuthResendNoticeProps) {
-  const [secondsLeft, setSecondsLeft] = useState(60);
-
-  useEffect(() => {
-    if (secondsLeft <= 0) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setSecondsLeft((current) => current - 1);
-    }, 1000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [secondsLeft]);
-
-  function handleResend() {
-    onResend();
-    setSecondsLeft(60);
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-start gap-3 rounded-md border border-border bg-muted/30 p-4">
-        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border border-border bg-background">
-          <AppIcon
-            name="Mail"
-            className="size-4 text-primary"
-            aria-hidden="true"
-          />
-        </span>
-        <div className="min-w-0 space-y-1">
-          <h1 className="font-medium text-[14px] text-foreground">
-            Check your email
-          </h1>
-          <p className="break-words text-[13px] text-muted-foreground">
-            We sent a password reset link to {email}.
-          </p>
-        </div>
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        className="h-9 w-full text-[13px]"
-        disabled={secondsLeft > 0}
-        onClick={handleResend}
-      >
-        {secondsLeft > 0 ? `Resend in ${secondsLeft}s` : "Resend email"}
       </Button>
     </div>
   );
@@ -153,15 +109,10 @@ type AuthPageLinkProps = React.ComponentProps<typeof Link>;
 
 function AuthPageLink({ className, ...props }: AuthPageLinkProps) {
   return (
-    <Button className="h-9 w-full text-[13px]">
-      <Link
-        className={cn(
-          className
-        )}
-      {...props}
-      />
+    <Button asChild className="h-9 w-full text-[13px]">
+      <Link className={cn(className)} {...props} />
     </Button>
   );
 }
 
-export { AuthDoneState, AuthLayout, AuthPageLink, AuthResendNotice };
+export { AuthDoneState, AuthLayout, AuthPageLink };

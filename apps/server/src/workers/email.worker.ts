@@ -1,10 +1,12 @@
 import { type Job, Worker } from "bullmq";
 
 import { env } from "@/config";
-import { QUEUE_NAMES,
+import {
+  QUEUE_NAMES,
   bullMqConnection,
-type EmailJobData, type EmailJobName
- } from "@/infrastructure/queue";
+  type EmailJobData,
+  type EmailJobName,
+} from "@/infrastructure/queue";
 import { loggerWorker } from "@/shared/utils";
 
 type EmailWorkerJob = Job<EmailJobData, void, EmailJobName>;
@@ -12,19 +14,15 @@ type EmailWorkerJob = Job<EmailJobData, void, EmailJobName>;
 async function processEmailJob(job: EmailWorkerJob) {
   switch (job.data.type) {
     case "send-auth-otp-email":
-      loggerWorker.info(
-        `OTP for ${job.data.to}: ${job.data.otp}`
-      );
+      loggerWorker.info(`OTP for ${job.data.to}: ${job.data.otp}`);
       return;
     case "send-password-reset-email":
       loggerWorker.info(
-        `password reset OTP for ${job.data.to}: ${job.data.otp}`
+        `password reset URL for ${job.data.to}: ${job.data.url}`
       );
       return;
     case "send-invite-email":
-      loggerWorker.info(
-        `invite for ${job.data.to}: ${job.data.inviteUrl}`
-      );
+      loggerWorker.info(`invite for ${job.data.to}: ${job.data.inviteUrl}`);
       return;
     default:
       loggerWorker.info("[email]", JSON.stringify(job.data, null, 2));

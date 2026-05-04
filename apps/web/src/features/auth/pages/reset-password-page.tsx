@@ -1,22 +1,54 @@
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "@workspace/ui/components/sonner";
+import { useSearchParams } from "react-router";
 
-import { AuthDoneState, AuthLayout, ResetPasswordForm } from "../_components";
+import {
+  AuthDoneState,
+  AuthLayout,
+  SetPasswordForm,
+} from "@/features/auth/_components";
+import { authService } from "../auth.service";
+import { useState } from "react";
 
 function ResetPasswordPage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const email = searchParams.get("email") ?? "";
-  const [isDone, setIsDone] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  if (isDone) {
+  const token = searchParams.get("token");
+
+  const handlePasswordReset = async (values: { password: string }) => {
+    if (!token) {
+      toast.error("Invalid or missing reset token.");
+      return;
+    }
+    try {
+      const result = await authService.resetPassword({
+        token,
+        newPassword: values.password,
+      });
+
+      if (result?.error) {
+        toast.error(result.error.message ?? "Failed to reset password");
+        return;
+      }
+
+      toast.success("Password reset successful");
+      setIsSuccess(true);
+    } catch (error) {
+      toast.error("Failed to reset password");
+    }
+  };
+
+  if (!token) {
     return (
-      <AuthLayout eyebrow="Password updated">
+      <AuthLayout
+        eyebrow="Reset password"
+        description="Your password reset link is invalid or expired."
+      >
         <AuthDoneState
-          title="Your password is set"
-          description="Use your new password to sign in to TimeTracker."
-          actionLabel="Continue to sign in"
-          onAction={() => navigate("/auth")}
+          title="Invalid reset link"
+          description="Please request a new password reset link and try again."
+          actionLabel="Back to forgot password"
+          to="/auth/forgot-password"
         />
       </AuthLayout>
     );
@@ -25,11 +57,22 @@ function ResetPasswordPage() {
   return (
     <AuthLayout
       eyebrow="Reset password"
-      description={
-        email ? `Enter the OTP sent to ${email}` : "Enter your reset OTP."
-      }
+      description="Create a new password for your account."
     >
-      <ResetPasswordForm email={email} onDone={() => setIsDone(true)} />
+      {isSuccess ? (
+        <AuthDoneState
+          title="Password reset successful"
+          description="Your password has been updated. Sign in with your new password."
+          actionLabel="Go to sign in"
+          to="/auth"
+        />
+      ) : (
+        <SetPasswordForm
+          description="Create a new password for your account."
+          submitLabel="Save new password"
+          onSubmit={handlePasswordReset}
+        />
+      )}
     </AuthLayout>
   );
 }

@@ -1,25 +1,37 @@
 import { Button } from "@workspace/ui/components/button";
 import { Loader } from "lucide-react";
-
-import { authClient } from "@/auth-client";
+import { useState } from "react";
+import { authService } from "../auth.service";
+import { toast } from "@workspace/ui/components/sonner";
 
 function MicrosoftAuthButton() {
-  const isLoading = false;
+  const [providerLoading, setProviderLoading] = useState(false);
   async function handleSignInWithMicrosoft() {
-    await authClient.signIn.social({
-      provider: "microsoft",
-      callbackURL: `${window.location.origin}/dashboard`,
-    });
+    try {
+      setProviderLoading(true);
+      const result = await authService.continueWithMicrosoft();
+      if (result?.error) {
+        throw new Error(result.error.message);
+      }
+    } catch (error) {
+      console.error("Error during Microsoft sign-in:", error);
+      let message = "An error occurred during Microsoft sign-in.";
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      toast.error(message);
+      setProviderLoading(false);
+    }
   }
 
   return (
     <Button
       onClick={handleSignInWithMicrosoft}
-      disabled={isLoading}
+      disabled={providerLoading}
       variant="outline"
       className="h-9 w-full gap-2 text-[13px]"
     >
-      {isLoading ? (
+      {providerLoading ? (
         <Loader className="size-12 animate-spin" />
       ) : (
         <svg

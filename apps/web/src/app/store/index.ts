@@ -9,3 +9,7 @@ export const store = configureStore({
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+
+// Re-exporting slices and hooks for easier imports in components
+export * from "./slices/user-slice";
+export * from "./hooks";

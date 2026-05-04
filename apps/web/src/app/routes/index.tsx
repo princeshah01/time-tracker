@@ -1,36 +1,39 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 
+import { GuestRoute } from "./guest-route";
 import { ProtectedRoute } from "./protected-route";
 import { appRoutes } from "./route-config";
+import { AppLayout } from "@/shared/components/app-layout";
 
-function mapRoutes(routes: typeof appRoutes) {
-  return routes.flatMap((route) => {
-    const parentRoute = {
-      path: route.path,
-      element: route.public ? (
-        route.element
-      ) : (
-        <ProtectedRoute requiredPermissions={route.permissions}>
-          {route.element}
-        </ProtectedRoute>
-      ),
-    };
-
-    const childRoutes =
-      route.children?.map((child) => ({
-        path: child.path,
-        element: child.public ? (
-          child.element
-        ) : (
-          <ProtectedRoute requiredPermissions={child.permissions}>
-            {child.element}
-          </ProtectedRoute>
-        ),
-      })) ?? [];
-
-    return [parentRoute, ...childRoutes];
-  });
+function createRoute(route: (typeof appRoutes)[number]) {
+  return {
+    path: route.path,
+    element: route.guestOnly ? (
+      <GuestRoute>{route.element}</GuestRoute>
+    ) : route.public ? (
+      route.element
+    ) : (
+      <ProtectedRoute requiredPermissions={route.permissions}>
+        {route.element}
+      </ProtectedRoute>
+    ),
+  };
 }
+
+const publicRoutes = appRoutes
+  .filter((route) => route.public || route.guestOnly)
+  .map(createRoute);
+
+const protectedRoutes = appRoutes
+  .filter((route) => !route.public && !route.guestOnly)
+  .map((route) => ({
+    path: route.path,
+    element: (
+      <ProtectedRoute requiredPermissions={route.permissions}>
+        {route.element}
+      </ProtectedRoute>
+    ),
+  }));
 
 export function createAppRouter() {
   return createBrowserRouter([
@@ -42,14 +45,12 @@ export function createAppRouter() {
           index: true,
           element: <Navigate to="/dashboard" replace />,
         },
-        ...mapRoutes(appRoutes),
+
+        ...publicRoutes,
+
         {
-          path: "/unauthorized",
-          element: (
-            <div>
-              Unauthorized - You do not have permission to view this page.
-            </div>
-          ),
+          element: <AppLayout />,
+          children: protectedRoutes,
         },
       ],
     },

@@ -3,10 +3,8 @@ import {
   AuthPage,
   ForgotPasswordPage,
   ResetPasswordPage,
-  SignupOtpPage,
-  TwoFactorPage,
 } from "@/features/auth/pages";
-import { ProfileSettingsPage, SecuritySettingsPage } from "@/features/profile";
+import { SettingsPage } from "@/features/settings";
 import type { AppRoute } from "@/shared/types";
 
 export const appRoutes: AppRoute[] = [
@@ -18,47 +16,40 @@ export const appRoutes: AppRoute[] = [
     label: "Auth",
     element: <AuthPage />,
     public: true,
+    guestOnly: true,
   },
   {
     path: "/accept-invite",
     label: "Accept Invite",
     element: <AcceptInvitePage />,
     public: true,
+    guestOnly: true,
   },
   {
     path: "/forgot-password",
     label: "Forgot Password",
     element: <ForgotPasswordPage />,
     public: true,
+    guestOnly: true,
   },
   {
     path: "/reset-password",
     label: "Reset Password",
     element: <ResetPasswordPage />,
     public: true,
+    guestOnly: true,
   },
-  {
-    path: "/signup-otp",
-    label: "Verify Email",
-    element: <SignupOtpPage />,
-    public: true,
-  },
-  {
-    path: "/two-factor",
-    label: "Two Factor",
-    element: <TwoFactorPage />,
-    public: true,
-  },
-
   // --------------------
   // DASHBOARD
   // --------------------
   {
     path: "/dashboard",
     label: "Dashboard",
-    icon: "Home",
+    icon: "LayoutDashboard",
     element: <div>Dashboard Overview</div>,
     showInSidebar: true,
+    sideBarGroup: "General",
+    permissions: [],
   },
 
   // --------------------
@@ -69,24 +60,18 @@ export const appRoutes: AppRoute[] = [
     label: "Clients",
     icon: "Users",
     element: <div>Clients Overview</div>,
-    permissions: ["client:view"],
     showInSidebar: true,
+    sideBarGroup: "Management",
   },
   {
     path: "/clients/new",
     label: "Create Client",
-    icon: "Plus",
     element: <div>Create Client</div>,
-    permissions: ["client:create"],
-    showInSidebar: false,
   },
   {
     path: "/clients/:clientId",
     label: "Client Details",
-    icon: "Users",
     element: <div>Client Details</div>,
-    permissions: ["client:view"],
-    showInSidebar: false,
   },
   // --------------------
   // PROJECTS
@@ -96,24 +81,18 @@ export const appRoutes: AppRoute[] = [
     label: "Projects",
     icon: "FolderKanban",
     element: <div>Projects Overview</div>,
-    permissions: ["project:view"],
     showInSidebar: true,
+    sideBarGroup: "Management",
   },
   {
     path: "/projects/new",
     label: "Create Project",
-    icon: "Plus",
     element: <div>Create Project</div>,
-    permissions: ["project:create"],
-    showInSidebar: false,
   },
   {
     path: "/projects/:projectId",
     label: "Project Details",
-    icon: "FolderKanban",
     element: <div>Project Details</div>,
-    permissions: ["project:view"],
-    showInSidebar: false,
   },
   // --------------------
   // TASKS
@@ -124,20 +103,17 @@ export const appRoutes: AppRoute[] = [
     icon: "CheckSquare",
     element: <div>Tasks Overview</div>,
     showInSidebar: true,
+    sideBarGroup: "Management",
   },
   {
     path: "/tasks/new",
     label: "Create Task",
-    icon: "Plus",
     element: <div>Create Task</div>,
-    showInSidebar: false,
   },
   {
     path: "/tasks/:taskId",
     label: "Task Details",
-    icon: "CheckSquare",
     element: <div>Task Details</div>,
-    showInSidebar: false,
   },
 
   // --------------------
@@ -148,24 +124,18 @@ export const appRoutes: AppRoute[] = [
     label: "Timesheets",
     icon: "Clock",
     element: <div>Timesheets Overview</div>,
-    permissions: ["timesheet:view:own"],
     showInSidebar: true,
+    sideBarGroup: "Management",
   },
   {
     path: "/timesheets/new",
     label: "Create Timesheet",
-    icon: "Plus",
     element: <div>Create Timesheet</div>,
-    permissions: ["timesheet:create"],
-    showInSidebar: false,
   },
   {
     path: "/timesheets/:timesheetId",
     label: "Timesheet Details",
-    icon: "Clock",
     element: <div>Timesheet Details</div>,
-    permissions: ["timesheet:view:own"],
-    showInSidebar: false,
   },
   // --------------------
   // ANALYTICS
@@ -176,6 +146,7 @@ export const appRoutes: AppRoute[] = [
     icon: "BarChart3",
     element: <div>Analytics Overview</div>,
     showInSidebar: true,
+    sideBarGroup: "Insights",
   },
 
   // --------------------
@@ -185,15 +156,9 @@ export const appRoutes: AppRoute[] = [
     path: "/settings",
     label: "Settings",
     icon: "Settings",
-    element: <ProfileSettingsPage />,
+    element: <SettingsPage />,
     showInSidebar: true,
-  },
-  {
-    path: "/settings/security",
-    label: "Security",
-    icon: "Shield",
-    element: <SecuritySettingsPage />,
-    showInSidebar: false,
+    sideBarGroup: "System",
   },
 
   // --------------------
@@ -202,17 +167,13 @@ export const appRoutes: AppRoute[] = [
   {
     path: "/unauthorized",
     label: "Unauthorized",
-    icon: "ShieldAlert",
     element: <div>Unauthorized</div>,
-    showInSidebar: false,
     public: true,
   },
   {
     path: "*",
     label: "Not Found",
-    icon: "SearchX",
     element: <div>Not Found</div>,
-    showInSidebar: false,
     public: true,
   },
 ];

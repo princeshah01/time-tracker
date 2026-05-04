@@ -8,10 +8,12 @@ const profileRouter = Router();
 
 profileRouter.use(requireAuth);
 
-profileRouter.get("/me", profileController.me);
+profileRouter.get("/", profileController.me);
+
+profileRouter.get("/avatar", profileController.getProfilePicture);
 
 profileRouter.patch(
-  "/me",
+  "/",
   validate(updateProfileSchema),
   profileController.updateMe
 );

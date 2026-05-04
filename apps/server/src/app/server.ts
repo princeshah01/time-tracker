@@ -35,16 +35,24 @@ async function startServer() {
     const shutdown = async (signal: string) => {
       loggerServer.info(`Received ${signal}, shutting down...`);
 
-      server.close(async () => {
-        try {
-          await disconnectRedis();
-          loggerServer.info("Server closed gracefully");
-          process.exit(0);
-        } catch (error) {
-          loggerServer.error("Error during shutdown", error);
-          process.exit(1);
-        }
-      });
+      try {
+        // Stop accepting new requests
+        await new Promise<void>((resolve, reject) => {
+          server.close((err) => {
+            if (err) return reject(err);
+            resolve();
+          });
+        });
+
+        // Clean up resources
+        await disconnectRedis();
+
+        loggerServer.info("Server closed gracefully");
+        process.exit(0);
+      } catch (error) {
+        loggerServer.error("Error during shutdown", error);
+        process.exit(1);
+      }
     };
 
     process.on("SIGINT", shutdown);

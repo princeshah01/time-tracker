@@ -28,7 +28,7 @@ app.use(cookieParser());
 
 app.use("/api", appRouter);
 
-app.use(notFoundMiddleware);
+// app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 
 export { app };

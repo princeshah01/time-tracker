@@ -5,7 +5,7 @@ import { loggerServer } from "@/shared/utils";
 
 const bullMqConnection = new IORedis(
   bullMqConfig.redisUrl,
-  bullMqConfig.connection,
+  bullMqConfig.connection
 );
 
 bullMqConnection.on("connect", () => {

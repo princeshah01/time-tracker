@@ -20,6 +20,7 @@
     "@tanstack/react-query-devtools": "^5.100.6",
     "@workspace/env": "workspace:*",
     "@workspace/ui": "workspace:*",
+    "axios": "^1.16.0",
     "better-auth": "catalog:",
     "lucide-react": "catalog:",
     "next-themes": "catalog:",
@@ -27,6 +28,7 @@
     "react-dom": "catalog:",
     "react-hook-form": "^7.74.0",
     "react-redux": "^9.2.0",
+    "react-router": "^7.14.2",
     "react-router-dom": "^7.14.2",
     "tailwindcss": "catalog:",
     "zod": "catalog:"

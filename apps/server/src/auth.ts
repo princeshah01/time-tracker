@@ -5,8 +5,8 @@ import { genericOAuth } from "better-auth/plugins/generic-oauth";
 import { twoFactor } from "better-auth/plugins/two-factor";
 
 import {
-    addAuthOtpEmailJob,
-    addPasswordResetOtpEmailJob,
+  addAuthOtpEmailJob,
+  addPasswordResetEmailJob,
 } from "@/infrastructure/queue";
 import { betterAuthRedisStorage } from "@/infrastructure/redis";
 import { permissionsService } from "@/modules/permissions/permissions.service";
@@ -61,7 +61,6 @@ async function getMicrosoftUserInfo(tokens: { accessToken?: string }) {
       profile.name ??
       `${profile.given_name ?? ""} ${profile.family_name ?? ""}`.trim(),
     email: email ?? "",
-    image: profile.picture,
     emailVerified: profile.email_verified ?? true,
   };
 }
@@ -89,14 +88,6 @@ export const auth = betterAuth({
   plugins: [
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
-        if (type === "forget-password") {
-          await addPasswordResetOtpEmailJob({
-            to: email,
-            otp,
-          });
-          return;
-        }
-
         await addAuthOtpEmailJob({
           to: email,
           otp,
@@ -158,8 +149,16 @@ export const auth = betterAuth({
     autoSignIn: false,
     minPasswordLength: 8,
     revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, token }) => {
+      const url = `${env.CLIENT_URL}/reset-password/?token=${token}`;
+      await addPasswordResetEmailJob({
+        to: user.email,
+        url,
+      });
+    },
   },
   emailVerification: {
+    sendOnSignIn: true,
     autoSignInAfterVerification: true,
   },
   databaseHooks: {

@@ -2,7 +2,7 @@ import { permissionsService } from "@/modules/permissions/permissions.service";
 import { AppError } from "@/shared/utils";
 import { ProfileRepository } from "./profile.repository";
 import type { ProfileMe, UpdateProfileInput } from "./profile.types";
-
+import { env } from "@/config";
 export class ProfileService {
   constructor(private readonly profileRepository = new ProfileRepository()) {}
 
@@ -21,11 +21,11 @@ export class ProfileService {
     }
 
     return {
-      userInfo: {
+      user: {
         id: user.id,
         email: user.email,
         name: user.name,
-        image: user.image,
+        image: user.image ?? `${env.BETTER_AUTH_URL}/api/me/avatar`,
         emailVerified: user.emailVerified,
         twoFactorEnabled: user.twoFactorEnabled,
         hasPassword: accounts.some(
@@ -67,6 +67,41 @@ export class ProfileService {
     }
 
     return this.getMe(userId);
+  }
+  async getProfilePicture(userId: string): Promise<{
+    url?: string;
+    hasLocalImage?: boolean;
+    hasMicrosoftImage?: boolean;
+    accessToken?: string | null;
+  } | null> {
+    const user = await this.profileRepository.findUserById(userId);
+
+    if (!user) {
+      throw new AppError({
+        message: "User not found",
+        code: "NOT_FOUND",
+      });
+    }
+    if (user.image) {
+      return {
+        url: user.image,
+        hasLocalImage: true,
+      };
+    }
+    const microsoftAccount = await this.profileRepository
+      .findUserAccounts(userId)
+      .then((accounts) =>
+        accounts.find((account) => account.providerId === "microsoft")
+      );
+
+    if (microsoftAccount && microsoftAccount?.accessToken) {
+      return {
+        hasMicrosoftImage: true,
+        accessToken: microsoftAccount.accessToken,
+      };
+    }
+
+    return null;
   }
 }
 

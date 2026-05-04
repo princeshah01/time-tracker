@@ -1,35 +1,37 @@
-import { DEFAULT_ICON, ICON_REGISTRY } from "@/shared/constants";
-import { cn } from "@workspace/ui/lib/utils";
-import type { AppIconName } from "@/shared/types";
-import { Loader, type LucideIcon, type LucideProps } from "lucide-react";
 import { Suspense } from "react";
+import { Loader, type LucideProps } from "lucide-react";
+
+import { DEFAULT_ICON, ICON_REGISTRY } from "@/shared/constants";
+import type { AppIconName } from "@/shared/types";
+import { cn } from "@workspace/ui/lib/utils";
 
 type AppIconProps = LucideProps & {
-  name?: AppIconName | string;
+  name?: AppIconName;
 };
 
+function isAppIconName(name?: string): name is AppIconName {
+  return Boolean(name && name in ICON_REGISTRY);
+}
+
 export function AppIcon({
-  name = "HelpCircle",
+  name,
   className,
+  size = 18,
   ...props
 }: AppIconProps) {
-  const Icon = (
-    name && name in ICON_REGISTRY
-      ? ICON_REGISTRY[name as keyof typeof ICON_REGISTRY]
-      : DEFAULT_ICON
-  ) as LucideIcon;
+  const Icon = isAppIconName(name) ? ICON_REGISTRY[name] : DEFAULT_ICON;
 
   return (
     <Suspense
       fallback={
         <Loader
           className={cn("animate-spin text-slate-400", className)}
-          size={props.size ?? 18}
+          size={size}
           {...props}
         />
       }
     >
-      <Icon className={className} {...props} />
+      <Icon className={className} size={size} {...props} />
     </Suspense>
   );
 }

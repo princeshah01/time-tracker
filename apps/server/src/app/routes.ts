@@ -6,7 +6,7 @@ import { securityRouter } from "@/modules/security/security.routes";
 
 const appRouter = Router();
 
-appRouter.use("/profile", profileRouter);
+appRouter.use("/me", profileRouter);
 appRouter.use("/invites", invitesRouter);
 appRouter.use("/security", securityRouter);
 

@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import {
@@ -11,12 +10,13 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
-import { useState } from "react";
+import { PasswordInput } from "@workspace/ui/components/input-password";
+import { toast } from "@workspace/ui/components/sonner";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { z } from "zod";
-
-import { getMe, signInWithEmail } from "../service/auth-service";
+import { authService } from "../auth.service";
+import { AuthSteps, AuthStepValues } from "../auth.types";
 
 const signInSchema = z.object({
   email: z.email("Enter a valid work email"),
@@ -26,10 +26,16 @@ const signInSchema = z.object({
 
 type SignInFormValues = z.infer<typeof signInSchema>;
 
-function SignInTab() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
+type SignInTabProps = {
+  onSubmitSuccess?: () => void;
+};
+
+function SignInTab({
+  onSubmitSuccess,
+  handleStepChange,
+}: SignInTabProps & {
+  handleStepChange: (newStep: AuthSteps, values: AuthStepValues) => void;
+}) {
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -38,26 +44,40 @@ function SignInTab() {
       rememberMe: true,
     },
   });
+  const { isSubmitting } = form.formState;
 
-  async function onSubmit(values: SignInFormValues) {
-    setError(null);
-    const result = await signInWithEmail(values);
-
-    if (result.error) {
-      setError(result.error.message ?? "Sign in failed");
-      return;
+  async function onSubmit(_values: SignInFormValues) {
+    try {
+      await form.trigger();
+      const values = form.getValues();
+      const result = await authService.signInWithEmail({
+        email: values.email,
+        password: values.password,
+      });
+      console.log({ result });
+      if (result.error) {
+        if (result.error.code === "EMAIL_NOT_VERIFIED") {
+          handleStepChange("email-verification", { email: values.email });
+          toast.error(
+            "Email not verified. Please check your inbox for the verification email."
+          );
+          return;
+        }
+      }
+      if ((result.data as any)?.twoFactorRedirect) {
+        // TODO: will implemet later once profile section done.
+        handleStepChange("signin-tfa", { email: values.email });
+        return;
+      }
+      onSubmitSuccess?.();
+    } catch (error) {
+      let message = "Something went wrong";
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      toast.error(message);
+      console.error("Sign in error:", message);
     }
-
-    if ("twoFactorRedirect" in (result.data ?? {})) {
-      navigate("/two-factor");
-      return;
-    }
-
-    await queryClient.fetchQuery({
-      queryKey: ["auth", "me"],
-      queryFn: getMe,
-    });
-    navigate("/dashboard");
   }
 
   return (
@@ -99,8 +119,7 @@ function SignInTab() {
                 </Link>
               </div>
               <FormControl>
-                <Input
-                  type="password"
+                <PasswordInput
                   placeholder="Enter password"
                   className="h-9 text-[13px]"
                   {...field}
@@ -131,10 +150,13 @@ function SignInTab() {
           )}
         />
 
-        <Button type="submit" className="h-9 w-full text-[13px]">
-          {form.formState.isSubmitting ? "Signing in..." : "Sign in"}
+        <Button
+          disabled={isSubmitting}
+          type="submit"
+          className="h-9 w-full text-[13px]"
+        >
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </Button>
-        {error ? <p className="text-[12px] text-destructive">{error}</p> : null}
       </form>
     </Form>
   );

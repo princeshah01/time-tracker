@@ -10,12 +10,12 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { Input } from "@workspace/ui/components/input";
-import { useState } from "react";
+import { PasswordInput } from "@workspace/ui/components/input-password";
+import { toast } from "@workspace/ui/components/sonner";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 
-import { signUpWithEmail } from "../service/auth-service";
+import { authService } from "@/features/auth";
 
 const signUpSchema = z
   .object({
@@ -34,9 +34,11 @@ const signUpSchema = z
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
-function SignUpTab() {
-  const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
+type SignUpTabProps = {
+  onSubmitSuccess?: () => void;
+};
+
+function SignUpTab({ onSubmitSuccess }: SignUpTabProps) {
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -48,16 +50,16 @@ function SignUpTab() {
     },
   });
 
-  async function onSubmit(values: SignUpFormValues) {
-    setError(null);
-    const result = await signUpWithEmail(values);
-
-    if (result.error) {
-      setError(result.error.message ?? "Sign up failed");
-      return;
+  async function onSubmit(_values: SignUpFormValues) {
+    const response = await authService.signUpWithEmail(_values);
+    if (response.error) {
+      toast.error(
+        response.error.message || "An error occurred during sign-up."
+      );
+    } else {
+      toast.success("Sign-up completed successfully.");
+      onSubmitSuccess?.();
     }
-
-    navigate(`/signup-otp?email=${encodeURIComponent(values.email)}`);
   }
 
   return (
@@ -112,8 +114,7 @@ function SignUpTab() {
               <div className="flex flex-col justify-between gap-2">
                 <FormLabel className="text-[12px]">Password</FormLabel>
                 <FormControl>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     placeholder="Minimum 8 characters"
                     className="h-9 text-[13px]"
                     {...field}
@@ -133,8 +134,7 @@ function SignUpTab() {
               <div className="flex flex-col justify-between gap-2">
                 <FormLabel className="text-[12px]">Confirm password</FormLabel>
                 <FormControl>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     placeholder="Re-enter password"
                     className="h-9 text-[13px]"
                     {...field}
@@ -172,7 +172,6 @@ function SignUpTab() {
         <Button type="submit" className="h-9 w-full text-[13px]">
           {form.formState.isSubmitting ? "Creating..." : "Create account"}
         </Button>
-        {error ? <p className="text-[12px] text-destructive">{error}</p> : null}
       </form>
     </Form>
   );

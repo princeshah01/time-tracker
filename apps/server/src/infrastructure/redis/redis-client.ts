@@ -2,7 +2,6 @@ import { createClient, type RedisClientType } from "redis";
 import { redisConfig } from "@/config";
 import { loggerServer } from "@/shared/utils";
 
-
 const redis = createClient(redisConfig) as RedisClientType;
 
 redis.on("error", (error) => {
@@ -13,8 +12,8 @@ async function connectRedis() {
   loggerServer.info("Connecting to Redis...");
   if (!redis.isOpen) {
     await redis.connect();
-}
-loggerServer.info("Connected to Redis");
+  }
+  loggerServer.info("Connected to Redis");
 }
 
 async function disconnectRedis() {
@@ -24,4 +23,4 @@ async function disconnectRedis() {
   loggerServer.info("Disconnected from Redis");
 }
 
-export { redis, connectRedis, disconnectRedis};
+export { redis, connectRedis, disconnectRedis };

@@ -6,7 +6,9 @@ import {
 } from "@/modules/permissions/permissions.service";
 import { AppError } from "@/shared/utils";
 
-export function requirePermission(permissions: PermissionInput): RequestHandler {
+export function requirePermission(
+  permissions: PermissionInput
+): RequestHandler {
   return async (req, _res, next) => {
     try {
       if (!req.user) {
