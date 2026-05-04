@@ -1,5 +1,7 @@
 import { apiFetch } from "@/shared/lib";
 import { MeResponse } from "./user.type";
+import { authClient } from "@/shared/lib";
+
 const userService = {
   getProfile: async () => {
     const response = await apiFetch<MeResponse>({
@@ -27,6 +29,10 @@ const userService = {
         newPassword,
       },
     });
+    return response;
+  },
+  LogOut: async () => {
+    const response = await authClient.signOut();
     return response;
   },
 };

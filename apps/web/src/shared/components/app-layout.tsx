@@ -13,6 +13,8 @@ import {
   SheetTrigger,
 } from "@workspace/ui/components/sheet";
 import { PageLoader } from "./loaders";
+import { userService } from "@/features/user/user.service";
+import { toast } from "@workspace/ui/components/sonner";
 
 const AppLayout = () => {
   const [open, setOpen] = useState(false);
@@ -25,9 +27,18 @@ const AppLayout = () => {
     return <PageLoader />;
   }
 
+  async function handleLogout() {
+    const res = await userService.LogOut();
+    if ((res.data as any).success) {
+      window.location.href = window.location.origin + "/auth";
+      return;
+    }
+    toast.error("Failed to log out. Please try again.");
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <AppSideBar items={sideBarItems} />
+      <AppSideBar items={sideBarItems} onLogout={handleLogout} />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-40 flex h-11 shrink-0 items-center justify-between border-b border-border bg-background px-3 md:hidden">

@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import { useAuth } from "@/shared/hooks";
+import { PageLoader } from "@/shared/components/loaders";
 
 import {
   clearUser,

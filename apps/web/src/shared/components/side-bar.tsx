@@ -33,7 +33,6 @@ export function SideBar({ items, onNavigate, onLogout }: SideBarProps) {
   const { name: userName, image } = user || {};
   const { name: roleName } = role || {};
   const initials = getInitials(userName);
-  console.log("Sidebar render", { userName, roleName, initials, image });
   return (
     <>
       <div className="flex h-11 items-center gap-2 border-b border-sidebar-border px-3">
@@ -106,7 +105,7 @@ export function SideBar({ items, onNavigate, onLogout }: SideBarProps) {
             onClick={onLogout}
             className="h-6 w-6 text-sidebar-foreground hover:bg-sidebar-accent"
           >
-            <AppIcon name="LogOut" className="h-3 w-3" />
+            <AppIcon name="LogOut" className="h-3 w-3 text-red-500" />
           </Button>
         </div>
       </div>

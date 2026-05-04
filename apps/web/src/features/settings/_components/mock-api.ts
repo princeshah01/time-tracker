@@ -18,7 +18,7 @@ const ALL_ROLES: Role[] = Array.from({ length: 120 }).map((_, i) => ({
 export async function fetchRoles({
   pageParam = 0,
   search = "",
-  limit = 20
+  limit = 20,
 }: {
   pageParam?: number;
   search?: string;

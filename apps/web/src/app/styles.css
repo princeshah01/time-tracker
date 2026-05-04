@@ -41,3 +41,11 @@
 *::-webkit-scrollbar-corner {
   background: var(--scrollbar-track);
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

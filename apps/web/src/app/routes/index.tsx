@@ -49,7 +49,11 @@ export function createAppRouter() {
         ...publicRoutes,
 
         {
-          element: <AppLayout />,
+          element: (
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          ),
           children: protectedRoutes,
         },
       ],

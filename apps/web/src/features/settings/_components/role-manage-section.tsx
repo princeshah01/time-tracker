@@ -39,25 +39,17 @@ export function RolesTable() {
   const [search, setSearch] = useState("");
   const [rowLimit, setRowLimit] = useState(10);
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-  } = useInfiniteQuery({
-    queryKey: ["roles", search, rowLimit],
-    queryFn: ({ pageParam }) =>
-      fetchRoles({ pageParam, search, limit: rowLimit }),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteQuery({
+      queryKey: ["roles", search, rowLimit],
+      queryFn: ({ pageParam }) =>
+        fetchRoles({ pageParam, search, limit: rowLimit }),
+      initialPageParam: 0,
+      getNextPageParam: (lastPage) => lastPage.nextPage,
+    });
 
   // flatten pages
-  const roles = useMemo(
-    () => data?.pages.flatMap((p) => p.data) ?? [],
-    [data]
-  );
+  const roles = useMemo(() => data?.pages.flatMap((p) => p.data) ?? [], [data]);
 
   function handleDefaultChange(selectedRole: RoleRow) {
     console.log("Set default:", selectedRole);
@@ -98,9 +90,7 @@ export function RolesTable() {
           <Switch
             checked={row.original.isDefault}
             onClick={(e) => e.stopPropagation()}
-            onCheckedChange={() =>
-              handleDefaultChange(row.original)
-            }
+            onCheckedChange={() => handleDefaultChange(row.original)}
           />
         ),
       },
@@ -108,11 +98,8 @@ export function RolesTable() {
     []
   );
 
-  console.log("Limit", rowLimit);
-
   return (
     <div className="space-y-4 border-t p-4">
-      {/* 🔍 Search */}
       <div className="flex items-center justify-between gap-3">
         <div className="relative max-w-sm flex-1">
           <AppIcon
@@ -134,7 +121,6 @@ export function RolesTable() {
         </Button>
       </div>
 
-      {/* 📊 Table */}
       <DataTable
         data={roles}
         columns={columns}
@@ -146,6 +132,7 @@ export function RolesTable() {
         onRowClick={handleRowClick}
         onRowContextMenu={handleContextMenu}
         setRowLimit={setRowLimit}
+        emptyText="No roles found"
       />
     </div>
   );
