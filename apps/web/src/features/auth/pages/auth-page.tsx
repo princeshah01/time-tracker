@@ -75,6 +75,18 @@ function AuthPage() {
     navigate("/dashboard");
   }
 
+  async function onTfaVerify(values: { otp: string }) {
+    const result = await authService.signInTfa({
+      otp: values.otp ?? "",
+    });
+    if (result.error) {
+      toast.error(result.error.message);
+      return;
+    }
+    toast.success("2FA verification successful");
+    onLoginSucess();
+  }
+
   return (
     <AuthLayout>
       {step === "auth-tabs" ? (
@@ -109,7 +121,7 @@ function AuthPage() {
           title="Verify authenticator code"
           description="Use the 6-digit code from your authenticator app."
           submitLabel="Verify and continue"
-          onSubmit={() => {}}
+          onSubmit={onTfaVerify}
         />
       ) : null}
 

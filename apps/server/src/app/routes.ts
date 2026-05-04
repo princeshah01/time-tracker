@@ -8,6 +8,6 @@ const appRouter = Router();
 
 appRouter.use("/me", profileRouter);
 appRouter.use("/invites", invitesRouter);
-appRouter.use("/security", securityRouter);
+// appRouter.use("/security", securityRouter);
 
 export { appRouter };

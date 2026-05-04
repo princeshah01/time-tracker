@@ -1,6 +1,7 @@
 import { isAPIError } from "better-auth/api";
-
+import { fromNodeHeaders } from "better-auth/node";
 import { AppError, type AppErrorCode } from "./app-error";
+import type { Request } from "express";
 
 function codeFromStatus(statusCode: number): AppErrorCode {
   switch (statusCode) {
@@ -64,4 +65,8 @@ export async function runAuthApi<T>(operation: () => Promise<T>): Promise<T> {
 
     throw error;
   }
+}
+
+export function authHeaders(req: Request) {
+  return fromNodeHeaders(req.headers);
 }

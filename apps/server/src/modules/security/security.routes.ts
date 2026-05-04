@@ -20,12 +20,6 @@ securityRouter.post(
 );
 
 securityRouter.post(
-  "/set-password",
-  validate(setPasswordSchema),
-  securityController.setPassword
-);
-
-securityRouter.post(
   "/two-factor/setup",
   validate(twoFactorPasswordSchema),
   securityController.enableTwoFactor

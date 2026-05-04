@@ -2,7 +2,11 @@ import { Link, useLocation } from "react-router-dom";
 
 import { cn } from "@workspace/ui/lib/utils";
 import { Button } from "@workspace/ui/components/button";
-import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
 import type { SidebarGroupKey } from "@/shared/types";
 import type { SidebarGroupMap } from "../lib/build-sidebar";
 import { AppIcon } from "./app-icon";
@@ -26,10 +30,10 @@ type SideBarProps = {
 export function SideBar({ items, onNavigate, onLogout }: SideBarProps) {
   const location = useLocation();
   const { user, role } = useAppSelector((s) => s.user);
-  const userName = user?.name;
-  const initials = getInitials(user?.name);
-  const roleName = role?.name;
-
+  const { name: userName, image } = user || {};
+  const { name: roleName } = role || {};
+  const initials = getInitials(userName);
+  console.log("Sidebar render", { userName, roleName, initials, image });
   return (
     <>
       <div className="flex h-11 items-center gap-2 border-b border-sidebar-border px-3">
@@ -82,6 +86,7 @@ export function SideBar({ items, onNavigate, onLogout }: SideBarProps) {
       <div className="border-t border-sidebar-border p-2">
         <div className="flex items-center gap-2 px-1">
           <Avatar className="size-6">
+            <AvatarImage src={image || ""} className="object-cover" />
             <AvatarFallback className="bg-sidebar-primary text-[9px] text-sidebar-primary-foreground">
               {initials || "U"}
             </AvatarFallback>

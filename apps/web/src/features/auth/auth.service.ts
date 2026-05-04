@@ -37,4 +37,11 @@ export const authService = {
     });
     return result;
   },
+  signInTfa: async (input: { otp: string }) => {
+    const result = await authClient.twoFactor.verifyTotp({
+      code: input.otp.trim(),
+      trustDevice: true,
+    });
+    return result;
+  },
 };

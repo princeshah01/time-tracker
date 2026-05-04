@@ -1,17 +1,19 @@
 import type { Request, Response } from "express";
 
 import type { ValidatedRequest } from "@/shared/middlewares";
-import { AppError, sendSuccess } from "@/shared/utils";
+import { AppError, runAuthApi, sendSuccess, authHeaders } from "@/shared/utils";
 import { profileService } from "./profile.service";
-import type { updateProfileSchema } from "./profile.validators";
+import type {
+  setPasswordSchema,
+  updateProfileSchema,
+} from "./profile.validators";
 import { requireRouteUser } from "@/shared/session";
+import { auth } from "@/auth";
 
 export class ProfileController {
   async me(req: Request, res: Response) {
     const user = requireRouteUser(req);
     const profile = await profileService.getMe(user.id);
-    // Simulate some delay to show loading state on frontend
-    await new Promise((resolve) => setTimeout(resolve, 50_00));
 
     if (!profile) {
       throw new AppError({
@@ -31,13 +33,22 @@ export class ProfileController {
     const user = requireRouteUser(req);
     const { body } = (req as ValidatedRequest<typeof updateProfileSchema>)
       .validated;
-    const profile = await profileService.updateMe(user.id, body);
+    const imagePath = req.file
+      ? `/uploads/profile-images/${req.file.filename}`
+      : undefined;
+
+    const profile = await profileService.updateMe(user.id, {
+      ...body,
+      ...(imagePath && { image: imagePath }),
+    });
+
     return sendSuccess({
       res,
       message: "Profile updated successfully",
       data: profile,
     });
   }
+
   async getProfilePicture(req: Request, res: Response) {
     const user = requireRouteUser(req);
 
@@ -81,6 +92,24 @@ export class ProfileController {
 
     return res.status(404).json({
       message: "Profile picture not found",
+    });
+  }
+  async setPassword(req: Request, res: Response) {
+    const { body } = (req as ValidatedRequest<typeof setPasswordSchema>)
+      .validated;
+    const result = await runAuthApi(() =>
+      auth.api.setPassword({
+        headers: authHeaders(req),
+        body: {
+          newPassword: body.newPassword,
+        },
+      })
+    );
+
+    return sendSuccess({
+      res,
+      data: result,
+      message: "Password set successfully",
     });
   }
 }

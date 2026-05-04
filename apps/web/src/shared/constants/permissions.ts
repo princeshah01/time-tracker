@@ -23,6 +23,11 @@ const permissions = {
   timesheetShare: "timesheet:share",
   analyticsView: "analytics:view",
   settingsView: "settings:view",
+  profileView: "profile:view",
+  profileEdit: "profile:edit",
+  notificationSettings: "notification-settings:manage",
+  mySecurity: "profile:security-manage",
+  workspaceSettings: "workspace-settings:manage",
 } as const;
 
 export { permissions };

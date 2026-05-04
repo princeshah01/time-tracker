@@ -25,7 +25,7 @@ export class ProfileService {
         id: user.id,
         email: user.email,
         name: user.name,
-        image: user.image ?? `${env.BETTER_AUTH_URL}/api/me/avatar`,
+        image: `${env.BETTER_AUTH_URL}/api/me/avatar`,
         emailVerified: user.emailVerified,
         twoFactorEnabled: user.twoFactorEnabled,
         hasPassword: accounts.some(
@@ -54,17 +54,7 @@ export class ProfileService {
       });
     }
 
-    const updatedUser = await this.profileRepository.updateUserProfile(
-      userId,
-      input
-    );
-
-    if (!updatedUser) {
-      throw new AppError({
-        message: "User not found",
-        code: "NOT_FOUND",
-      });
-    }
+    await this.profileRepository.updateUserProfile(userId, input);
 
     return this.getMe(userId);
   }
@@ -84,7 +74,7 @@ export class ProfileService {
     }
     if (user.image) {
       return {
-        url: user.image,
+        url: `${env.BETTER_AUTH_URL}${user.image}`,
         hasLocalImage: true,
       };
     }

@@ -103,23 +103,15 @@ export const auth = betterAuth({
     }),
     twoFactor({
       issuer: "TimeTracker",
-      otpOptions: {
-        period: 5,
-        digits: 6,
-        allowedAttempts: 5,
-        storeOTP: "hashed",
-        async sendOTP({ user, otp }) {
-          await addAuthOtpEmailJob({
-            to: user.email,
-            otp,
-            purpose: "two-factor",
-          });
-        },
-      },
+
+      // Microsoft-only users should NOT enable TFA before setting password.
+
       totpOptions: {
         digits: 6,
         period: 30,
+        window: 3,
       },
+
       backupCodeOptions: {
         amount: 10,
         length: 10,
@@ -178,5 +170,6 @@ export const auth = betterAuth({
   },
   advanced: {
     useSecureCookies: env.NODE_ENV === "production",
+    cookiePrefix: "time-tracker",
   },
 });
