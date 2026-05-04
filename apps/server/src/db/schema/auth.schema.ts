@@ -108,6 +108,7 @@ export const roles = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     isDefault: boolean("is_default").default(false).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

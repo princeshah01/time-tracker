@@ -7,12 +7,18 @@ export type RoleRecord = typeof roles.$inferSelect;
 
 export class PermissionsRepository {
   async findRoleByName(name: string) {
-    const [role] = await db.select().from(roles).where(eq(roles.name, name));
+    const [role] = await db
+      .select()
+      .from(roles)
+      .where(and(eq(roles.name, name), eq(roles.isActive, true)));
     return role ?? null;
   }
 
   async findRoleById(id: number) {
-    const [role] = await db.select().from(roles).where(eq(roles.id, id));
+    const [role] = await db
+      .select()
+      .from(roles)
+      .where(and(eq(roles.id, id), eq(roles.isActive, true)));
     return role ?? null;
   }
 
@@ -20,7 +26,7 @@ export class PermissionsRepository {
     const [role] = await db
       .select()
       .from(roles)
-      .where(eq(roles.isDefault, true));
+      .where(and(eq(roles.isDefault, true), eq(roles.isActive, true)));
     return role ?? null;
   }
 
@@ -36,7 +42,7 @@ export class PermissionsRepository {
       })
       .from(userRoles)
       .innerJoin(roles, eq(userRoles.roleId, roles.id))
-      .where(eq(userRoles.userId, userId));
+      .where(and(eq(userRoles.userId, userId), eq(roles.isActive, true)));
   }
 
   async findPermissionsForRoleIds(roleIds: number[]) {

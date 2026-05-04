@@ -127,7 +127,7 @@ export function DataTable<TData>({
     <div className="rounded-md border overflow-clip">
       <div
         ref={containerRef}
-        className="h-[calc(100vh-207px)] overflow-auto no-scrollbar mask-b-from-0% mask-b-to-170%"
+        className="relative h-[calc(100vh-207px)] overflow-auto no-scrollbar mask-b-from-0% mask-b-to-170%"
         onScroll={handleScroll}
       >
         <Table className="w-full table-fixed">
@@ -188,7 +188,7 @@ export function DataTable<TData>({
         </Table>
 
         {showEmpty && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground text-sm">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-muted-foreground text-sm">
             <AppIcon name="Inbox" className="mb-1 size-10" />
             {emptyText}
           </div>

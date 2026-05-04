@@ -71,7 +71,7 @@ export function SideBar({ items, onNavigate, onLogout }: SideBarProps) {
                           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
-                      <AppIcon name={item?.icon!} />
+                      <AppIcon size={16} name={item?.icon!} />
                       <span>{item.label}</span>
                     </Link>
                   );
