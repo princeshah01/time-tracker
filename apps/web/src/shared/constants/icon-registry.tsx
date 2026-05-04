@@ -46,6 +46,8 @@ export const ICON_REGISTRY = {
   Camera: lazy(() =>
     import("lucide-react").then((m) => ({ default: m.Camera }))
   ),
+  Search: lazy(() => import("lucide-react").then((m) => ({ default: m.Search }))),
+  Plus: lazy(() => import("lucide-react").then((m) => ({ default: m.Plus }))),
   HelpCircle: lazy(() =>
     import("lucide-react").then((m) => ({ default: m.HelpCircle }))
   ),
