@@ -5,7 +5,14 @@ import { TabsContent } from "@workspace/ui/components/tabs";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Badge } from "@workspace/ui/components/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@workspace/ui/components/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@workspace/ui/components/dialog";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { toast } from "@workspace/ui/components/sonner";
 
@@ -14,15 +21,7 @@ import { DataTable } from "@/shared/components/data-table";
 import { settingsService } from "../settings.service";
 import { SettingsSection } from "./settings-body";
 import { cn } from "@workspace/ui/lib/utils";
-
-type RoleRow = {
-  id: number;
-  name: string;
-  description: string | null;
-  permissionsCount: number;
-  isDefault: boolean;
-  isActive: boolean;
-};
+import type { RoleListItem } from "../settings.type";
 
 function PermissionsView({
   permissions,
@@ -66,10 +65,10 @@ const RoleManageSectionContent = () => {
 
 function RolesTable() {
   const [search, setSearch] = useState("");
-  const [rowLimit, setRowLimit] = useState(10);
-  const [selectedRole, setSelectedRole] = useState<RoleRow | null>(null);
+  const [rowLimit, setRowLimit] = useState(0);
+  const [selectedRole, setSelectedRole] = useState<RoleListItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [menuState, setMenuState] = useState<{ x: number; y: number; row: RoleRow } | null>(null);
+  const [menuState, setMenuState] = useState<{ x: number; y: number; row: RoleListItem } | null>(null);
   const [form, setForm] = useState({ name: "", description: "" });
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
@@ -90,6 +89,7 @@ function RolesTable() {
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.hasNextPage ? lastPage.page + 1 : undefined),
+    enabled: Boolean(rowLimit)
   });
 
   const permissionsQuery = useQuery({
@@ -98,7 +98,7 @@ function RolesTable() {
       if (selectedRole?.id) {
         const roleRes = await settingsService.viewRole(selectedRole.id);
         if (!roleRes.success || !roleRes.data) throw new Error(roleRes.message);
-        return roleRes.data.permissions.permissions;
+        return roleRes.data.permissions;
       }
       const res = await settingsService.listPermissions();
       if (!res.success || !res.data) throw new Error(res.message);
@@ -145,7 +145,7 @@ function RolesTable() {
   });
 
   const toggleRoleStatusMutation = useMutation({
-    mutationFn: async (role: RoleRow) => {
+    mutationFn: async (role: RoleListItem) => {
       const response = await settingsService.toggleRoleStatus(role.id);
       if (!response.success) throw new Error(response.message);
       return response;
@@ -159,7 +159,7 @@ function RolesTable() {
 
   const roles = useMemo(() => rolesQuery.data?.pages.flatMap((p) => p.items) ?? [], [rolesQuery.data]);
 
-  const columns = useMemo<ColumnDef<RoleRow>[]>(
+  const columns = useMemo<ColumnDef<RoleListItem>[]>(
     () => [
       { accessorKey: "id", header: "ID", cell: ({ row }) => `#${row.original.id}` },
       {
@@ -223,13 +223,13 @@ function RolesTable() {
     setDialogOpen(true);
   }
 
-  function openEdit(role: RoleRow) {
+  function openEdit(role: RoleListItem) {
     setSelectedRole(role);
     setForm({ name: role.name, description: role.description || "" });
     setDialogOpen(true);
   }
 
-  function handleContextMenu(event: React.MouseEvent, role: RoleRow) {
+  function handleContextMenu(event: React.MouseEvent, role: RoleListItem) {
     event.preventDefault();
     setMenuState({ x: event.clientX, y: event.clientY, row: role });
   }

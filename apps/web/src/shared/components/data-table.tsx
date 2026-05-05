@@ -15,6 +15,8 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { AppIcon } from "./app-icon";
+import { cn } from "@workspace/ui/lib/utils";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 
 type DataTableProps<TData> = {
   data: TData[];
@@ -32,17 +34,21 @@ type DataTableProps<TData> = {
   rowBuffer?: number;
   setRowLimit?: (limit: number) => void;
 
+  /**
+   * Style Table container
+   */
+
+  containerClassName?: string; 
   onRowClick?: (row: TData) => void;
   onRowContextMenu?: (event: React.MouseEvent, row: TData) => void;
 };
 
-// 🔥 Skeleton Row
 function SkeletonRow({ columns }: { columns: number }) {
   return (
     <TableRow>
       {Array.from({ length: columns }).map((_, i) => (
         <TableCell key={i} className="px-3 py-3">
-          <div className="h-4 w-full animate-pulse rounded bg-muted" />
+          <Skeleton className="h-4 w-full" />
         </TableCell>
       ))}
     </TableRow>
@@ -58,11 +64,10 @@ export function DataTable<TData>({
   isFetchingNextPage = false,
   fetchNextPage,
   emptyText = "No data found",
-
-  estimatedRowHeight = 44,
-  rowBuffer = 6,
+  estimatedRowHeight = 40,
+  rowBuffer = 3,
   setRowLimit,
-
+  containerClassName,
   onRowClick,
   onRowContextMenu,
 }: DataTableProps<TData>) {
@@ -76,7 +81,6 @@ export function DataTable<TData>({
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // 🔥 Dynamic row limit (virtual-like behavior)
   useEffect(() => {
     const el = containerRef.current;
     if (!setRowLimit || !el) return;
@@ -105,7 +109,6 @@ export function DataTable<TData>({
     };
   }, [setRowLimit, estimatedRowHeight, rowBuffer]);
 
-  // 🔥 Infinite scroll (stable callback)
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const el = e.currentTarget;
@@ -127,7 +130,7 @@ export function DataTable<TData>({
     <div className="rounded-md border overflow-clip">
       <div
         ref={containerRef}
-        className="relative h-[calc(100vh-207px)] overflow-auto no-scrollbar mask-b-from-0% mask-b-to-170%"
+        className={cn("relative h-[calc(100vh-207px)] overflow-auto no-scrollbar mask-b-from-0% mask-b-to-220%", containerClassName)}
         onScroll={handleScroll}
       >
         <Table className="w-full table-fixed">

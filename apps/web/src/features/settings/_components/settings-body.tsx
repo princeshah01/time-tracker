@@ -12,7 +12,7 @@ import type { AppIconName } from "@/shared/types";
 
 import { NotificationSectionContent } from "./notification-section";
 import { ProfileSectionContent } from "./profile-section";
-import { RoleManageSectionContent } from "./role-manage-section";
+import { RoleManageSectionContent } from "./roles";
 import { SecuritySectionContent } from "./security-section";
 import { WorkSpaceSectionContent } from "./system-settings-section";
 import { UserManageSectionContent } from "./users-manage-section";

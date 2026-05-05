@@ -15,7 +15,7 @@ import {
 const rolesRouter = Router();
 
 rolesRouter.use(requireAuth);
-rolesRouter.use(requirePermission(permissionKeys.roleManage));
+// rolesRouter.use(requirePermission(permissionKeys.roleManage));
 
 rolesRouter.get("/", validate(listRolesSchema), rolesController.list);
 rolesRouter.get(

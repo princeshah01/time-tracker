@@ -24,6 +24,7 @@
     "@workspace/ui": "workspace:*",
     "axios": "^1.16.0",
     "better-auth": "catalog:",
+    "lodash.debounce": "^4.0.8",
     "lucide-react": "catalog:",
     "next-themes": "catalog:",
     "qrcode.react": "^4.2.0",
@@ -38,6 +39,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/lodash.debounce": "^4.0.9",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

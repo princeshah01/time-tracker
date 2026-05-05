@@ -49,7 +49,7 @@ export class RolesService {
 
     return {
       ...role,
-      permissions,
+      ...permissions,
     };
   }
 

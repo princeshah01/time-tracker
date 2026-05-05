@@ -1,39 +1,6 @@
 import { apiFetch } from "@/shared/lib";
-
-type RoleListItem = {
-  id: number;
-  name: string;
-  description: string | null;
-  isDefault: boolean;
-  isActive: boolean;
-  permissionsCount: number;
-};
-
-type RolePermission = {
-  name: string;
-  include: boolean;
-};
-
-type RoleView = {
-  id: number;
-  name: string;
-  description: string | null;
-  isDefault: boolean;
-  isActive: boolean;
-  permissions: {
-    permissions: RolePermission[];
-  };
-};
-
-type ListRolesResponse = {
-  items: RoleListItem[];
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNextPage: boolean;
-};
-
+import  type {ListRolesResponse,RoleView , RolePermission} from "./settings.type"
+ 
 export const settingsService = {
   listRoles(input: { page: number; limit: number; q?: string }) {
     return apiFetch<ListRolesResponse>({

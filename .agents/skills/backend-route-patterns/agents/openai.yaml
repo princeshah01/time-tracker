@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Route Patterns"
+  short_description: "Express module and route conventions"
+  default_prompt: "Use $backend-route-patterns to create a backend module route with repository, service, controller, validation, auth, and permissions in this monorepo style."
