@@ -1,7 +1,7 @@
 export const permissionKeys = {
-  userInvite: "user:invite",
-  userView: "user:view",
-  userManage: "user:manage",
+  userInvite: "users:invite",
+  userView: "users:view",
+  userManage: "users:manage",
   roleView: "role:view",
   roleManage: "role:manage",
   profileView: "profile:view",

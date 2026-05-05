@@ -15,6 +15,13 @@
       "when": 1777916577450,
       "tag": "0001_amazing_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778005183659,
+      "tag": "0002_dazzling_leopardon",
+      "breakpoints": true
     }
   ]
 }

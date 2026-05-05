@@ -23,6 +23,7 @@ import {
   HelpCircle,
   Pencil,
   CircleOff,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -51,6 +52,7 @@ export const ICON_REGISTRY = {
   HelpCircle,
   Pencil,
   CircleOff,
+  Trash2,
 } as const satisfies Record<string, LucideIcon>;
 
 export type AppIconName = keyof typeof ICON_REGISTRY;

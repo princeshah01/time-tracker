@@ -1,5 +1,18 @@
 import { authClient } from "@/shared/lib";
-import { OtpResend } from "./auth.types";
+import { apiFetch } from "@/shared/lib/api";
+import type { OtpResend } from "./auth.types";
+
+type InvitationVerifyResponse = {
+  id: number;
+  email: string;
+  role: {
+    id: number;
+    name: string;
+    description: string | null;
+  };
+  status: "pending" | "accepted" | "expired" | "revoked";
+  expiresAt: string;
+};
 
 export const authService = {
   signUpWithEmail: async (input: {
@@ -43,5 +56,33 @@ export const authService = {
       trustDevice: true,
     });
     return result;
+  },
+  verifyInvitation: async (token: string) => {
+    return apiFetch<InvitationVerifyResponse>({
+      method: "GET",
+      url: "/invitations/verify",
+      params: { token },
+    });
+  },
+  sendInvitationOtp: async (token: string) => {
+    return apiFetch<{ email: string; expiresAt: string }>({
+      method: "POST",
+      url: "/invitations/send-otp",
+      data: { token },
+    });
+  },
+  verifyInvitationOtp: async (input: { token: string; otp: string }) => {
+    return apiFetch<{ email: string; verified: boolean }>({
+      method: "POST",
+      url: "/invitations/verify-otp",
+      data: input,
+    });
+  },
+  acceptInvitation: async (input: { name: string; password: string }) => {
+    return apiFetch<{ accepted: boolean; email: string; userId: string }>({
+      method: "POST",
+      url: "/invitations/accept",
+      data: input,
+    });
   },
 };

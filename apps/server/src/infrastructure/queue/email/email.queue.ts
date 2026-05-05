@@ -20,6 +20,7 @@ export type EmailJobData =
         | "sign-up"
         | "email-verification"
         | "change-email"
+        | "invite"
         | "two-factor";
     }
   | {

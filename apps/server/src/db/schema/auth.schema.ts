@@ -187,7 +187,13 @@ export const userInvites = pgTable(
       onDelete: "set null",
     }),
     expiresAt: timestamp("expires_at").notNull(),
+    otpHash: text("otp_hash"),
+    otpExpiresAt: timestamp("otp_expires_at"),
+    otpSentAt: timestamp("otp_sent_at"),
+    otpAttempts: integer("otp_attempts").default(0).notNull(),
+    otpVerifiedAt: timestamp("otp_verified_at"),
     acceptedAt: timestamp("accepted_at"),
+    revokedAt: timestamp("revoked_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -197,6 +203,7 @@ export const userInvites = pgTable(
   (table) => [
     uniqueIndex("user_invites_token_hash_unique").on(table.tokenHash),
     index("user_invites_email_idx").on(table.email),
+    index("user_invites_role_id_idx").on(table.roleId),
   ]
 );
 

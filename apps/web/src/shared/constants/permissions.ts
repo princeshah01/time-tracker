@@ -1,9 +1,9 @@
 const permissions = {
-  userInvite: "user:invite",
-  userAdd: "user:invite",
+  userInvite: "users:invite",
+  userAdd: "users:invite",
   userEdit: "user:edit",
   userStatusChange: "user:status-change",
-  userView: "user:view",
+  userView: "users:view",
   roleAdd: "role:add",
   roleEdit: "role:edit",
   roleStatusChange: "role:status-change",

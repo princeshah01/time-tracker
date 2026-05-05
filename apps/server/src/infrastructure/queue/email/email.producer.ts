@@ -12,6 +12,7 @@ export async function addAuthOtpEmailJob(input: {
     | "sign-up"
     | "email-verification"
     | "change-email"
+    | "invite"
     | "two-factor";
 }) {
   return emailQueue.add("send-auth-otp-email", {

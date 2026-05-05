@@ -10,6 +10,7 @@ import { permissions } from "@/shared/constants";
 import { hasPermission } from "@/shared/lib/permissions";
 import type { AppIconName } from "@/shared/types";
 
+import { InvitationSectionContent } from "./invitations";
 import { NotificationSectionContent } from "./notification-section";
 import { ProfileSectionContent } from "./profile-section";
 import { RoleManageSectionContent } from "./roles";
@@ -20,6 +21,7 @@ import { UserManageSectionContent } from "./users-manage-section";
 const SETTINGS_TABS = [
   "profile",
   "users",
+  "invitations",
   "roles",
   "notifications",
   "security",
@@ -32,6 +34,7 @@ type SettingsTabValue = (typeof SETTINGS_TABS)[number];
 const TAB_PERMISSIONS: Record<SettingsTabValue, string[]> = {
   profile: [],
   users: [],
+  invitations: [],
   roles: [],
   notifications: [],
   security: [],
@@ -55,6 +58,11 @@ const TAB_META: Record<
     icon: "Users",
     label: "Users",
     content: <UserManageSectionContent />,
+  },
+  invitations: {
+    icon: "Mail",
+    label: "Invitations",
+    content: <InvitationSectionContent />,
   },
   roles: {
     icon: "Shield",
