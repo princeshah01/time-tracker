@@ -26,10 +26,16 @@ import { toast } from "@workspace/ui/components/sonner";
 
 import { PermissionsView } from "./permission-view";
 import { settingsService } from "@/features/settings/settings.service";
-import type { RoleListItem, RolePermission } from "@/features/settings/settings.type";
+import type {
+  RoleListItem,
+  RolePermission,
+} from "@/features/settings/settings.type";
 
 const roleFormSchema = z.object({
-  name: z.string().min(3, "Role name must be at least 3 characters long").max(50, "Role name must be at most 50 characters long"),
+  name: z
+    .string()
+    .min(3, "Role name must be at least 3 characters long")
+    .max(50, "Role name must be at most 50 characters long"),
   description: z.string().optional(),
 });
 
@@ -75,7 +81,7 @@ const RoleViewDialog = ({
 
         return response.data;
       }
-      // if no selected role, we are in create mode, so we just need to fetch the list of all permissions to show in the form  
+      // if no selected role, we are in create mode, so we just need to fetch the list of all permissions to show in the form
       const response = await settingsService.listPermissions();
 
       if (!response.success || !response.data) {
@@ -227,17 +233,17 @@ const RoleViewDialog = ({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                  <div className="flex flex-col gap-2">
-                    <FormLabel className="text-xs">Role Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter role name"
-                        disabled={isDefaultRole || isSaving}
+                    <div className="flex flex-col gap-2">
+                      <FormLabel className="text-xs">Role Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Enter role name"
+                          disabled={isDefaultRole || isSaving}
                         />
-                    </FormControl>
-                    <FormMessage className="text-[10px]" />
-                  </div>
+                      </FormControl>
+                      <FormMessage className="text-[10px]" />
+                    </div>
                   </FormItem>
                 )}
               />
@@ -247,44 +253,43 @@ const RoleViewDialog = ({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                                      <div className="flex flex-col gap-2">
-
-                    <FormLabel className="text-xs">Description</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter description"
-                        disabled={isDefaultRole || isSaving}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-[10px]" />
-                  </div>
-                    </FormItem>
+                    <div className="flex flex-col gap-2">
+                      <FormLabel className="text-xs">Description</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Enter description"
+                          disabled={isDefaultRole || isSaving}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-[10px]" />
+                    </div>
+                  </FormItem>
                 )}
               />
             </div>
 
             <div className="space-y-2">
               <p className="text-xs font-medium">Permissions</p>
-                <PermissionsView
-                  permissions={permissionOptions}
-                  isLoading={roleDetailsQuery.isLoading}
-                  selected={selectedPermissions}
-                  disabled={isDefaultRole || isSaving}
-                  onToggle={(name, checked) => {
-                    setSelectedPermissions((prev) => {
-                      const next = new Set(prev);
+              <PermissionsView
+                permissions={permissionOptions}
+                isLoading={roleDetailsQuery.isLoading}
+                selected={selectedPermissions}
+                disabled={isDefaultRole || isSaving}
+                onToggle={(name, checked) => {
+                  setSelectedPermissions((prev) => {
+                    const next = new Set(prev);
 
-                      if (checked) {
-                        next.add(name);
-                      } else {
-                        next.delete(name);
-                      }
+                    if (checked) {
+                      next.add(name);
+                    } else {
+                      next.delete(name);
+                    }
 
-                      return next;
-                    });
-                  }}
-                />
+                    return next;
+                  });
+                }}
+              />
             </div>
 
             <DialogFooter>

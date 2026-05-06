@@ -1,6 +1,10 @@
 import { apiFetch } from "@/shared/lib";
-import  type {ListRolesResponse,RoleView , RolePermission} from "./settings.type"
- 
+import type {
+  ListRolesResponse,
+  RoleView,
+  RolePermission,
+} from "./settings.type";
+
 export const settingsService = {
   listRoles(input: { page: number; limit: number; q?: string }) {
     return apiFetch<ListRolesResponse>({

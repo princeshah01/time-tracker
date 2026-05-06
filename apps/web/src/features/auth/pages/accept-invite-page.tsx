@@ -17,12 +17,7 @@ import {
 } from "@/features/auth/_components";
 import { authService } from "../auth.service";
 
-type InviteState =
-  | "checking"
-  | "otp"
-  | "password"
-  | "done"
-  | "invalid";
+type InviteState = "checking" | "otp" | "password" | "done" | "invalid";
 
 function getErrorMessage(responseMessage: string, fallback: string) {
   return responseMessage || fallback;
@@ -34,7 +29,9 @@ function AcceptInvitePage() {
   const [email, setEmail] = useState("");
   const [roleName, setRoleName] = useState("");
   const [name, setName] = useState("");
-  const [state, setState] = useState<InviteState>(token ? "checking" : "invalid");
+  const [state, setState] = useState<InviteState>(
+    token ? "checking" : "invalid"
+  );
   const [errorMessage, setErrorMessage] = useState(
     token ? "" : "Invite link is missing a token."
   );
@@ -207,10 +204,7 @@ function AcceptInvitePage() {
                 submitLabel="Verify OTP"
                 onSubmit={handleVerifyOtp}
               />
-              <ResendCountdownButton
-                seconds={60}
-                onResend={handleResendOtp}
-              />
+              <ResendCountdownButton seconds={60} onResend={handleResendOtp} />
             </div>
           ) : (
             <div className="space-y-4">

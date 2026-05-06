@@ -1,17 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { TabsContent } from "@workspace/ui/components/tabs";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Badge } from "@workspace/ui/components/badge";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@workspace/ui/components/dialog";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { toast } from "@workspace/ui/components/sonner";
@@ -39,11 +44,16 @@ function PermissionsView({
       {permissions.map((permission) => {
         const checked = selected.has(permission.name);
         return (
-          <label key={permission.name} className="flex items-center gap-2 text-xs">
+          <label
+            key={permission.name}
+            className="flex items-center gap-2 text-xs"
+          >
             <Checkbox
               checked={checked}
               disabled={disabled}
-              onCheckedChange={(value) => onToggle(permission.name, Boolean(value))}
+              onCheckedChange={(value) =>
+                onToggle(permission.name, Boolean(value))
+              }
             />
             <span className="truncate">{permission.name}</span>
           </label>
@@ -56,7 +66,10 @@ function PermissionsView({
 const RoleManageSectionContent = () => {
   return (
     <TabsContent value="roles" className="m-0">
-      <SettingsSection title="Roles" description="Manage user roles and permissions.">
+      <SettingsSection
+        title="Roles"
+        description="Manage user roles and permissions."
+      >
         <RolesTable />
       </SettingsSection>
     </TabsContent>
@@ -68,11 +81,16 @@ function RolesTable() {
   const [rowLimit, setRowLimit] = useState(0);
   const [selectedRole, setSelectedRole] = useState<RoleListItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [menuState, setMenuState] = useState<{ x: number; y: number; row: RoleListItem } | null>(null);
+  const [menuState, setMenuState] = useState<{
+    x: number;
+    y: number;
+    row: RoleListItem;
+  } | null>(null);
   const [form, setForm] = useState({ name: "", description: "" });
-  const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
+  const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(
+    new Set()
+  );
   const queryClient = useQueryClient();
-
 
   const rolesQuery = useInfiniteQuery({
     queryKey: ["roles", search, rowLimit],
@@ -88,8 +106,9 @@ function RolesTable() {
       return response.data;
     },
     initialPageParam: 1,
-    getNextPageParam: (lastPage) => (lastPage.hasNextPage ? lastPage.page + 1 : undefined),
-    enabled: Boolean(rowLimit)
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNextPage ? lastPage.page + 1 : undefined,
+    enabled: Boolean(rowLimit),
   });
 
   const permissionsQuery = useQuery({
@@ -157,16 +176,26 @@ function RolesTable() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const roles = useMemo(() => rolesQuery.data?.pages.flatMap((p) => p.items) ?? [], [rolesQuery.data]);
+  const roles = useMemo(
+    () => rolesQuery.data?.pages.flatMap((p) => p.items) ?? [],
+    [rolesQuery.data]
+  );
 
   const columns = useMemo<ColumnDef<RoleListItem>[]>(
     () => [
-      { accessorKey: "id", header: "ID", cell: ({ row }) => `#${row.original.id}` },
+      {
+        accessorKey: "id",
+        header: "ID",
+        cell: ({ row }) => `#${row.original.id}`,
+      },
       {
         accessorKey: "name",
         header: "Role Name",
         cell: ({ row }) => (
-          <span className="block truncate font-medium" title={row.original.name}>
+          <span
+            className="block truncate font-medium"
+            title={row.original.name}
+          >
             {row.original.name}
           </span>
         ),
@@ -175,7 +204,10 @@ function RolesTable() {
         accessorKey: "description",
         header: "Description",
         cell: ({ row }) => (
-          <span className="block truncate text-muted-foreground" title={row.original.description || "-"}>
+          <span
+            className="block truncate text-muted-foreground"
+            title={row.original.description || "-"}
+          >
             {row.original.description || "-"}
           </span>
         ),
@@ -190,7 +222,10 @@ function RolesTable() {
             <Button
               variant="outline"
               size="sm"
-              className={cn("h-6 w-14 rounded-md text-xs py-1.5 cursor-pointer", role.isActive ? "bg-foreground text-background " : "")}
+              className={cn(
+                "h-6 w-14 rounded-md text-xs py-1.5 cursor-pointer",
+                role.isActive ? "bg-foreground text-background " : ""
+              )}
               disabled={role.isDefault || toggleRoleStatusMutation.isPending}
               onClick={(e) => {
                 e.stopPropagation();
@@ -251,7 +286,11 @@ function RolesTable() {
   useEffect(() => {
     if (!dialogOpen || !permissionOptions.length) return;
     setSelectedPermissions(
-      new Set(permissionOptions.filter((permission) => permission.include).map((permission) => permission.name))
+      new Set(
+        permissionOptions
+          .filter((permission) => permission.include)
+          .map((permission) => permission.name)
+      )
     );
   }, [dialogOpen, permissionOptions]);
 
@@ -271,7 +310,11 @@ function RolesTable() {
           />
         </div>
 
-        <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={openCreate}>
+        <Button
+          size="sm"
+          className="h-8 gap-1.5 text-[12px]"
+          onClick={openCreate}
+        >
           <AppIcon name="Plus" className="h-3.5 w-3.5" />
           Add Role
         </Button>
@@ -308,7 +351,9 @@ function RolesTable() {
           </button>
           <button
             className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent disabled:opacity-50"
-            disabled={menuState.row.isDefault || toggleRoleStatusMutation.isPending}
+            disabled={
+              menuState.row.isDefault || toggleRoleStatusMutation.isPending
+            }
             onClick={() => {
               toggleRoleStatusMutation.mutate(menuState.row);
               setMenuState(null);
@@ -323,7 +368,9 @@ function RolesTable() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedRole ? "Edit Role" : "Create Role"}</DialogTitle>
+            <DialogTitle>
+              {selectedRole ? "Edit Role" : "Create Role"}
+            </DialogTitle>
             <DialogDescription>
               Configure role details and permissions for this role.
             </DialogDescription>
@@ -335,7 +382,9 @@ function RolesTable() {
                 <p className="text-xs font-medium">Role Name</p>
                 <Input
                   value={form.name}
-                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   placeholder="Enter role name"
                   disabled={selectedRole?.isDefault}
                 />
@@ -344,7 +393,12 @@ function RolesTable() {
                 <p className="text-xs font-medium">Description</p>
                 <Input
                   value={form.description}
-                  onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Enter description"
                   disabled={selectedRole?.isDefault}
                 />
@@ -375,7 +429,11 @@ function RolesTable() {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={createRoleMutation.isPending || updateRoleMutation.isPending || Boolean(selectedRole?.isDefault) }
+              disabled={
+                createRoleMutation.isPending ||
+                updateRoleMutation.isPending ||
+                Boolean(selectedRole?.isDefault)
+              }
             >
               {selectedRole ? "Save changes" : "Create role"}
             </Button>

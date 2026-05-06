@@ -28,10 +28,7 @@ export class InvitationsRepository {
     invitedBy: string;
     expiresAt: Date;
   }) {
-    const [invitation] = await db
-      .insert(userInvites)
-      .values(input)
-      .returning();
+    const [invitation] = await db.insert(userInvites).values(input).returning();
 
     return invitation ?? null;
   }
@@ -313,10 +310,7 @@ export class InvitationsRepository {
     });
   }
 
-  private buildListWhere(input: {
-    q?: string;
-    status?: InvitationStatus;
-  }) {
+  private buildListWhere(input: { q?: string; status?: InvitationStatus }) {
     const conditions = [];
     const q = input.q?.trim();
 

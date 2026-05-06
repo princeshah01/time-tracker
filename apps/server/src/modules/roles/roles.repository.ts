@@ -47,10 +47,7 @@ export class RolesRepository {
         .orderBy(asc(roles.id))
         .limit(limit)
         .offset(offset),
-      db
-        .select({ value: count() })
-        .from(roles)
-        .where(whereClause),
+      db.select({ value: count() }).from(roles).where(whereClause),
     ]);
 
     return {

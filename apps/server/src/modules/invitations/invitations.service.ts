@@ -303,9 +303,8 @@ export class InvitationsService {
   }
 
   async revokeInvitation(invitationId: number) {
-    const existing = await this.invitationsRepository.findInvitationById(
-      invitationId
-    );
+    const existing =
+      await this.invitationsRepository.findInvitationById(invitationId);
 
     if (!existing) {
       throw new AppError({
@@ -384,18 +383,19 @@ export class InvitationsService {
   }
 
   private async assertUsableInvitationId(invitationId: number) {
-    const invitation = await this.invitationsRepository.findInvitationById(
-      invitationId
-    );
+    const invitation =
+      await this.invitationsRepository.findInvitationById(invitationId);
 
     return this.assertUsableInvitation(invitation);
   }
 
-  private assertUsableInvitation<TInvitation extends {
-    acceptedAt: Date | null;
-    revokedAt: Date | null;
-    expiresAt: Date;
-  } | null>(invitation: TInvitation) {
+  private assertUsableInvitation<
+    TInvitation extends {
+      acceptedAt: Date | null;
+      revokedAt: Date | null;
+      expiresAt: Date;
+    } | null,
+  >(invitation: TInvitation) {
     if (!invitation) {
       throw new AppError({
         message: "Invitation not found",

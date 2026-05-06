@@ -143,9 +143,7 @@ export class RolesService {
     }
 
     await this.rolesRepository.updateRole(roleId, {
-      ...(input.name !== undefined
-        ? { name: normalizeName(input.name) }
-        : {}),
+      ...(input.name !== undefined ? { name: normalizeName(input.name) } : {}),
       ...(input.description !== undefined
         ? { description: input.description?.trim() || null }
         : {}),
@@ -208,22 +206,30 @@ export class RolesService {
     ]);
 
     const assigned = new Set(rolePermissionKeys);
-    const permissions: RolePermissionView[] = allPermissions.map((permission) => ({
-      name: permission.key,
-      include: assigned.has(permission.key),
-    }));
+    const permissions: RolePermissionView[] = allPermissions.map(
+      (permission) => ({
+        name: permission.key,
+        include: assigned.has(permission.key),
+      })
+    );
 
     return { permissions };
   }
 
   private async setRolePermissions(roleId: number, permissionKeys: string[]) {
-    const normalizedKeys = [...new Set(permissionKeys.map((key) => key.trim()))];
+    const normalizedKeys = [
+      ...new Set(permissionKeys.map((key) => key.trim())),
+    ];
     const permissionRecords =
       await this.rolesRepository.findPermissionsByKeys(normalizedKeys);
 
     if (permissionRecords.length !== normalizedKeys.length) {
-      const foundKeys = new Set(permissionRecords.map((permission) => permission.key));
-      const missingPermissions = normalizedKeys.filter((key) => !foundKeys.has(key));
+      const foundKeys = new Set(
+        permissionRecords.map((permission) => permission.key)
+      );
+      const missingPermissions = normalizedKeys.filter(
+        (key) => !foundKeys.has(key)
+      );
 
       throw new AppError({
         message: `Invalid permission keys: ${missingPermissions.join(", ")}`,

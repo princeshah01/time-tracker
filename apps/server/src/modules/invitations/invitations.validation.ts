@@ -18,9 +18,7 @@ export const listInvitationsSchema = z.object({
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(20),
     q: z.string().trim().optional().default(""),
-    status: z
-      .enum(["expired", "pending", "accepted", "revoked"])
-      .optional(),
+    status: z.enum(["expired", "pending", "accepted", "revoked"]).optional(),
   }),
   params: z.object({}),
 });
@@ -46,7 +44,10 @@ export const verifyInvitationOtpSchema = z.object({
   body: z
     .object({
       token: tokenSchema,
-      otp: z.string().trim().regex(/^\d{6}$/, "OTP must be 6 digits"),
+      otp: z
+        .string()
+        .trim()
+        .regex(/^\d{6}$/, "OTP must be 6 digits"),
     })
     .strict(),
   query: z.object({}),

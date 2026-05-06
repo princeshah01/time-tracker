@@ -25,7 +25,11 @@ rolesRouter.get(
 );
 rolesRouter.get("/:roleId", validate(roleIdParamSchema), rolesController.view);
 rolesRouter.post("/", validate(createRoleSchema), rolesController.create);
-rolesRouter.patch("/:roleId", validate(updateRoleSchema), rolesController.update);
+rolesRouter.patch(
+  "/:roleId",
+  validate(updateRoleSchema),
+  rolesController.update
+);
 rolesRouter.patch(
   "/:roleId/disable",
   validate(disableRoleSchema),

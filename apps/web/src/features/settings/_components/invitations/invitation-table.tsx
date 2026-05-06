@@ -14,6 +14,7 @@ import {
 } from "./invitation-filters";
 import { INVITATION_ROWS } from "./invitations.mock";
 import type { InvitationRow, InvitationStatus } from "./invitations.types";
+import { capitalize, formatTableDate } from "@/shared/lib";
 
 const statusClassName: Record<InvitationStatus, string> = {
   pending: "border-warning bg-warning/10 text-warning",
@@ -21,14 +22,6 @@ const statusClassName: Record<InvitationStatus, string> = {
   expired: "border-muted bg-muted text-muted-foreground",
   revoked: "border-destructive bg-destructive/10 text-destructive",
 };
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
 
 function InvitationTable() {
   const [search, setSearch] = useState("");
@@ -76,10 +69,13 @@ function InvitationTable() {
               className="block truncate font-medium"
               title={row.original.email}
             >
-              {row.original.email}
+              {capitalize(row.original.email)}
             </span>
-            <span className="block truncate text-[12px] text-muted-foreground">
-              {row.original.roleName}
+            <span
+              className="block truncate text-[12px] text-muted-foreground"
+              title={row.original.roleName}
+            >
+              {capitalize(row.original.roleName)}
             </span>
           </div>
         ),
@@ -87,18 +83,24 @@ function InvitationTable() {
       {
         accessorKey: "createdAt",
         header: "Created",
-        cell: ({ row }) => formatDate(row.original.createdAt),
+        cell: ({ row }) => formatTableDate(row.original.createdAt),
       },
       {
         accessorKey: "invitedBy",
         header: "Invited By",
         cell: ({ row }) => (
           <div className="min-w-0">
-            <span className="block truncate font-medium">
+            <span
+              className="block truncate font-medium"
+              title={row.original.invitedBy.name}
+            >
               {row.original.invitedBy.name}
             </span>
-            <span className="block truncate text-[12px] text-muted-foreground">
-              {row.original.invitedBy.email}
+            <span
+              className="block truncate text-[12px] text-muted-foreground"
+              title={row.original.invitedBy.email}
+            >
+              {capitalize(row.original.invitedBy.email)}
             </span>
           </div>
         ),
@@ -109,11 +111,15 @@ function InvitationTable() {
         cell: ({ row }) => (
           <Badge
             variant="outline"
-            className={cn("capitalize", statusClassName[row.original.status])}
+            className={cn(
+              "capitalize text-[10px]",
+              statusClassName[row.original.status]
+            )}
           >
             {row.original.status}
           </Badge>
         ),
+        size: 100,
       },
       {
         id: "actions",
@@ -137,6 +143,7 @@ function InvitationTable() {
             <AppIcon name="Trash2" className="h-3.5 w-3.5" />
           </Button>
         ),
+        size: 55,
       },
     ],
     []

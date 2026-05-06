@@ -26,7 +26,6 @@ import { InviteEmailCombobox } from "./invite-email-combobox";
 import { INVITATION_EMAIL_SUGGESTIONS } from "./invitations.mock";
 import type { InvitationRoleOption } from "./invitations.types";
 
-
 // ✅ Schema
 const inviteSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -66,17 +65,16 @@ export function InviteCompose({ roles }: InviteComposeProps) {
             render={({ field }) => (
               <FormItem className="min-w-0 flex-1">
                 <div className="relative flex flex-col gap-1">
+                  <FormLabel className="text-[12px]">Email</FormLabel>
 
-                <FormLabel className="text-[12px]">Email</FormLabel>
-
-                <FormControl>
-                  <InviteEmailCombobox
-                    value={field.value}
-                    suggestions={INVITATION_EMAIL_SUGGESTIONS}
-                    onChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage className="absolute -bottom-5 text-xs text-nowrap" />
+                  <FormControl>
+                    <InviteEmailCombobox
+                      value={field.value}
+                      suggestions={INVITATION_EMAIL_SUGGESTIONS}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage className="absolute -bottom-5 text-xs text-nowrap" />
                 </div>
               </FormItem>
             )}
@@ -88,30 +86,26 @@ export function InviteCompose({ roles }: InviteComposeProps) {
             name="roleId"
             render={({ field }) => (
               <FormItem className="lg:w-56">
-                                <div className="relative flex flex-col gap-1">
+                <div className="relative flex flex-col gap-1">
+                  <FormLabel className="text-[12px]">Role</FormLabel>
 
-                <FormLabel className="text-[12px]">Role</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="h-8 text-[12px] leading-none">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
 
-                <FormControl>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className="h-8 text-[12px] leading-none">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
+                      <SelectContent>
+                        {roles.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
 
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-
-                <FormMessage className="absolute -bottom-5 text-xs text-nowrap" />
+                  <FormMessage className="absolute -bottom-5 text-xs text-nowrap" />
                 </div>
               </FormItem>
             )}

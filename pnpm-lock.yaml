@@ -225,6 +225,9 @@ importers:
       better-auth:
         specifier: 'catalog:'
         version: 1.6.9(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@types/pg@8.20.0)(kysely@0.28.16)(pg@8.20.0)(postgres@3.4.9))(next@16.2.4(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(pg@8.20.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      date-fns:
+        specifier: 'catalog:'
+        version: 4.1.0
       lodash.debounce:
         specifier: ^4.0.8
         version: 4.0.8

@@ -38,7 +38,7 @@ type DataTableProps<TData> = {
    * Style Table container
    */
 
-  containerClassName?: string; 
+  containerClassName?: string;
   onRowClick?: (row: TData) => void;
   onRowContextMenu?: (event: React.MouseEvent, row: TData) => void;
 };
@@ -130,15 +130,31 @@ export function DataTable<TData>({
     <div className="rounded-md border overflow-clip">
       <div
         ref={containerRef}
-        className={cn("relative h-[calc(100vh-207px)] overflow-auto no-scrollbar mask-b-from-0% mask-b-to-220%", containerClassName)}
+        className={cn(
+          "relative h-[calc(100vh-207px)] overflow-auto  mask-b-from-0% mask-b-to-220%",
+          containerClassName
+        )}
         onScroll={handleScroll}
       >
-        <Table className="w-full table-fixed">
+        <Table
+          className="w-full table-fixed"
+          style={{
+            minWidth: table.getTotalSize(),
+          }}
+        >
           <TableHeader className="sticky top-0 z-50 bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="bg-muted/40">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="px-3 text-[12px]">
+                  <TableHead
+                    key={header.id}
+                    className="px-3 text-[12px]"
+                    style={{
+                      width: header.getSize(),
+                      minWidth: header.getSize(),
+                      maxWidth: header.getSize(),
+                    }}
+                  >
                     {flexRender(
                       header.column.columnDef.header,
                       header.getContext()
@@ -167,7 +183,15 @@ export function DataTable<TData>({
                   }}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-3 py-2 text-sm">
+                    <TableCell
+                      key={cell.id}
+                      className="px-3 py-2 text-sm"
+                      style={{
+                        width: cell.column.getSize(),
+                        minWidth: cell.column.getSize(),
+                        maxWidth: cell.column.getSize(),
+                      }}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

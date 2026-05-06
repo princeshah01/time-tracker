@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { toast } from "@workspace/ui/components/sonner"; 
+import { toast } from "@workspace/ui/components/sonner";
 import { Input } from "@workspace/ui/components/input";
 
 type InviteEmailComboboxProps = {
@@ -54,7 +54,9 @@ function InviteEmailCombobox({
                 className="flex h-8 w-full items-center rounded-sm px-2 text-left text-[12px] hover:bg-accent hover:text-accent-foreground"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
-                  toast.error("User not found. Please enter a valid email address.");
+                  toast.error(
+                    "User not found. Please enter a valid email address."
+                  );
                   setIsOpen(false);
                 }}
               >

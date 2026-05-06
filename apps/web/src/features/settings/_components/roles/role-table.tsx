@@ -1,5 +1,9 @@
 import { use, useEffect, useMemo, useState } from "react";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import debounce from "lodash.debounce";
 
@@ -66,7 +70,7 @@ const RoleTable = () => {
   }, [search, debouncedFn]);
 
   const [rowLimit, setRowLimit] = useState(0);
-  
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RoleListItem | null>(null);
 
@@ -132,7 +136,10 @@ const RoleTable = () => {
         accessorKey: "name",
         header: "Role Name",
         cell: ({ row }) => (
-          <span className="block truncate font-medium" title={row.original.name}>
+          <span
+            className="block truncate font-medium"
+            title={row.original.name}
+          >
             {row.original.name}
           </span>
         ),
@@ -160,24 +167,24 @@ const RoleTable = () => {
           const role = row.original;
 
           return (
-        <Button
-        variant="outline"
-        size="sm"
-        className={cn(
-          "h-5 w-10 rounded-md text-[10px] transition-colors",
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-5 w-10 rounded-md text-[10px] transition-colors",
 
-          role.isActive
-            ? "border-success bg-success/10 text-success hover:bg-success/20 hover:text-success"
-            : "border-muted bg-muted text-muted-foreground hover:bg-muted/80 hover:text-muted-foreground"
-        )}
-        disabled={role.isDefault || toggleRoleStatusMutation.isPending}
-        onClick={(event) => {
-          event.stopPropagation();
-          toggleRoleStatusMutation.mutate(role);
-        }}
-      >
-        {role.isActive ? "Active" : "Inactive"}
-      </Button>
+                role.isActive
+                  ? "border-success bg-success/10 text-success hover:bg-success/20 hover:text-success"
+                  : "border-muted bg-muted text-muted-foreground hover:bg-muted/80 hover:text-muted-foreground"
+              )}
+              disabled={role.isDefault || toggleRoleStatusMutation.isPending}
+              onClick={(event) => {
+                event.stopPropagation();
+                toggleRoleStatusMutation.mutate(role);
+              }}
+            >
+              {role.isActive ? "Active" : "Inactive"}
+            </Button>
           );
         },
       },
@@ -205,10 +212,7 @@ const RoleTable = () => {
     setDialogOpen(true);
   }
 
-  function handleRowContextMenu(
-    event: React.MouseEvent,
-    role: RoleListItem
-  ) {
+  function handleRowContextMenu(event: React.MouseEvent, role: RoleListItem) {
     event.preventDefault();
     setMenuState({
       x: event.clientX,
@@ -216,14 +220,22 @@ const RoleTable = () => {
       row: role,
     });
   }
-  console.log("render", { search, debouncedSearch, rolesQuery: rolesQuery.status });
+  console.log("render", {
+    search,
+    debouncedSearch,
+    rolesQuery: rolesQuery.status,
+  });
 
   return (
     <div className="space-y-4 border-t p-4" onClick={() => setMenuState(null)}>
       <div className="flex items-center justify-between gap-3">
         <RoleTableFilter search={search} onSearchChange={setSearch} />
 
-        <Button size="sm" className="h-8 gap-1.5 text-[12px]" onClick={openCreate}>
+        <Button
+          size="sm"
+          className="h-8 gap-1.5 text-[12px]"
+          onClick={openCreate}
+        >
           <AppIcon name="Plus" className="h-3.5 w-3.5" />
           Add Role
         </Button>

@@ -6,7 +6,6 @@ import { InvitationTable } from "./invitation-table";
 import { INVITATION_ROLE_OPTIONS } from "./invitations.mock";
 
 const InvitationSectionContent = () => {
-
   // TODO fetch Roles we can invite
 
   return (
