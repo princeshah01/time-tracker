@@ -1,30 +1,84 @@
-import { useMemo, useState } from "react";
-import { toast } from "@workspace/ui/components/sonner";
+import { useEffect, useMemo, useState } from "react";
+import debounce from "lodash.debounce";
+import { useQuery } from "@tanstack/react-query";
+
 import { Input } from "@workspace/ui/components/input";
+import { Skeleton } from "@workspace/ui/components/skeleton";
+import {
+  userManageService,
+  type UserSearchResponse,
+} from "@/features/users-mange";
+import { EmptyState } from "@/shared/components/empty-container";
+import { toast } from "@workspace/ui/components/sonner";
+import { QUERY_KEYS } from "@/shared/constants";
 
 type InviteEmailComboboxProps = {
   value: string;
-  suggestions: string[];
   onChange: (value: string) => void;
 };
 
-function InviteEmailCombobox({
-  value,
-  suggestions,
-  onChange,
-}: InviteEmailComboboxProps) {
+function SuggestionSkeleton() {
+  return (
+    <div className="space-y-1 rounded-sm px-2 py-1.5">
+      <Skeleton className="h-3.5 w-4/5" />
+      <Skeleton className="h-3 w-3/5" />
+    </div>
+  );
+}
+
+function InviteEmailCombobox({ value, onChange }: InviteEmailComboboxProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const matchingSuggestions = useMemo(() => {
-    const query = value.trim().toLowerCase();
+  const [search, setSearch] = useState("");
 
-    if (!query) {
-      return suggestions.slice(0, 5);
+  const debouncedSetSearch = useMemo(
+    () =>
+      debounce((query: string) => {
+        setSearch(query.trim());
+      }, 400),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSetSearch(value);
+
+    return () => {
+      debouncedSetSearch.cancel();
+    };
+  }, [value, debouncedSetSearch]);
+
+  const {
+    data: suggestions = [],
+    isFetching,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: [QUERY_KEYS.INVITE_USER_SUGGESTIONS, search],
+    queryFn: async () => {
+      const result = await userManageService.searchUsers({
+        q: search,
+        type: "invite",
+        excludeSelf: false,
+        limit: 5,
+      });
+
+      return result?.data?.suggestedUsers;
+    },
+    enabled: isOpen && search.length > 0,
+    staleTime: 1000 * 60,
+  });
+
+  const globalLoading = isLoading || isFetching;
+
+  function handleSelectSuggestion(
+    user: UserSearchResponse["suggestedUsers"][number]
+  ) {
+    if (!user.canSendInvite) {
+      toast.error("User already has access.");
+      return;
     }
-
-    return suggestions
-      .filter((email) => email.toLowerCase().includes(query))
-      .slice(0, 5);
-  }, [suggestions, value]);
+    onChange(user.email);
+    setIsOpen(false);
+  }
 
   return (
     <div className="relative min-w-0 flex-1">
@@ -46,27 +100,41 @@ function InviteEmailCombobox({
 
       {isOpen && value.trim() ? (
         <div className="absolute top-full z-20 mt-1 max-h-52 w-full overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-          {matchingSuggestions.length > 0 ? (
-            matchingSuggestions.map((email) => (
+          {globalLoading ? (
+            <div className="space-y-1">
+              <SuggestionSkeleton />
+              <SuggestionSkeleton />
+            </div>
+          ) : isError ? (
+            <EmptyState
+              size="sm"
+              text="Failed to fetch users"
+              containerClassName="min-h-24"
+            />
+          ) : suggestions.length > 0 ? (
+            suggestions.map((user) => (
               <button
-                key={email}
+                key={user.email}
                 type="button"
-                className="flex h-8 w-full items-center rounded-sm px-2 text-left text-[12px] hover:bg-accent hover:text-accent-foreground"
+                className="flex w-full flex-col items-start rounded-sm px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() => {
-                  toast.error(
-                    "User not found. Please enter a valid email address."
-                  );
-                  setIsOpen(false);
-                }}
+                onClick={() => handleSelectSuggestion(user)}
               >
-                <span className="truncate">{email}</span>
+                <span className="max-w-full truncate text-[12px] font-medium">
+                  {user.email}
+                </span>
+
+                <span className="max-w-full truncate text-[11px] text-muted-foreground">
+                  {user.name} {user.role ? `• ${user.role}` : ""}
+                </span>
               </button>
             ))
           ) : (
-            <div className="px-2 py-2 text-[12px] text-muted-foreground">
-              No result found
-            </div>
+            <EmptyState
+              size="sm"
+              text="No users found"
+              containerClassName="min-h-24"
+            />
           )}
         </div>
       ) : null}

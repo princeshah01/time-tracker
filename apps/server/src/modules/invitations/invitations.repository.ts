@@ -13,12 +13,16 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/db";
 import { account, roles, user, userInvites, userRoles } from "@/db/schema";
 import type { InvitationStatus } from "./invitations.types";
 
 export type InvitationRecord = typeof userInvites.$inferSelect;
+
+const invitedByUserRoles = alias(userRoles, "invited_by_user_roles");
+const invitedByRoles = alias(roles, "invited_by_roles");
 
 export class InvitationsRepository {
   async createInvitation(input: {
@@ -29,6 +33,44 @@ export class InvitationsRepository {
     expiresAt: Date;
   }) {
     const [invitation] = await db.insert(userInvites).values(input).returning();
+
+    return invitation ?? null;
+  }
+
+  async refreshPendingInvitation(
+    invitationId: number,
+    input: {
+      roleId: number;
+      tokenHash: string;
+      invitedBy: string;
+      expiresAt: Date;
+      createdAt: Date;
+    }
+  ) {
+    const [invitation] = await db
+      .update(userInvites)
+      .set({
+        roleId: input.roleId,
+        tokenHash: input.tokenHash,
+        invitedBy: input.invitedBy,
+        expiresAt: input.expiresAt,
+        otpHash: null,
+        otpExpiresAt: null,
+        otpSentAt: null,
+        otpAttempts: 0,
+        otpVerifiedAt: null,
+        createdAt: input.createdAt,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(userInvites.id, invitationId),
+          isNull(userInvites.acceptedAt),
+          isNull(userInvites.revokedAt),
+          gt(userInvites.expiresAt, new Date())
+        )
+      )
+      .returning();
 
     return invitation ?? null;
   }
@@ -161,11 +203,17 @@ export class InvitationsRepository {
             id: user.id,
             name: user.name,
             email: user.email,
+            role: invitedByRoles.name,
           },
         })
         .from(userInvites)
         .innerJoin(roles, eq(userInvites.roleId, roles.id))
         .leftJoin(user, eq(userInvites.invitedBy, user.id))
+        .leftJoin(invitedByUserRoles, eq(invitedByUserRoles.userId, user.id))
+        .leftJoin(
+          invitedByRoles,
+          eq(invitedByUserRoles.roleId, invitedByRoles.id)
+        )
         .where(whereClause)
         .orderBy(desc(userInvites.createdAt), asc(userInvites.id))
         .limit(limit)
@@ -175,6 +223,11 @@ export class InvitationsRepository {
         .from(userInvites)
         .innerJoin(roles, eq(userInvites.roleId, roles.id))
         .leftJoin(user, eq(userInvites.invitedBy, user.id))
+        .leftJoin(invitedByUserRoles, eq(invitedByUserRoles.userId, user.id))
+        .leftJoin(
+          invitedByRoles,
+          eq(invitedByUserRoles.roleId, invitedByRoles.id)
+        )
         .where(whereClause),
     ]);
 
@@ -320,7 +373,8 @@ export class InvitationsRepository {
           ilike(userInvites.email, `%${q}%`),
           ilike(roles.name, `%${q}%`),
           ilike(user.name, `%${q}%`),
-          ilike(user.email, `%${q}%`)
+          ilike(user.email, `%${q}%`),
+          ilike(invitedByRoles.name, `%${q}%`)
         )
       );
     }

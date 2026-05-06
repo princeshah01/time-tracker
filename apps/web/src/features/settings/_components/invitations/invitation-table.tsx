@@ -1,5 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
+import debounce from "lodash.debounce";
 
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
@@ -12,8 +18,12 @@ import {
   InvitationFilters,
   type InvitationStatusFilter,
 } from "./invitation-filters";
-import { INVITATION_ROWS } from "./invitations.mock";
-import type { InvitationRow, InvitationStatus } from "./invitations.types";
+import { QUERY_KEYS } from "@/shared/constants";
+import { settingsService } from "@/features/settings";
+import type {
+  InvitationListItem,
+  InvitationStatus,
+} from "@/features/settings/settings.type";
 import { capitalize, formatTableDate } from "@/shared/lib";
 
 const statusClassName: Record<InvitationStatus, string> = {
@@ -24,41 +34,89 @@ const statusClassName: Record<InvitationStatus, string> = {
 };
 
 function InvitationTable() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState<InvitationStatusFilter>("all");
-  const [invitations, setInvitations] =
-    useState<InvitationRow[]>(INVITATION_ROWS);
+  const [rowLimit, setRowLimit] = useState(0);
 
-  const filteredInvitations = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const debouncedFn = useMemo(
+    () =>
+      debounce((value: string) => {
+        setDebouncedSearch(value);
+      }, 500),
+    []
+  );
 
-    return invitations.filter((invitation) => {
-      const matchesStatus = status === "all" || invitation.status === status;
-      const matchesSearch =
-        !query ||
-        invitation.email.toLowerCase().includes(query) ||
-        invitation.invitedBy.name.toLowerCase().includes(query) ||
-        invitation.invitedBy.email.toLowerCase().includes(query);
+  useEffect(() => {
+    debouncedFn(search.trim());
 
-      return matchesStatus && matchesSearch;
-    });
-  }, [invitations, search, status]);
+    return () => {
+      debouncedFn.cancel();
+    };
+  }, [search, debouncedFn]);
 
-  function revokeInvitation(invitation: InvitationRow) {
+  const invitationsQuery = useInfiniteQuery({
+    queryKey: [QUERY_KEYS.INVITATIONS, debouncedSearch, status, rowLimit],
+    enabled: Boolean(rowLimit),
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const response = await settingsService.listInvitations({
+        page: pageParam,
+        limit: rowLimit,
+        q: debouncedSearch,
+        status: status === "all" ? undefined : status,
+      });
+
+      if (!response.success || !response.data) {
+        throw new Error(response.message || "Failed to fetch invitations");
+      }
+
+      return response.data;
+    },
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasNextPage ? lastPage.page + 1 : undefined;
+    },
+  });
+
+  const revokeInvitationMutation = useMutation({
+    mutationFn: async (invitation: InvitationListItem) => {
+      const response = await settingsService.revokeInvitation(invitation.id);
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to revoke invitation");
+      }
+
+      return response;
+    },
+    onSuccess: (response) => {
+      toast.success(response.message || "Invitation revoked successfully");
+      void queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.INVITATIONS],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.INVITE_USER_SUGGESTIONS],
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const invitations = useMemo(() => {
+    return invitationsQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  }, [invitationsQuery.data]);
+
+  function revokeInvitation(invitation: InvitationListItem) {
     if (invitation.status === "accepted") {
       toast.error("Accepted invitations cannot be revoked.");
       return;
     }
 
-    setInvitations((current) =>
-      current.map((row) =>
-        row.id === invitation.id ? { ...row, status: "revoked" } : row
-      )
-    );
-    toast.success("Invitation marked as revoked.");
+    revokeInvitationMutation.mutate(invitation);
   }
 
-  const columns = useMemo<ColumnDef<InvitationRow>[]>(
+  const columns = useMemo<ColumnDef<InvitationListItem>[]>(
     () => [
       {
         accessorKey: "email",
@@ -73,9 +131,9 @@ function InvitationTable() {
             </span>
             <span
               className="block truncate text-[12px] text-muted-foreground"
-              title={row.original.roleName}
+              title={row.original.role.name}
             >
-              {capitalize(row.original.roleName)}
+              {capitalize(row.original.role.name)}
             </span>
           </div>
         ),
@@ -92,15 +150,17 @@ function InvitationTable() {
           <div className="min-w-0">
             <span
               className="block truncate font-medium"
-              title={row.original.invitedBy.name}
+              title={row.original.invitedBy.name ?? "Unknown"}
             >
-              {row.original.invitedBy.name}
+              {row.original.invitedBy.name ?? "Unknown"}
             </span>
             <span
               className="block truncate text-[12px] text-muted-foreground"
-              title={row.original.invitedBy.email}
+              title={row.original.invitedBy.email ?? "-"}
             >
-              {capitalize(row.original.invitedBy.email)}
+              {row.original.invitedBy.email
+                ? capitalize(row.original.invitedBy.email)
+                : "-"}
             </span>
           </div>
         ),
@@ -112,7 +172,7 @@ function InvitationTable() {
           <Badge
             variant="outline"
             className={cn(
-              "capitalize text-[10px]",
+              "capitalize text-[8px] rounded-md",
               statusClassName[row.original.status]
             )}
           >
@@ -132,7 +192,8 @@ function InvitationTable() {
             className="h-8 w-8 text-muted-foreground hover:text-destructive"
             disabled={
               row.original.status === "accepted" ||
-              row.original.status === "revoked"
+              row.original.status === "revoked" ||
+              revokeInvitationMutation.isPending
             }
             onClick={(event) => {
               event.stopPropagation();
@@ -146,7 +207,7 @@ function InvitationTable() {
         size: 55,
       },
     ],
-    []
+    [revokeInvitationMutation.isPending]
   );
 
   return (
@@ -159,9 +220,14 @@ function InvitationTable() {
       />
 
       <DataTable
-        data={filteredInvitations}
+        data={invitations}
         columns={columns}
-        getRowId={(row) => row.id}
+        getRowId={(row) => String(row.id)}
+        isLoading={invitationsQuery.isLoading}
+        hasNextPage={invitationsQuery.hasNextPage}
+        isFetchingNextPage={invitationsQuery.isFetchingNextPage}
+        fetchNextPage={invitationsQuery.fetchNextPage}
+        setRowLimit={setRowLimit}
         emptyText="No invitations found"
         containerClassName="h-[calc(100vh-320px)] min-h-72"
       />

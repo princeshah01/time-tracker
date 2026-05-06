@@ -8,7 +8,7 @@ import {
 } from "@workspace/ui/components/select";
 
 import { AppIcon } from "@/shared/components/app-icon";
-import type { InvitationStatus } from "./invitations.types";
+import type { InvitationStatus } from "@/features/settings/settings.type";
 
 export type InvitationStatusFilter = InvitationStatus | "all";
 

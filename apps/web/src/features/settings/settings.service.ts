@@ -3,6 +3,10 @@ import type {
   ListRolesResponse,
   RoleView,
   RolePermission,
+  AssignableRoleResponse,
+  InvitationStatus,
+  ListInvitationsResponse,
+  SendInvitationResponse,
 } from "./settings.type";
 
 export const settingsService = {
@@ -17,7 +21,12 @@ export const settingsService = {
       },
     });
   },
-
+  listAssignableRoles() {
+    return apiFetch<AssignableRoleResponse>({
+      method: "GET",
+      url: "/roles/assignable",
+    });
+  },
   viewRole(roleId: number) {
     return apiFetch<RoleView>({
       method: "GET",
@@ -64,6 +73,39 @@ export const settingsService = {
     return apiFetch({
       method: "PATCH",
       url: `/roles/${roleId}/disable`,
+    });
+  },
+
+  sendInvite(input: { email: string; roleId: number }) {
+    return apiFetch<SendInvitationResponse>({
+      method: "POST",
+      url: "/invitations",
+      data: input,
+    });
+  },
+
+  listInvitations(input: {
+    page: number;
+    limit: number;
+    q?: string;
+    status?: InvitationStatus;
+  }) {
+    return apiFetch<ListInvitationsResponse>({
+      method: "GET",
+      url: "/invitations",
+      params: {
+        page: input.page,
+        limit: input.limit,
+        q: input.q ?? "",
+        ...(input.status ? { status: input.status } : {}),
+      },
+    });
+  },
+
+  revokeInvitation(invitationId: number) {
+    return apiFetch({
+      method: "PATCH",
+      url: `/invitations/${invitationId}/revoke`,
     });
   },
 };

@@ -32,7 +32,7 @@ export const permissionKeys = {
 } as const;
 
 export const roleNames = {
-  admin: "admin",
+  admin: "system-admin",
   manager: "manager",
   teamLead: "teamlead",
   developer: "developer",

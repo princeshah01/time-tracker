@@ -2,6 +2,7 @@ import { and, asc, count, eq, ilike, inArray, not, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { permissions, rolePermissions, roles, userRoles } from "@/db/schema";
+import { roleNames } from "@/shared/constants/role-permission";
 
 export class RolesRepository {
   async findActiveRoleByName(name: string, excludeRoleId?: number) {
@@ -24,6 +25,17 @@ export class RolesRepository {
 
   async listRoles() {
     return db.select().from(roles).orderBy(asc(roles.id));
+  }
+
+  async listAssignableRoles() {
+    return db
+      .select({
+        label: roles.name,
+        value: roles.id,
+      })
+      .from(roles)
+      .where(and(eq(roles.isActive, true), not(eq(roles.name, roleNames.admin))))
+      .orderBy(asc(roles.name));
   }
 
   async listRolesPaginated(input: { page: number; limit: number; q?: string }) {

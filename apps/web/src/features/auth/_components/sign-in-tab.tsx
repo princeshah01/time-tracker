@@ -54,7 +54,7 @@ function SignInTab({
         email: values.email,
         password: values.password,
       });
-      console.log({ result });
+      console.log({result})
       if (result.error) {
         if (result.error.code === "EMAIL_NOT_VERIFIED") {
           handleStepChange("email-verification", { email: values.email });
@@ -63,6 +63,7 @@ function SignInTab({
           );
           return;
         }
+        throw new Error(result.error.message);
       }
       if ((result.data as any)?.twoFactorRedirect) {
         // TODO: will implemet later once profile section done.

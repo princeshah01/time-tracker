@@ -10,6 +10,7 @@ import { signJWT, verifyJWT } from "better-auth/crypto";
 import { env } from "@/config";
 import { addAuthOtpEmailJob, addInviteEmailJob } from "@/infrastructure/queue";
 import { permissionsService } from "@/modules/permissions/permissions.service";
+import { roleNames } from "@/shared/constants/role-permission";
 import { AppError } from "@/shared/utils";
 import { InvitationsRepository } from "./invitations.repository";
 import type {
@@ -84,31 +85,43 @@ export class InvitationsService {
       });
     }
 
-    const activeInvitation =
-      await this.invitationsRepository.findActiveInvitationByEmail(email);
-
-    if (activeInvitation) {
+    if (roleRecord.name === roleNames.admin) {
       throw new AppError({
-        message: "A pending invitation already exists for this email",
-        code: "CONFLICT",
+        message: "System admin role cannot be assigned by invitation",
+        code: "FORBIDDEN",
       });
     }
 
+    const activeInvitation =
+      await this.invitationsRepository.findActiveInvitationByEmail(email);
+
     const token = createInvitationToken();
-    const expiresAt = new Date();
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt);
     expiresAt.setDate(expiresAt.getDate() + INVITATION_EXPIRY_DAYS);
 
-    const invitation = await this.invitationsRepository.createInvitation({
-      email,
-      roleId: input.roleId,
-      tokenHash: hashValue(token),
-      invitedBy: input.invitedBy,
-      expiresAt,
-    });
+    const invitation = activeInvitation
+      ? await this.invitationsRepository.refreshPendingInvitation(
+          activeInvitation.id,
+          {
+            roleId: input.roleId,
+            tokenHash: hashValue(token),
+            invitedBy: input.invitedBy,
+            expiresAt,
+            createdAt,
+          }
+        )
+      : await this.invitationsRepository.createInvitation({
+          email,
+          roleId: input.roleId,
+          tokenHash: hashValue(token),
+          invitedBy: input.invitedBy,
+          expiresAt,
+        });
 
     if (!invitation) {
       throw new AppError({
-        message: "Failed to create invitation",
+        message: "Failed to save invitation",
         code: "INTERNAL_SERVER_ERROR",
         isOperational: false,
       });

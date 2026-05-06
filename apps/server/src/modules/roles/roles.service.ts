@@ -35,6 +35,12 @@ export class RolesService {
     };
   }
 
+  async listAssignableRoles() {
+    const assignableRoles = await this.rolesRepository.listAssignableRoles();
+
+    return { assignableRoles };
+  }
+
   async viewRole(roleId: number) {
     const role = await this.rolesRepository.findRoleById(roleId);
 

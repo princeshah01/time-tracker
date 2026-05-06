@@ -1,7 +1,6 @@
 import { Router } from "express";
 
-import { permissionKeys } from "@/shared/constants/role-permission";
-import { requireAuth, requirePermission, validate } from "@/shared/middlewares";
+import { requireAuth, validate } from "@/shared/middlewares";
 import { rolesController } from "./roles.controllers";
 import {
   createRoleSchema,
@@ -15,9 +14,12 @@ import {
 const rolesRouter = Router();
 
 rolesRouter.use(requireAuth);
-// rolesRouter.use(requirePermission(permissionKeys.roleManage));
 
 rolesRouter.get("/", validate(listRolesSchema), rolesController.list);
+rolesRouter.get(
+  "/assignable",
+  rolesController.listAssignable
+);
 rolesRouter.get(
   "/permissions",
   validate(listRolePermissionsSchema),

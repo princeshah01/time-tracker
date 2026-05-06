@@ -25,6 +25,16 @@ export class RolesController {
     });
   }
 
+  async listAssignable(_req: Request, res: Response) {
+    const assignableRoles = await rolesService.listAssignableRoles();
+
+    return sendSuccess({
+      res,
+      data: assignableRoles,
+      message: "Assignable roles fetched successfully",
+    });
+  }
+
   async view(req: Request, res: Response) {
     const { params } = (req as ValidatedRequest<typeof roleIdParamSchema>)
       .validated;
