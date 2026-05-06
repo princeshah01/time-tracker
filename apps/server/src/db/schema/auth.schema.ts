@@ -17,6 +17,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  isActive: boolean("is_active").default(true).notNull(),
   twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -174,6 +175,27 @@ export const userRoles = pgTable(
   ]
 );
 
+export const userSkills = pgTable(
+  "user_skills",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("user_skills_user_id_name_unique").on(table.userId, table.name),
+    index("user_skills_user_id_idx").on(table.userId),
+    index("user_skills_name_idx").on(table.name),
+  ]
+);
+
 export const userInvites = pgTable(
   "user_invites",
   {
@@ -211,6 +233,7 @@ export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
   userRoles: many(userRoles),
+  skills: many(userSkills),
   invitesSent: many(userInvites),
 }));
 
@@ -267,6 +290,13 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
   role: one(roles, {
     fields: [userRoles.roleId],
     references: [roles.id],
+  }),
+}));
+
+export const userSkillsRelations = relations(userSkills, ({ one }) => ({
+  user: one(user, {
+    fields: [userSkills.userId],
+    references: [user.id],
   }),
 }));
 

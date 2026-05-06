@@ -1,7 +1,10 @@
 export type SuggestedUser = {
+  id?: string;
   name: string;
   email: string;
   role: string | null;
+  image?: string | null;
+  skills?: string[];
   canSendInvite: boolean;
 };
 
@@ -15,6 +18,7 @@ export type OnboardedUserSearchRecord = {
   name: string;
   email: string;
   role: string | null;
+  image: string | null;
 };
 
 export type InvitedUserSearchRecord = {
@@ -24,4 +28,13 @@ export type InvitedUserSearchRecord = {
   acceptedAt: Date | null;
   revokedAt: Date | null;
   expiresAt: Date;
+};
+
+export type SkillUserSearchRecord = {
+  id: string;
+  name: string;
+  email: string;
+  role: string | null;
+  image: string | null;
+  skill: string;
 };

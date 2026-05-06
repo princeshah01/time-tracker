@@ -1,8 +1,10 @@
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { emailOTP } from "better-auth/plugins/email-otp";
 import { genericOAuth } from "better-auth/plugins/generic-oauth";
 import { twoFactor } from "better-auth/plugins/two-factor";
+import { eq } from "drizzle-orm";
 
 import {
   addAuthOtpEmailJob,
@@ -13,6 +15,7 @@ import { permissionsService } from "@/modules/permissions/permissions.service";
 
 import { env } from "@/config";
 import { db } from "@/db";
+import { user } from "@/db/schema";
 
 type MicrosoftProfile = {
   sub?: string;
@@ -153,11 +156,52 @@ export const auth = betterAuth({
     sendOnSignIn: true,
     autoSignInAfterVerification: true,
   },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/sign-in/email") return;
+
+      const email = (ctx.body as { email?: string } | undefined)?.email
+        ?.trim()
+        .toLowerCase();
+
+      if (!email) return;
+
+      const [record] = await db
+        .select({ isActive: user.isActive })
+        .from(user)
+        .where(eq(user.email, email))
+        .limit(1);
+
+      if (record && !record.isActive) {
+        throw new APIError("FORBIDDEN", {
+          message: "Your account is inactive. Please contact an administrator.",
+        });
+      }
+    }),
+  },
   databaseHooks: {
     user: {
       create: {
         async after(user) {
           await permissionsService.attachDefaultRole(user.id);
+        },
+      },
+    },
+    session: {
+      create: {
+        async before(session) {
+          const [record] = await db
+            .select({ isActive: user.isActive })
+            .from(user)
+            .where(eq(user.id, session.userId))
+            .limit(1);
+
+          if (record && !record.isActive) {
+            throw new APIError("FORBIDDEN", {
+              message:
+                "Your account is inactive. Please contact an administrator.",
+            });
+          }
         },
       },
     },

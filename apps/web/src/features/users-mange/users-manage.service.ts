@@ -1,16 +1,72 @@
 import { apiFetch } from "@/shared/lib";
-import type { UserSearchRequestBody, UserSearchResponse } from "./users-manage.types";
-
+import type {
+  ListUsersResponse,
+  UpdateUserInput,
+  UserListItem,
+  UserSearchRequestBody,
+  UserSearchResponse,
+  UserStatusFilter,
+} from "./users-manage.types";
 
 const userManageService = {
-    searchUsers: async (body: UserSearchRequestBody) => {
-        const response = await apiFetch<UserSearchResponse>({
-            url: "/users/search",
-            method: "POST",  
-            data: body,
-        });
-        return response;
-    }
+  listUsers: async (input: {
+    page: number;
+    limit: number;
+    q?: string;
+    status?: UserStatusFilter;
+    role?: string;
+  }) => {
+    return apiFetch<ListUsersResponse>({
+      url: "/users",
+      method: "GET",
+      params: {
+        page: input.page,
+        limit: input.limit,
+        q: input.q ?? "",
+        ...(input.status ? { status: input.status } : {}),
+        ...(input.role ? { role: input.role } : {}),
+      },
+    });
+  },
+
+  viewUser: async (userId: string) => {
+    return apiFetch<UserListItem>({
+      url: `/users/${userId}`,
+      method: "GET",
+    });
+  },
+
+  updateUser: async (userId: string, data: UpdateUserInput) => {
+    return apiFetch<UserListItem>({
+      url: `/users/${userId}`,
+      method: "PATCH",
+      data,
+    });
+  },
+
+  sendPasswordReset: async (userId: string) => {
+    return apiFetch<{ email: string; sent: boolean }>({
+      url: `/users/${userId}/reset-password`,
+      method: "POST",
+    });
+  },
+
+  updateMySkills: async (skills: string[]) => {
+    return apiFetch<UserListItem>({
+      url: "/users/me/skills",
+      method: "PATCH",
+      data: { skills },
+    });
+  },
+
+  searchUsers: async (body: UserSearchRequestBody) => {
+    const response = await apiFetch<UserSearchResponse>({
+      url: "/users/search",
+      method: "POST",
+      data: body,
+    });
+    return response;
+  },
 };
 
 export { userManageService };

@@ -1,5 +1,6 @@
 const permissions = {
   userInvite: "users:invite",
+  userManage: "users:manage",
   userAdd: "users:invite",
   userEdit: "user:edit",
   userStatusChange: "user:status-change",

@@ -4,9 +4,27 @@ import type { ValidatedRequest } from "@/shared/middlewares";
 import { requireRouteUser } from "@/shared/session";
 import { sendSuccess } from "@/shared/utils";
 import { usersService } from "./users.service";
-import type { searchUsersSchema } from "./users.validation";
+import type {
+  listUsersSchema,
+  searchUsersSchema,
+  updateMySkillsSchema,
+  updateUserSchema,
+  userIdParamSchema,
+} from "./users.validation";
 
 export class UsersController {
+  async list(req: Request, res: Response) {
+    const { query } = (req as ValidatedRequest<typeof listUsersSchema>)
+      .validated;
+    const result = await usersService.listUsers(query);
+
+    return sendSuccess({
+      res,
+      data: result,
+      message: "Users fetched successfully",
+    });
+  }
+
   async search(req: Request, res: Response) {
     const { validated } = req as ValidatedRequest<typeof searchUsersSchema>;
     const user = requireRouteUser(req);
@@ -20,6 +38,55 @@ export class UsersController {
       res,
       data: result,
       message: "User suggestions fetched successfully",
+    });
+  }
+
+  async view(req: Request, res: Response) {
+    const { params } = (req as ValidatedRequest<typeof userIdParamSchema>)
+      .validated;
+    const result = await usersService.viewUser(params.userId);
+
+    return sendSuccess({
+      res,
+      data: result,
+      message: "User fetched successfully",
+    });
+  }
+
+  async update(req: Request, res: Response) {
+    const { params, body } = (req as ValidatedRequest<typeof updateUserSchema>)
+      .validated;
+    const result = await usersService.updateUser(params.userId, body);
+
+    return sendSuccess({
+      res,
+      data: result,
+      message: "User updated successfully",
+    });
+  }
+
+  async updateMySkills(req: Request, res: Response) {
+    const user = requireRouteUser(req);
+    const { body } = (req as ValidatedRequest<typeof updateMySkillsSchema>)
+      .validated;
+    const result = await usersService.updateMySkills(user.id, body.skills);
+
+    return sendSuccess({
+      res,
+      data: result,
+      message: "Skills updated successfully",
+    });
+  }
+
+  async sendPasswordReset(req: Request, res: Response) {
+    const { params } = (req as ValidatedRequest<typeof userIdParamSchema>)
+      .validated;
+    const result = await usersService.sendPasswordReset(params.userId);
+
+    return sendSuccess({
+      res,
+      data: result,
+      message: "Password reset email sent successfully",
     });
   }
 }
