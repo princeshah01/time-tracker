@@ -7,10 +7,11 @@ export class ProfileService {
   constructor(private readonly profileRepository = new ProfileRepository()) {}
 
   async getMe(userId: string): Promise<ProfileMe> {
-    const [user, accounts, authorization] = await Promise.all([
+    const [user, accounts, authorization, skills] = await Promise.all([
       this.profileRepository.findUserById(userId),
       this.profileRepository.findUserAccounts(userId),
       permissionsService.getUserAuthorization(userId),
+      this.profileRepository.listSkillsByUserId(userId),
     ]);
 
     if (!user) {
@@ -26,6 +27,7 @@ export class ProfileService {
         email: user.email,
         name: user.name,
         image: `${env.BETTER_AUTH_URL}/api/me/avatar`,
+        skills: skills.map((skill) => skill.name),
         emailVerified: user.emailVerified,
         twoFactorEnabled: user.twoFactorEnabled,
         hasPassword: accounts.some(
@@ -45,7 +47,10 @@ export class ProfileService {
     userId: string,
     input: UpdateProfileInput
   ): Promise<ProfileMe> {
-    const hasUpdateData = input.name !== undefined || input.image !== undefined;
+    const hasUpdateData =
+      input.name !== undefined ||
+      input.image !== undefined ||
+      input.skills !== undefined;
 
     if (!hasUpdateData) {
       throw new AppError({
@@ -54,9 +59,27 @@ export class ProfileService {
       });
     }
 
-    await this.profileRepository.updateUserProfile(userId, input);
+    await Promise.all([
+      this.profileRepository.updateUserProfile(userId, input),
+      input.skills !== undefined
+        ? this.profileRepository.replaceUserSkills(
+            userId,
+            this.normalizeSkills(input.skills)
+          )
+        : Promise.resolve(),
+    ]);
 
     return this.getMe(userId);
+  }
+
+  private normalizeSkills(skills: string[]) {
+    return [
+      ...new Set(
+        skills
+          .map((skill) => skill.trim().toLowerCase())
+          .filter((skill) => skill.length > 0)
+      ),
+    ];
   }
   async getProfilePicture(userId: string): Promise<{
     url?: string;
@@ -84,7 +107,7 @@ export class ProfileService {
         accounts.find((account) => account.providerId === "microsoft")
       );
 
-    if (microsoftAccount && microsoftAccount?.accessToken) {
+    if (microsoftAccount?.accessToken) {
       return {
         hasMicrosoftImage: true,
         accessToken: microsoftAccount.accessToken,

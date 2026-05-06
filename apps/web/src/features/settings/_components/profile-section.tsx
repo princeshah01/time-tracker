@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { TabsContent } from "@workspace/ui/components/tabs";
 import { SettingsSection } from "./settings-body";
 import { Input } from "@workspace/ui/components/input";
 import { getInitials } from "@/shared/lib/string";
-import { User } from "@/shared/types";
+import type { User } from "@/shared/types";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from "@workspace/ui/components/form";
 import { AppIcon } from "@/shared/components/app-icon";
+import { TagSelect } from "@/shared/components/tag-select";
 import { setUser, useAppDispatch, useAppSelector } from "@/app/store";
 import { userService } from "@/features/user/user.service";
 import { toast } from "@workspace/ui/components/sonner";
@@ -54,7 +55,7 @@ const ProfileSectionContent = () => {
         title="Profile"
         description="Manage your personal information."
       >
-        <ProfileInfoForm user={user!} onSubmit={onSubmit} />
+        {user ? <ProfileInfoForm user={user} onSubmit={onSubmit} /> : null}
       </SettingsSection>
     </TabsContent>
   );
@@ -66,6 +67,7 @@ const profileSchema = z.object({
     .trim()
     .min(3, "Name must be at least 3 characters")
     .max(100, "Name must be at most 100 characters"),
+  skills: z.array(z.string().trim().min(1)),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -83,6 +85,7 @@ export function ProfileInfoForm({ user, onSubmit }: ProfileInfoFormProps) {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.name ?? "",
+      skills: user?.skills ?? [],
     },
   });
 
@@ -104,6 +107,7 @@ export function ProfileInfoForm({ user, onSubmit }: ProfileInfoFormProps) {
     const formData = new FormData();
 
     formData.append("name", values.name);
+    formData.append("skills", JSON.stringify(values.skills));
 
     if (selectedImage) {
       formData.append("image", selectedImage);
@@ -119,9 +123,11 @@ export function ProfileInfoForm({ user, onSubmit }: ProfileInfoFormProps) {
 
   return (
     <div className="divide-y divide-border">
-      <div className="py-4 px-4">
+      <div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <div className="p-4 border-b border-border">
+
             <div className="mb-4 flex items-center gap-3">
               <div className="group relative">
                 <Avatar className="h-10 w-10">
@@ -186,12 +192,35 @@ export function ProfileInfoForm({ user, onSubmit }: ProfileInfoFormProps) {
                 )}
               />
             </div>
+            </div>
+            
+            <div className="grid p-4 max-w-lg sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="skills"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-[12px]">Skills</FormLabel>
+                    <FormControl>
+                      <TagSelect
+                        className="max-w-lg"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Add skill and press Enter"
+                        disabled={saving}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <Button
               type="submit"
               disabled={saving}
               size="sm"
-              className="mt-3 h-7 text-[12px]"
+              className="mt-3 h-7 m-4 text-[12px]"
             >
               {saving && (
                 <AppIcon

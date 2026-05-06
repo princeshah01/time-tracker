@@ -1,12 +1,10 @@
 import { Router } from "express";
 
-import { permissionKeys } from "@/shared/constants/role-permission";
-import { requireAuth, requirePermission, validate } from "@/shared/middlewares";
+import { requireAuth, validate } from "@/shared/middlewares";
 import { usersController } from "./users.controllers";
 import {
   listUsersSchema,
   searchUsersSchema,
-  updateMySkillsSchema,
   updateUserSchema,
   userIdParamSchema,
 } from "./users.validation";
@@ -19,11 +17,6 @@ usersRouter.post(
   "/search",
   validate(searchUsersSchema),
   usersController.search
-);
-usersRouter.patch(
-  "/me/skills",
-  validate(updateMySkillsSchema),
-  usersController.updateMySkills
 );
 
 usersRouter.get(

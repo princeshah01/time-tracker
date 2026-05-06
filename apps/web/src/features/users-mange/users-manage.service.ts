@@ -51,14 +51,6 @@ const userManageService = {
     });
   },
 
-  updateMySkills: async (skills: string[]) => {
-    return apiFetch<UserDetail>({
-      url: "/users/me/skills",
-      method: "PATCH",
-      data: { skills },
-    });
-  },
-
   searchUsers: async (body: UserSearchRequestBody) => {
     const response = await apiFetch<UserSearchResponse>({
       url: "/users/search",

@@ -7,7 +7,6 @@ import { usersService } from "./users.service";
 import type {
   listUsersSchema,
   searchUsersSchema,
-  updateMySkillsSchema,
   updateUserSchema,
   userIdParamSchema,
 } from "./users.validation";
@@ -63,19 +62,6 @@ export class UsersController {
       res,
       data: result,
       message: "User updated successfully",
-    });
-  }
-
-  async updateMySkills(req: Request, res: Response) {
-    const user = requireRouteUser(req);
-    const { body } = (req as ValidatedRequest<typeof updateMySkillsSchema>)
-      .validated;
-    const result = await usersService.updateMySkills(user.id, body.skills);
-
-    return sendSuccess({
-      res,
-      data: result,
-      message: "Skills updated successfully",
     });
   }
 

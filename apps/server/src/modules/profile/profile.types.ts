@@ -3,6 +3,7 @@ export type ProfileUserInfo = {
   email: string;
   name: string;
   image: string | null;
+  skills: string[];
   emailVerified: boolean;
   twoFactorEnabled: boolean;
   hasPassword: boolean;
@@ -24,4 +25,5 @@ export type ProfileMe = {
 export type UpdateProfileInput = {
   name?: string;
   image?: string | null;
+  skills?: string[];
 };

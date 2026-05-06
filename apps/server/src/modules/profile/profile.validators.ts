@@ -1,5 +1,30 @@
 import { z } from "zod";
 
+const skillSchema = z.string().trim().min(1).max(60);
+
+const profileSkillsSchema = z.preprocess((value) => {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    return Array.isArray(parsed) ? parsed : value;
+  } catch {
+    return trimmed.split(",");
+  }
+}, z.array(skillSchema).max(50));
+
 export const updateProfileSchema = z.object({
   body: z
     .object({
@@ -9,6 +34,7 @@ export const updateProfileSchema = z.object({
         .min(2, "Name must be at least 2 characters")
         .max(100, "Name is too long")
         .optional(),
+      skills: profileSkillsSchema.optional(),
     })
     .strict(),
 

@@ -65,16 +65,6 @@ export const updateUserSchema = z.object({
   query: z.object({}),
 });
 
-export const updateMySkillsSchema = z.object({
-  body: z
-    .object({
-      skills: z.array(skillSchema).max(50),
-    })
-    .strict(),
-  query: z.object({}),
-  params: z.object({}),
-});
-
 export type SearchUsersInput = z.infer<typeof searchUsersSchema>["body"];
 export type ListUsersInput = z.infer<typeof listUsersSchema>["query"];
 export type UpdateUserInput = z.infer<typeof updateUserSchema>["body"];

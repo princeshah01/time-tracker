@@ -1,5 +1,3 @@
-import type { Role } from "./role_permissions";
-
 export type Gender = "male" | "female" | "other";
 
 export type User = {
@@ -7,6 +5,7 @@ export type User = {
   email: string;
   name: string;
   image?: string | null;
+  skills?: string[];
   emailVerified?: boolean;
   twoFactorEnabled?: boolean;
   hasPassword?: boolean;

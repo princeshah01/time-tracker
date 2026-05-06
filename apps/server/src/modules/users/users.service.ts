@@ -154,24 +154,6 @@ export class UsersService {
     return this.viewUser(userId);
   }
 
-  async updateMySkills(userId: string, skills: string[]) {
-    const existing = await this.usersRepository.findUserById(userId);
-
-    if (!existing) {
-      throw new AppError({
-        message: "User not found",
-        code: "NOT_FOUND",
-      });
-    }
-
-    await this.usersRepository.replaceUserSkills(
-      userId,
-      this.normalizeSkills(skills)
-    );
-
-    return this.viewUser(userId);
-  }
-
   async sendPasswordReset(userId: string) {
     const user = await this.usersRepository.findUserById(userId);
 

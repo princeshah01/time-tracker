@@ -8,12 +8,14 @@ import { TAG_ICON_MAP } from "@/shared/constants/tag-icons";
 
 import { AppIcon } from "./app-icon";
 import { SkillTagRenderer } from "./tag-icon";
+import { cn } from "@workspace/ui/lib/utils";
 
 export type TagSelectProps = {
   value: string[];
   onChange: (value: string[]) => void;
   placeholder?: string;
   disabled?: boolean;
+  className?: string;
 };
 
 function normalizeTag(value: string) {
@@ -25,6 +27,7 @@ function TagSelect({
   onChange,
   placeholder = "Add tag",
   disabled = false,
+  className,
 }: TagSelectProps) {
   const [draft, setDraft] = useState("");
   const [open, setOpen] = useState(false);
@@ -67,7 +70,7 @@ function TagSelect({
   }
 
   return (
-    <div className="space-y-2">
+    <div className={cn("space-y-2", className)}>
       <div className="flex flex-wrap gap-1.5">
         {value.length > 0 ? (
           value.map((tag) => (
