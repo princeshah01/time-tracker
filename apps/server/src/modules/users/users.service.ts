@@ -74,15 +74,18 @@ function toInvitedSuggestion(input: {
 export class UsersService {
   constructor(private readonly usersRepository = new UsersRepository()) {}
 
-  async listUsers(input: ListUsersInput) {
-    const result = await this.usersRepository.listUsersPaginated(input);
+  async listUsers(input: ListUsersInput, currentUserId: string) {
+    const result = await this.usersRepository.listUsersPaginated(
+      input,
+      currentUserId
+    );
     const skillsByUserId = await this.getSkillsByUserId(
       result.items.map((user) => user.id)
     );
 
     return {
       items: result.items.map((user) => ({
-        ...user,
+        ...this.toUserView(user),
         skills: skillsByUserId.get(user.id) ?? [],
       })),
       page: result.page,
@@ -106,7 +109,7 @@ export class UsersService {
     const skillsByUserId = await this.getSkillsByUserId([user.id]);
 
     return {
-      ...user,
+      ...this.toUserView(user),
       skills: skillsByUserId.get(user.id) ?? [],
     };
   }
@@ -352,6 +355,16 @@ export class UsersService {
           .filter((skill) => skill.length > 0)
       ),
     ];
+  }
+
+  private toUserView<
+    TUser extends { role: { id: number | null; name: string | null } | null },
+  >(user: TUser) {
+    return {
+      ...user,
+      roleId: user.role?.id ?? null,
+      roleName: user.role?.name ?? null,
+    };
   }
 }
 

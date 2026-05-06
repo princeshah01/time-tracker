@@ -54,7 +54,7 @@ function SignInTab({
         email: values.email,
         password: values.password,
       });
-      console.log({result})
+      console.log({ result });
       if (result.error) {
         if (result.error.code === "EMAIL_NOT_VERIFIED") {
           handleStepChange("email-verification", { email: values.email });

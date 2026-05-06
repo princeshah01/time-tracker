@@ -36,6 +36,7 @@ usersRouter.get(
   "/:userId",
   // requirePermission(permissionKeys.userManage),
   validate(userIdParamSchema),
+  // Simulate network delay
   usersController.view
 );
 usersRouter.patch(

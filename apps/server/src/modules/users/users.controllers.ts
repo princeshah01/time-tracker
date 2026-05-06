@@ -16,7 +16,8 @@ export class UsersController {
   async list(req: Request, res: Response) {
     const { query } = (req as ValidatedRequest<typeof listUsersSchema>)
       .validated;
-    const result = await usersService.listUsers(query);
+    const user = requireRouteUser(req);
+    const result = await usersService.listUsers(query, user.id);
 
     return sendSuccess({
       res,
@@ -45,7 +46,7 @@ export class UsersController {
     const { params } = (req as ValidatedRequest<typeof userIdParamSchema>)
       .validated;
     const result = await usersService.viewUser(params.userId);
-
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     return sendSuccess({
       res,
       data: result,

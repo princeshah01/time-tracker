@@ -59,7 +59,7 @@ export class UsersRepository {
     return record ?? null;
   }
 
-  async listUsersPaginated(input: ListUsersInput) {
+  async listUsersPaginated(input: ListUsersInput, currentUserId: string) {
     const page = input.page;
     const limit = input.limit;
     const offset = (page - 1) * limit;
@@ -85,7 +85,7 @@ export class UsersRepository {
         .from(user)
         .leftJoin(userRoles, eq(userRoles.userId, user.id))
         .leftJoin(roles, eq(userRoles.roleId, roles.id))
-        .where(whereClause)
+        .where(and(whereClause, ne(user.id, currentUserId)))
         .orderBy(desc(user.createdAt), asc(user.name))
         .limit(limit)
         .offset(offset),

@@ -16,10 +16,7 @@ const rolesRouter = Router();
 rolesRouter.use(requireAuth);
 
 rolesRouter.get("/", validate(listRolesSchema), rolesController.list);
-rolesRouter.get(
-  "/assignable",
-  rolesController.listAssignable
-);
+rolesRouter.get("/assignable", rolesController.listAssignable);
 rolesRouter.get(
   "/permissions",
   validate(listRolePermissionsSchema),

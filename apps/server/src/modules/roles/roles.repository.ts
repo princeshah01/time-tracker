@@ -34,7 +34,9 @@ export class RolesRepository {
         value: roles.id,
       })
       .from(roles)
-      .where(and(eq(roles.isActive, true), not(eq(roles.name, roleNames.admin))))
+      .where(
+        and(eq(roles.isActive, true), not(eq(roles.name, roleNames.admin)))
+      )
       .orderBy(asc(roles.name));
   }
 

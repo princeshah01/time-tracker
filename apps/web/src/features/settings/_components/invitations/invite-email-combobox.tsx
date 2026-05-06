@@ -11,6 +11,7 @@ import {
 import { EmptyState } from "@/shared/components/empty-container";
 import { toast } from "@workspace/ui/components/sonner";
 import { QUERY_KEYS } from "@/shared/constants";
+import { useAppSelector } from "@/app/store";
 
 type InviteEmailComboboxProps = {
   value: string;
@@ -29,7 +30,8 @@ function SuggestionSkeleton() {
 function InviteEmailCombobox({ value, onChange }: InviteEmailComboboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
-
+  const { user } = useAppSelector((s) => s.user);
+  const currentUserEmail = user?.email;
   const debouncedSetSearch = useMemo(
     () =>
       debounce((query: string) => {
@@ -116,17 +118,25 @@ function InviteEmailCombobox({ value, onChange }: InviteEmailComboboxProps) {
               <button
                 key={user.email}
                 type="button"
-                className="flex w-full flex-col items-start rounded-sm px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"
+                className="flex w-full items-start justify-between rounded-sm px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => handleSelectSuggestion(user)}
               >
-                <span className="max-w-full truncate text-[12px] font-medium">
-                  {user.email}
-                </span>
+                <div className="flex min-w-0 flex-col">
+                  <span className="max-w-full truncate text-[12px] font-medium">
+                    {user.email}
+                  </span>
 
-                <span className="max-w-full truncate text-[11px] text-muted-foreground">
-                  {user.name} {user.role ? `• ${user.role}` : ""}
-                </span>
+                  <span className="max-w-full truncate text-[11px] text-muted-foreground">
+                    {user.name} {user.role ? `• ${user.role}` : ""}
+                  </span>
+                </div>
+
+                {currentUserEmail === user.email && (
+                  <span className="ml-2 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    You
+                  </span>
+                )}
               </button>
             ))
           ) : (

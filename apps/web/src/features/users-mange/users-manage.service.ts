@@ -2,7 +2,7 @@ import { apiFetch } from "@/shared/lib";
 import type {
   ListUsersResponse,
   UpdateUserInput,
-  UserListItem,
+  UserDetail,
   UserSearchRequestBody,
   UserSearchResponse,
   UserStatusFilter,
@@ -30,14 +30,14 @@ const userManageService = {
   },
 
   viewUser: async (userId: string) => {
-    return apiFetch<UserListItem>({
+    return apiFetch<UserDetail>({
       url: `/users/${userId}`,
       method: "GET",
     });
   },
 
   updateUser: async (userId: string, data: UpdateUserInput) => {
-    return apiFetch<UserListItem>({
+    return apiFetch<UserDetail>({
       url: `/users/${userId}`,
       method: "PATCH",
       data,
@@ -52,7 +52,7 @@ const userManageService = {
   },
 
   updateMySkills: async (skills: string[]) => {
-    return apiFetch<UserListItem>({
+    return apiFetch<UserDetail>({
       url: "/users/me/skills",
       method: "PATCH",
       data: { skills },
