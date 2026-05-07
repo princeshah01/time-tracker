@@ -95,7 +95,7 @@ export function InviteCompose() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-10 lg:gap-4 lg:flex-row lg:items-start"
+          className="flex flex-col gap-6 lg:gap-4 lg:flex-row lg:items-start"
         >
           <FormField
             control={form.control}

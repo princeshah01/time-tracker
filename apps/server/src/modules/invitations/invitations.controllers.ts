@@ -48,7 +48,11 @@ export class InvitationsController {
   async list(req: Request, res: Response) {
     const { query } = (req as ValidatedRequest<typeof listInvitationsSchema>)
       .validated;
-    const invitations = await invitationsService.listInvitations(query);
+    const user = requireRouteUser(req);
+    const invitations = await invitationsService.listInvitations(
+      query,
+      user.id
+    );
 
     return sendSuccess({
       res,
@@ -125,7 +129,11 @@ export class InvitationsController {
   async revoke(req: Request, res: Response) {
     const { params } = (req as ValidatedRequest<typeof revokeInvitationSchema>)
       .validated;
-    const invitation = await invitationsService.revokeInvitation(params.id);
+    const user = requireRouteUser(req);
+    const invitation = await invitationsService.revokeInvitation(
+      params.id,
+      user.id
+    );
 
     return sendSuccess({
       res,

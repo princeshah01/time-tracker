@@ -22,12 +22,13 @@ const RoleTableContextMenu = ({
   setMenuState,
   toggleRoleStatusMutation,
 }: RoleTableContextMenuProps) => {
-  if (!menuState) return null;
   const menuRef = useDismiss<HTMLDivElement>({
-    enabled: !!menuState,
+    enabled: Boolean(menuState),
     onDismiss: () => setMenuState(null),
   });
-  
+
+  if (!menuState) return null;
+
   return (
     <div
       ref={menuRef}
@@ -35,6 +36,7 @@ const RoleTableContextMenu = ({
       style={{ top: menuState.y, left: menuState.x }}
     >
       <button
+        type="button"
         className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
         onClick={() => {
           openEdit(menuState.row);
@@ -46,6 +48,7 @@ const RoleTableContextMenu = ({
       </button>
 
       <button
+        type="button"
         className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent disabled:opacity-50"
         disabled={menuState.row.isDefault || toggleRoleStatusMutation.isPending}
         onClick={() => {

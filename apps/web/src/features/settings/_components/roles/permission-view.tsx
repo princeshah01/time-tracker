@@ -39,12 +39,15 @@ const PermissionsView = ({
     <div className="grid max-h-72 grid-cols-1 gap-2 overflow-auto rounded-md border p-3 md:grid-cols-2">
       {permissions.map((permission) => {
         const checked = selected.has(permission.name);
+        const permissionId = `permission-${permission.name}`;
         return (
           <label
             key={permission.name}
+            htmlFor={permissionId}
             className="flex items-center gap-2 text-xs"
           >
             <Checkbox
+              id={permissionId}
               checked={checked}
               disabled={disabled}
               onCheckedChange={(value) =>

@@ -99,7 +99,7 @@ function toPayload(values: UserEditFormValues): UpdateUserInput {
       ...new Set(
         values.skills
           .map((skill) => skill.trim())
-          .filter((skill) => skill.length > 0)
+          .filter((skill) => skill.length > 0),
       ),
     ],
   };
@@ -115,7 +115,7 @@ function UserDetailDialog({
   const hasUserManagePermission = hasPermission(currentUserPermissions, [
     permissions.userManage,
   ]);
-  console.log("hasUserManagePermission", hasUserManagePermission);
+
   const queryClient = useQueryClient();
   const userId = user?.id;
 
@@ -150,7 +150,7 @@ function UserDetailDialog({
     mutationFn: async (input: { userId: string; data: UpdateUserInput }) => {
       const response = await userManageService.updateUser(
         input.userId,
-        input.data
+        input.data,
       );
 
       if (!response.success || !response.data) {
@@ -163,7 +163,7 @@ function UserDetailDialog({
       toast.success("User updated successfully");
       queryClient.setQueryData(
         [QUERY_KEYS.USER_DETAIL, updatedUser.id],
-        updatedUser
+        updatedUser,
       );
       void queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USERS] });
       void queryClient.invalidateQueries({
@@ -175,15 +175,42 @@ function UserDetailDialog({
       toast.error(error.message);
     },
   });
-
   const currentUser = userDetailQuery.data;
   const watchedIsActive = form.watch("isActive");
 
+  console.log("currentUser", currentUser);
+  console.log("form values", form.watch());
+
+ useEffect(() => {
+  if (!open) return;
+  if (!currentUser) return;
+
+  const nextValues = {
+    name: currentUser.name ?? "",
+    email: currentUser.email ?? "",
+    roleId: currentUser.roleId != null ? String(currentUser.roleId) : "",
+    isActive: currentUser.isActive ?? true,
+    skills: currentUser.skills ?? [],
+  };
+
+  console.log("RESET FORM", nextValues);
+
+  form.reset(nextValues);
+}, [open, currentUser?.id, form]);
+
   useEffect(() => {
-    if (open && currentUser) {
-      form.reset(toFormValues(currentUser));
+  const subscription = form.watch((value, info) => {
+    if (info.name === "roleId") {
+      console.log("roleId changed:", {
+        value: value.roleId,
+        info,
+      });
     }
-  }, [currentUser, form.getValues().roleId, open]);
+  });
+
+  return () => subscription.unsubscribe();
+}, [form]);
+
 
   function handleSubmit(values: UserEditFormValues) {
     if (!currentUser) return;
@@ -239,7 +266,7 @@ function UserDetailDialog({
                       "mt-1 text-[11px]",
                       watchedIsActive
                         ? "border-success bg-success/10 text-success"
-                        : "border-muted bg-muted text-muted-foreground"
+                        : "border-muted bg-muted text-muted-foreground",
                     )}
                   >
                     {watchedIsActive ? "Active" : "Inactive"}
@@ -303,7 +330,10 @@ function UserDetailDialog({
                       <FormLabel className="text-[12px]">Role</FormLabel>
                       <Select
                         value={field.value}
-                        onValueChange={field.onChange}
+                        onValueChange={(value)=>{
+                          if (!value) return;
+                          field.onChange(value);
+                        }}
                         disabled={
                           !hasUserManagePermission ||
                           updateUserMutation.isPending
@@ -329,7 +359,6 @@ function UserDetailDialog({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="isActive"

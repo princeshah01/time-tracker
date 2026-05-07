@@ -6,6 +6,8 @@ import {
   eq,
   ilike,
   inArray,
+  isNull,
+  lte,
   ne,
   or,
   sql,
@@ -48,6 +50,7 @@ export class UsersRepository {
           id: roles.id,
           name: roles.name,
           description: roles.description,
+          level: roles.level,
         },
       })
       .from(user)
@@ -59,11 +62,19 @@ export class UsersRepository {
     return record ?? null;
   }
 
-  async listUsersPaginated(input: ListUsersInput, currentUserId: string) {
+  async listUsersPaginated(
+    input: ListUsersInput,
+    currentUserId: string,
+    maxRoleLevel: number
+  ) {
     const page = input.page;
     const limit = input.limit;
     const offset = (page - 1) * limit;
-    const whereClause = this.buildListWhere(input);
+    const whereClause = and(
+      this.buildListWhere(input),
+      ne(user.id, currentUserId),
+      this.roleLevelWhere(maxRoleLevel)
+    );
 
     const [items, totalResult] = await Promise.all([
       db
@@ -80,12 +91,13 @@ export class UsersRepository {
             id: roles.id,
             name: roles.name,
             description: roles.description,
+            level: roles.level,
           },
         })
         .from(user)
         .leftJoin(userRoles, eq(userRoles.userId, user.id))
         .leftJoin(roles, eq(userRoles.roleId, roles.id))
-        .where(and(whereClause, ne(user.id, currentUserId)))
+        .where(whereClause)
         .orderBy(desc(user.createdAt), asc(user.name))
         .limit(limit)
         .offset(offset),
@@ -171,13 +183,15 @@ export class UsersRepository {
   }
 
   async searchOnboardedUsers(
-    input: SearchOnboardedUsersInput
+    input: SearchOnboardedUsersInput & { maxRoleLevel: number }
   ): Promise<OnboardedUserSearchRecord[]> {
     const query = `%${input.q}%`;
     const searchWhere = or(ilike(user.name, query), ilike(user.email, query));
-    const whereClause = input.excludeUserId
-      ? and(searchWhere, ne(user.id, input.excludeUserId))
-      : searchWhere;
+    const whereClause = and(
+      searchWhere,
+      input.excludeUserId ? ne(user.id, input.excludeUserId) : undefined,
+      this.roleLevelWhere(input.maxRoleLevel)
+    );
 
     return db
       .select({
@@ -196,7 +210,7 @@ export class UsersRepository {
   }
 
   async searchUsersBySkills(
-    input: SearchOnboardedUsersInput
+    input: SearchOnboardedUsersInput & { maxRoleLevel: number }
   ): Promise<SkillUserSearchRecord[]> {
     const query = `%${input.q}%`;
     const searchWhere = or(
@@ -204,13 +218,12 @@ export class UsersRepository {
       ilike(user.name, query),
       ilike(user.email, query)
     );
-    const whereClause = input.excludeUserId
-      ? and(
-          searchWhere,
-          ne(user.id, input.excludeUserId),
-          eq(user.isActive, true)
-        )
-      : and(searchWhere, eq(user.isActive, true));
+    const whereClause = and(
+      searchWhere,
+      input.excludeUserId ? ne(user.id, input.excludeUserId) : undefined,
+      eq(user.isActive, true),
+      this.roleLevelWhere(input.maxRoleLevel)
+    );
 
     return db
       .select({
@@ -231,19 +244,20 @@ export class UsersRepository {
   }
 
   async searchInvitedUsers(
-    input: SearchInvitedUsersInput
+    input: SearchInvitedUsersInput & { maxRoleLevel: number }
   ): Promise<InvitedUserSearchRecord[]> {
     const query = `%${input.q}%`;
     const searchWhere = or(
       ilike(userInvites.email, query),
       ilike(roles.name, query)
     );
-    const whereClause = input.excludeEmail
-      ? and(
-          searchWhere,
-          ne(userInvites.email, input.excludeEmail.toLowerCase())
-        )
-      : searchWhere;
+    const whereClause = and(
+      searchWhere,
+      input.excludeEmail
+        ? ne(userInvites.email, input.excludeEmail.toLowerCase())
+        : undefined,
+      lte(roles.level, input.maxRoleLevel)
+    );
 
     return db
       .select({
@@ -315,5 +329,9 @@ export class UsersRepository {
     }
 
     return conditions.length > 0 ? and(...conditions) : undefined;
+  }
+
+  private roleLevelWhere(maxRoleLevel: number) {
+    return or(isNull(roles.level), lte(roles.level, maxRoleLevel));
   }
 }

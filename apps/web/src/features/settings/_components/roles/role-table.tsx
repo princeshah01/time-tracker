@@ -52,8 +52,10 @@ const RoleTableFilter = ({ search, onSearchChange }: RoleTableFilterProps) => {
 const RoleTable = () => {
   const queryClient = useQueryClient();
 
-  const {permissions: userPermissions} = useAppSelector((s) => s.user);
-  const canManageRoles = hasPermission(userPermissions, [permissions.roleManage]);
+  const { permissions: userPermissions } = useAppSelector((s) => s.user);
+  const canManageRoles = hasPermission(userPermissions, [
+    permissions.roleManage,
+  ]);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -164,6 +166,11 @@ const RoleTable = () => {
         ),
       },
       {
+        accessorKey: "level",
+        header: "Level",
+        cell: ({ row }) => row.original.level,
+      },
+      {
         accessorKey: "permissionsCount",
         header: "Permissions",
       },
@@ -184,7 +191,11 @@ const RoleTable = () => {
                   ? "border-success bg-success/10 text-success hover:bg-success/20 hover:text-success"
                   : "border-muted bg-muted text-muted-foreground hover:bg-muted/80 hover:text-muted-foreground"
               )}
-              disabled={role.isDefault || toggleRoleStatusMutation.isPending || !canManageRoles}
+              disabled={
+                role.isDefault ||
+                toggleRoleStatusMutation.isPending ||
+                !canManageRoles
+              }
               onClick={(event) => {
                 event.stopPropagation();
                 toggleRoleStatusMutation.mutate(role);
@@ -206,7 +217,7 @@ const RoleTable = () => {
           ),
       },
     ],
-    [toggleRoleStatusMutation]
+    [canManageRoles, toggleRoleStatusMutation]
   );
 
   function openCreate() {
@@ -229,18 +240,18 @@ const RoleTable = () => {
   }
 
   return (
-    <div className="space-y-4 border-t p-4" onClick={() => setMenuState(null)}>
+    <div className="space-y-4 border-t p-4">
       <div className="flex items-center justify-between gap-3">
         <RoleTableFilter search={search} onSearchChange={setSearch} />
         <PermissionsWrapper requiredPermissions={[permissions.roleManage]}>
-        <Button
-          size="sm"
-          className="h-8 gap-1.5 text-[12px]"
-          onClick={openCreate}
-        >
-          <AppIcon name="Plus" className="h-3.5 w-3.5" />
-          Add Role
-        </Button>
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 text-[12px]"
+            onClick={openCreate}
+          >
+            <AppIcon name="Plus" className="h-3.5 w-3.5" />
+            Add Role
+          </Button>
         </PermissionsWrapper>
       </div>
 
@@ -258,12 +269,12 @@ const RoleTable = () => {
         emptyText="No roles found"
       />
       <PermissionsWrapper requiredPermissions={[permissions.roleManage]}>
-      <RoleTableContextMenu
-        menuState={menuState}
-        openEdit={openEdit}
-        setMenuState={setMenuState}
-        toggleRoleStatusMutation={toggleRoleStatusMutation}
-      />
+        <RoleTableContextMenu
+          menuState={menuState}
+          openEdit={openEdit}
+          setMenuState={setMenuState}
+          toggleRoleStatusMutation={toggleRoleStatusMutation}
+        />
       </PermissionsWrapper>
       <RoleViewDialog
         dialogOpen={dialogOpen}

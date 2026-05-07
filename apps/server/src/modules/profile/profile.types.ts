@@ -14,6 +14,7 @@ export type ProfileRole = {
   id: number;
   name: string;
   description: string | null;
+  level: number;
 };
 
 export type ProfileMe = {

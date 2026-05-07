@@ -2,6 +2,7 @@ export type RoleListItem = {
   id: number;
   name: string;
   description: string | null;
+  level: number;
   isDefault: boolean;
   isActive: boolean;
   permissionsCount: number;
@@ -16,6 +17,7 @@ export type RoleView = {
   id: number;
   name: string;
   description: string | null;
+  level: number;
   isDefault: boolean;
   isActive: boolean;
   permissions: RolePermission[];
@@ -33,6 +35,7 @@ export type ListRolesResponse = {
 export type AssignableRole = {
   value: number;
   label: string;
+  level: number;
 };
 
 export type AssignableRoleResponse = {

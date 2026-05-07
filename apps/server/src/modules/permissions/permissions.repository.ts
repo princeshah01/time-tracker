@@ -36,6 +36,7 @@ export class PermissionsRepository {
         id: roles.id,
         name: roles.name,
         description: roles.description,
+        level: roles.level,
         isDefault: roles.isDefault,
         createdAt: roles.createdAt,
         updatedAt: roles.updatedAt,
@@ -57,6 +58,18 @@ export class PermissionsRepository {
       .from(rolePermissions)
       .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
       .where(inArray(rolePermissions.roleId, roleIds));
+  }
+
+  async findMaxRoleLevelForUser(userId: string) {
+    const rows = await db
+      .select({
+        level: roles.level,
+      })
+      .from(userRoles)
+      .innerJoin(roles, eq(userRoles.roleId, roles.id))
+      .where(and(eq(userRoles.userId, userId), eq(roles.isActive, true)));
+
+    return rows.reduce((max, role) => Math.max(max, role.level), 0);
   }
 
   async userHasRole(userId: string, roleId: number) {

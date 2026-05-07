@@ -23,6 +23,7 @@ export type UserRoleSummary = {
   id: number | null;
   name: string | null;
   description: string | null;
+  level: number | null;
 };
 
 export type UserListItem = {
@@ -34,8 +35,8 @@ export type UserListItem = {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  roleId: number;
-  roleName: string;
+  roleId: number | null;
+  roleName: string | null;
   role: UserRoleSummary | null;
   skills: string[];
 };

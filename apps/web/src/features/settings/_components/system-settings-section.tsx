@@ -6,7 +6,7 @@ const WorkSpaceSectionContent = () => {
     <TabsContent value="workspace" className="m-0">
       <SettingsSection
         title="Workspace Settings"
-        description="Manage workspace settings."
+        description="Feature coming soon"
       >
         <div />
       </SettingsSection>

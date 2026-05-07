@@ -13,6 +13,7 @@ const roleDescriptionSchema = z
   .optional();
 
 const permissionKeySchema = z.string().trim().min(1);
+const roleLevelSchema = z.coerce.number().int().min(0).max(100);
 
 export const listRolesSchema = z.object({
   query: z.object({
@@ -34,6 +35,7 @@ export const createRoleSchema = z.object({
   body: z.object({
     name: roleNameSchema,
     description: roleDescriptionSchema,
+    level: roleLevelSchema.default(0),
     permissions: z.array(permissionKeySchema).default([]),
   }),
   params: z.object({}),
@@ -50,12 +52,14 @@ export const updateRoleSchema = z.object({
         .max(255, "Description must be at most 255 characters")
         .nullable()
         .optional(),
+      level: roleLevelSchema.optional(),
       permissions: z.array(permissionKeySchema).optional(),
     })
     .refine(
       (value) =>
         value.name !== undefined ||
         value.description !== undefined ||
+        value.level !== undefined ||
         value.permissions !== undefined,
       {
         message: "At least one field must be provided to update role",

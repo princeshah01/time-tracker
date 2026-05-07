@@ -92,6 +92,16 @@ export class InvitationsService {
       });
     }
 
+    if (
+      roleRecord.level >
+      (await permissionsService.getUserMaxRoleLevel(input.invitedBy))
+    ) {
+      throw new AppError({
+        message: "You cannot invite users to a role above your level",
+        code: "FORBIDDEN",
+      });
+    }
+
     const activeInvitation =
       await this.invitationsRepository.findActiveInvitationByEmail(email);
 
@@ -149,13 +159,19 @@ export class InvitationsService {
     };
   }
 
-  async listInvitations(input: {
-    page: number;
-    limit: number;
-    q?: string;
-    status?: InvitationStatus;
-  }) {
-    const result = await this.invitationsRepository.listInvitations(input);
+  async listInvitations(
+    input: {
+      page: number;
+      limit: number;
+      q?: string;
+      status?: InvitationStatus;
+    },
+    requesterId: string
+  ) {
+    const result = await this.invitationsRepository.listInvitations({
+      ...input,
+      maxRoleLevel: await permissionsService.getUserMaxRoleLevel(requesterId),
+    });
 
     return {
       items: result.items.map((invitation) => ({
@@ -315,7 +331,7 @@ export class InvitationsService {
     };
   }
 
-  async revokeInvitation(invitationId: number) {
+  async revokeInvitation(invitationId: number, requesterId: string) {
     const existing =
       await this.invitationsRepository.findInvitationById(invitationId);
 
@@ -323,6 +339,16 @@ export class InvitationsService {
       throw new AppError({
         message: "Invitation not found",
         code: "NOT_FOUND",
+      });
+    }
+
+    if (
+      existing.roleLevel >
+      (await permissionsService.getUserMaxRoleLevel(requesterId))
+    ) {
+      throw new AppError({
+        message: "You cannot manage invitations above your role level",
+        code: "FORBIDDEN",
       });
     }
 
@@ -334,9 +360,10 @@ export class InvitationsService {
     }
 
     if (existing.revokedAt) {
+      const { roleLevel: _roleLevel, ...invitation } = existing;
       return {
-        ...existing,
-        status: getStatus(existing),
+        ...invitation,
+        status: getStatus(invitation),
       };
     }
 

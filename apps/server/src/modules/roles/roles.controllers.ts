@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
 import type { ValidatedRequest } from "@/shared/middlewares";
+import { requireRouteUser } from "@/shared/session";
 import { sendSuccess } from "@/shared/utils";
 import { rolesService } from "./roles.service";
 import type {
@@ -16,7 +17,8 @@ export class RolesController {
   async list(req: Request, res: Response) {
     const { query } = (req as ValidatedRequest<typeof listRolesSchema>)
       .validated;
-    const roles = await rolesService.listRoles(query);
+    const user = requireRouteUser(req);
+    const roles = await rolesService.listRoles(query, user.id);
 
     return sendSuccess({
       res,
@@ -25,8 +27,9 @@ export class RolesController {
     });
   }
 
-  async listAssignable(_req: Request, res: Response) {
-    const assignableRoles = await rolesService.listAssignableRoles();
+  async listAssignable(req: Request, res: Response) {
+    const user = requireRouteUser(req);
+    const assignableRoles = await rolesService.listAssignableRoles(user.id);
 
     return sendSuccess({
       res,
@@ -38,7 +41,8 @@ export class RolesController {
   async view(req: Request, res: Response) {
     const { params } = (req as ValidatedRequest<typeof roleIdParamSchema>)
       .validated;
-    const role = await rolesService.viewRole(params.roleId);
+    const user = requireRouteUser(req);
+    const role = await rolesService.viewRole(params.roleId, user.id);
     return sendSuccess({
       res,
       data: role,
@@ -50,7 +54,11 @@ export class RolesController {
     const { query } = (
       req as ValidatedRequest<typeof listRolePermissionsSchema>
     ).validated;
-    const permissions = await rolesService.listPermissions(query.roleId);
+    const user = requireRouteUser(req);
+    const permissions = await rolesService.listPermissions(
+      query.roleId,
+      user.id
+    );
 
     return sendSuccess({
       res,
@@ -62,7 +70,8 @@ export class RolesController {
   async create(req: Request, res: Response) {
     const { body } = (req as ValidatedRequest<typeof createRoleSchema>)
       .validated;
-    const role = await rolesService.createRole(body);
+    const user = requireRouteUser(req);
+    const role = await rolesService.createRole(body, user.id);
 
     return sendSuccess({
       res,
@@ -75,7 +84,8 @@ export class RolesController {
   async update(req: Request, res: Response) {
     const { params, body } = (req as ValidatedRequest<typeof updateRoleSchema>)
       .validated;
-    const role = await rolesService.updateRole(params.roleId, body);
+    const user = requireRouteUser(req);
+    const role = await rolesService.updateRole(params.roleId, body, user.id);
 
     return sendSuccess({
       res,
@@ -87,7 +97,8 @@ export class RolesController {
   async toggleStatus(req: Request, res: Response) {
     const { params } = (req as ValidatedRequest<typeof disableRoleSchema>)
       .validated;
-    const role = await rolesService.toggleRoleStatus(params.roleId);
+    const user = requireRouteUser(req);
+    const role = await rolesService.toggleRoleStatus(params.roleId, user.id);
 
     return sendSuccess({
       res,

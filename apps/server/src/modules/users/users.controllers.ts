@@ -44,7 +44,8 @@ export class UsersController {
   async view(req: Request, res: Response) {
     const { params } = (req as ValidatedRequest<typeof userIdParamSchema>)
       .validated;
-    const result = await usersService.viewUser(params.userId);
+    const user = requireRouteUser(req);
+    const result = await usersService.viewUser(params.userId, user.id);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return sendSuccess({
       res,
@@ -56,7 +57,8 @@ export class UsersController {
   async update(req: Request, res: Response) {
     const { params, body } = (req as ValidatedRequest<typeof updateUserSchema>)
       .validated;
-    const result = await usersService.updateUser(params.userId, body);
+    const user = requireRouteUser(req);
+    const result = await usersService.updateUser(params.userId, body, user.id);
 
     return sendSuccess({
       res,
@@ -68,7 +70,8 @@ export class UsersController {
   async sendPasswordReset(req: Request, res: Response) {
     const { params } = (req as ValidatedRequest<typeof userIdParamSchema>)
       .validated;
-    const result = await usersService.sendPasswordReset(params.userId);
+    const user = requireRouteUser(req);
+    const result = await usersService.sendPasswordReset(params.userId, user.id);
 
     return sendSuccess({
       res,

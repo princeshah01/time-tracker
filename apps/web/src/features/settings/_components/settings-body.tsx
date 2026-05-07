@@ -36,9 +36,9 @@ const TAB_PERMISSIONS: Record<SettingsTabValue, string[]> = {
   users: [permissions.userView],
   invitations: [permissions.userInvite],
   roles: [permissions.roleView],
-  notifications: [],
+  notifications: ["not-implemented"], // Placeholder permission
   security: [permissions.profileSecurityManage],
-  workspace: [],
+  workspace: ["not-implemented"], // Placeholder permission
 };
 
 const TAB_META: Record<

@@ -9,6 +9,7 @@ export type UserRole = {
   id: number;
   name: string;
   description: string | null;
+  level: number;
 };
 
 export type UserAuthorization = {
@@ -40,6 +41,7 @@ export class PermissionsService {
             id: primaryRole.id,
             name: primaryRole.name,
             description: primaryRole.description,
+            level: primaryRole.level,
           }
         : null,
       permissions: [
@@ -61,6 +63,10 @@ export class PermissionsService {
 
   async getRoleById(roleId: number) {
     return this.permissionsRepository.findRoleById(roleId);
+  }
+
+  async getUserMaxRoleLevel(userId: string) {
+    return this.permissionsRepository.findMaxRoleLevelForUser(userId);
   }
 
   async requirePermission(userId: string, permissions: PermissionInput) {

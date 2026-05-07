@@ -1,4 +1,15 @@
-import { and, asc, count, eq, ilike, inArray, not, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  eq,
+  ilike,
+  inArray,
+  lte,
+  not,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import { db } from "@/db";
 import { permissions, rolePermissions, roles, userRoles } from "@/db/schema";
@@ -27,31 +38,44 @@ export class RolesRepository {
     return db.select().from(roles).orderBy(asc(roles.id));
   }
 
-  async listAssignableRoles() {
+  async listAssignableRoles(maxRoleLevel: number) {
     return db
       .select({
         label: roles.name,
         value: roles.id,
+        level: roles.level,
       })
       .from(roles)
       .where(
-        and(eq(roles.isActive, true), not(eq(roles.name, roleNames.admin)))
+        and(
+          eq(roles.isActive, true),
+          lte(roles.level, maxRoleLevel),
+          not(eq(roles.name, roleNames.admin))
+        )
       )
       .orderBy(asc(roles.name));
   }
 
-  async listRolesPaginated(input: { page: number; limit: number; q?: string }) {
+  async listRolesPaginated(input: {
+    page: number;
+    limit: number;
+    q?: string;
+    maxRoleLevel: number;
+  }) {
     const page = input.page;
     const limit = input.limit;
     const offset = (page - 1) * limit;
     const q = (input.q ?? "").trim();
-    const whereClause = q
+    const searchClause = q
       ? or(
           ilike(roles.name, `%${q}%`),
           ilike(roles.description, `%${q}%`),
           sql`${roles.id}::text ILIKE ${`%${q}%`}`
         )
       : undefined;
+    const whereClause = searchClause
+      ? and(searchClause, lte(roles.level, input.maxRoleLevel))
+      : lte(roles.level, input.maxRoleLevel);
 
     const [items, totalResult] = await Promise.all([
       db
@@ -72,12 +96,17 @@ export class RolesRepository {
     };
   }
 
-  async createRole(input: { name: string; description?: string | null }) {
+  async createRole(input: {
+    name: string;
+    description?: string | null;
+    level: number;
+  }) {
     const [role] = await db
       .insert(roles)
       .values({
         name: input.name,
         description: input.description ?? null,
+        level: input.level,
       })
       .returning();
 
@@ -86,7 +115,12 @@ export class RolesRepository {
 
   async updateRole(
     roleId: number,
-    input: { name?: string; description?: string | null; isActive?: boolean }
+    input: {
+      name?: string;
+      description?: string | null;
+      level?: number;
+      isActive?: boolean;
+    }
   ) {
     const [role] = await db
       .update(roles)
@@ -95,6 +129,7 @@ export class RolesRepository {
         ...(input.description !== undefined
           ? { description: input.description }
           : {}),
+        ...(input.level !== undefined ? { level: input.level } : {}),
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
         updatedAt: new Date(),
       })

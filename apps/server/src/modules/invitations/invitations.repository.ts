@@ -123,8 +123,26 @@ export class InvitationsRepository {
 
   async findInvitationById(invitationId: number) {
     const [invitation] = await db
-      .select()
+      .select({
+        id: userInvites.id,
+        email: userInvites.email,
+        roleId: userInvites.roleId,
+        tokenHash: userInvites.tokenHash,
+        invitedBy: userInvites.invitedBy,
+        expiresAt: userInvites.expiresAt,
+        otpHash: userInvites.otpHash,
+        otpExpiresAt: userInvites.otpExpiresAt,
+        otpSentAt: userInvites.otpSentAt,
+        otpAttempts: userInvites.otpAttempts,
+        otpVerifiedAt: userInvites.otpVerifiedAt,
+        acceptedAt: userInvites.acceptedAt,
+        revokedAt: userInvites.revokedAt,
+        createdAt: userInvites.createdAt,
+        updatedAt: userInvites.updatedAt,
+        roleLevel: roles.level,
+      })
       .from(userInvites)
+      .innerJoin(roles, eq(userInvites.roleId, roles.id))
       .where(eq(userInvites.id, invitationId));
 
     return invitation ?? null;
@@ -179,11 +197,15 @@ export class InvitationsRepository {
     limit: number;
     q?: string;
     status?: InvitationStatus;
+    maxRoleLevel: number;
   }) {
     const page = input.page;
     const limit = input.limit;
     const offset = (page - 1) * limit;
-    const whereClause = this.buildListWhere(input);
+    const whereClause = and(
+      this.buildListWhere(input),
+      lte(roles.level, input.maxRoleLevel)
+    );
 
     const [items, totalResult] = await Promise.all([
       db

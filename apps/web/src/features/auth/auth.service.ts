@@ -9,6 +9,7 @@ type InvitationVerifyResponse = {
     id: number;
     name: string;
     description: string | null;
+    level?: number;
   };
   status: "pending" | "accepted" | "expired" | "revoked";
   expiresAt: string;

@@ -6,9 +6,9 @@ const NotificationSectionContent = () => {
     <TabsContent value="notifications" className="m-0">
       <SettingsSection
         title="Notifications"
-        description="Manage your notification preferences."
+        description="Feature coming soon"
       >
-        <div />
+        <div/>
       </SettingsSection>
     </TabsContent>
   );

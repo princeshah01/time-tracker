@@ -1,4 +1,5 @@
 import { AppError } from "@/shared/utils";
+import { permissionsService } from "@/modules/permissions/permissions.service";
 import { RolesRepository } from "./roles.repository";
 
 type RolePermissionView = {
@@ -13,8 +14,16 @@ function normalizeName(value: string) {
 export class RolesService {
   constructor(private readonly rolesRepository = new RolesRepository()) {}
 
-  async listRoles(input: { page: number; limit: number; q?: string }) {
-    const result = await this.rolesRepository.listRolesPaginated(input);
+  async listRoles(
+    input: { page: number; limit: number; q?: string },
+    requesterId: string
+  ) {
+    const maxRoleLevel =
+      await permissionsService.getUserMaxRoleLevel(requesterId);
+    const result = await this.rolesRepository.listRolesPaginated({
+      ...input,
+      maxRoleLevel,
+    });
     const roleIds = result.items.map((role) => role.id);
     const permissionCounts =
       await this.rolesRepository.listPermissionCountsByRoleIds(roleIds);
@@ -35,16 +44,22 @@ export class RolesService {
     };
   }
 
-  async listAssignableRoles() {
-    const assignableRoles = await this.rolesRepository.listAssignableRoles();
+  async listAssignableRoles(requesterId: string) {
+    const maxRoleLevel =
+      await permissionsService.getUserMaxRoleLevel(requesterId);
+    const assignableRoles =
+      await this.rolesRepository.listAssignableRoles(maxRoleLevel);
 
     return { assignableRoles };
   }
 
-  async viewRole(roleId: number) {
+  async viewRole(roleId: number, requesterId: string) {
     const role = await this.rolesRepository.findRoleById(roleId);
 
-    if (!role) {
+    if (
+      !role ||
+      role.level > (await permissionsService.getUserMaxRoleLevel(requesterId))
+    ) {
       throw new AppError({
         message: "Role not found",
         code: "NOT_FOUND",
@@ -59,14 +74,17 @@ export class RolesService {
     };
   }
 
-  async listPermissions(roleId?: number) {
+  async listPermissions(roleId: number | undefined, requesterId: string) {
     if (!roleId) {
       return this.getRolePermissionsView();
     }
 
     const role = await this.rolesRepository.findRoleById(roleId);
 
-    if (!role) {
+    if (
+      !role ||
+      role.level > (await permissionsService.getUserMaxRoleLevel(requesterId))
+    ) {
       throw new AppError({
         message: "Role not found",
         code: "NOT_FOUND",
@@ -76,11 +94,25 @@ export class RolesService {
     return this.getRolePermissionsView(roleId);
   }
 
-  async createRole(input: {
-    name: string;
-    description?: string;
-    permissions: string[];
-  }) {
+  async createRole(
+    input: {
+      name: string;
+      description?: string;
+      level: number;
+      permissions: string[];
+    },
+    requesterId: string
+  ) {
+    const maxRoleLevel =
+      await permissionsService.getUserMaxRoleLevel(requesterId);
+
+    if (input.level > maxRoleLevel) {
+      throw new AppError({
+        message: "Role level cannot be higher than your role level",
+        code: "FORBIDDEN",
+      });
+    }
+
     const normalizedName = normalizeName(input.name);
     const existingRole =
       await this.rolesRepository.findActiveRoleByName(normalizedName);
@@ -95,6 +127,7 @@ export class RolesService {
     const role = await this.rolesRepository.createRole({
       name: normalizedName,
       description: input.description?.trim() || null,
+      level: input.level,
     });
 
     if (!role) {
@@ -106,7 +139,7 @@ export class RolesService {
     }
 
     await this.setRolePermissions(role.id, input.permissions);
-    return this.viewRole(role.id);
+    return this.viewRole(role.id, requesterId);
   }
 
   async updateRole(
@@ -114,8 +147,10 @@ export class RolesService {
     input: {
       name?: string;
       description?: string | null;
+      level?: number;
       permissions?: string[];
-    }
+    },
+    requesterId: string
   ) {
     const role = await this.rolesRepository.findRoleById(roleId);
 
@@ -123,6 +158,23 @@ export class RolesService {
       throw new AppError({
         message: "Role not found",
         code: "NOT_FOUND",
+      });
+    }
+
+    const maxRoleLevel =
+      await permissionsService.getUserMaxRoleLevel(requesterId);
+
+    if (role.level > maxRoleLevel) {
+      throw new AppError({
+        message: "You cannot manage a role above your level",
+        code: "FORBIDDEN",
+      });
+    }
+
+    if (input.level !== undefined && input.level > maxRoleLevel) {
+      throw new AppError({
+        message: "Role level cannot be higher than your role level",
+        code: "FORBIDDEN",
       });
     }
 
@@ -153,22 +205,32 @@ export class RolesService {
       ...(input.description !== undefined
         ? { description: input.description?.trim() || null }
         : {}),
+      ...(input.level !== undefined ? { level: input.level } : {}),
     });
 
     if (input.permissions !== undefined) {
       await this.setRolePermissions(roleId, input.permissions);
     }
 
-    return this.viewRole(roleId);
+    return this.viewRole(roleId, requesterId);
   }
 
-  async toggleRoleStatus(roleId: number) {
+  async toggleRoleStatus(roleId: number, requesterId: string) {
     const role = await this.rolesRepository.findRoleById(roleId);
 
     if (!role) {
       throw new AppError({
         message: "Role not found",
         code: "NOT_FOUND",
+      });
+    }
+
+    if (
+      role.level > (await permissionsService.getUserMaxRoleLevel(requesterId))
+    ) {
+      throw new AppError({
+        message: "You cannot manage a role above your level",
+        code: "FORBIDDEN",
       });
     }
 

@@ -45,6 +45,7 @@ export const settingsService = {
   createRole(input: {
     name: string;
     description?: string;
+    level: number;
     permissions: string[];
   }) {
     return apiFetch<RoleView>({
@@ -59,6 +60,7 @@ export const settingsService = {
     input: {
       name?: string;
       description?: string | null;
+      level?: number;
       permissions?: string[];
     }
   ) {

@@ -75,9 +75,12 @@ export class UsersService {
   constructor(private readonly usersRepository = new UsersRepository()) {}
 
   async listUsers(input: ListUsersInput, currentUserId: string) {
+    const maxRoleLevel =
+      await permissionsService.getUserMaxRoleLevel(currentUserId);
     const result = await this.usersRepository.listUsersPaginated(
       input,
-      currentUserId
+      currentUserId,
+      maxRoleLevel
     );
     const skillsByUserId = await this.getSkillsByUserId(
       result.items.map((user) => user.id)
@@ -96,10 +99,16 @@ export class UsersService {
     };
   }
 
-  async viewUser(userId: string) {
+  async viewUser(userId: string, requesterId: string) {
     const user = await this.usersRepository.findUserById(userId);
 
-    if (!user) {
+    if (
+      !user ||
+      !this.canAccessUserRole(
+        user,
+        await permissionsService.getUserMaxRoleLevel(requesterId)
+      )
+    ) {
       throw new AppError({
         message: "User not found",
         code: "NOT_FOUND",
@@ -114,13 +123,27 @@ export class UsersService {
     };
   }
 
-  async updateUser(userId: string, input: UpdateUserInput) {
+  async updateUser(
+    userId: string,
+    input: UpdateUserInput,
+    requesterId: string
+  ) {
     const existing = await this.usersRepository.findUserById(userId);
 
     if (!existing) {
       throw new AppError({
         message: "User not found",
         code: "NOT_FOUND",
+      });
+    }
+
+    const requesterMaxRoleLevel =
+      await permissionsService.getUserMaxRoleLevel(requesterId);
+
+    if (!this.canAccessUserRole(existing, requesterMaxRoleLevel)) {
+      throw new AppError({
+        message: "You cannot manage users above your role level",
+        code: "FORBIDDEN",
       });
     }
 
@@ -131,6 +154,13 @@ export class UsersService {
         throw new AppError({
           message: "Role not found",
           code: "NOT_FOUND",
+        });
+      }
+
+      if (role.level > requesterMaxRoleLevel) {
+        throw new AppError({
+          message: "You cannot assign a role above your role level",
+          code: "FORBIDDEN",
         });
       }
     }
@@ -151,16 +181,28 @@ export class UsersService {
       );
     }
 
-    return this.viewUser(userId);
+    return this.viewUser(userId, requesterId);
   }
 
-  async sendPasswordReset(userId: string) {
+  async sendPasswordReset(userId: string, requesterId: string) {
     const user = await this.usersRepository.findUserById(userId);
 
     if (!user) {
       throw new AppError({
         message: "User not found",
         code: "NOT_FOUND",
+      });
+    }
+
+    if (
+      !this.canAccessUserRole(
+        user,
+        await permissionsService.getUserMaxRoleLevel(requesterId)
+      )
+    ) {
+      throw new AppError({
+        message: "You cannot manage users above your role level",
+        code: "FORBIDDEN",
       });
     }
 
@@ -189,6 +231,9 @@ export class UsersService {
     const suggestedUsers: SuggestedUser[] = [];
     const seenEmails = new Set<string>();
     const q = input.q.trim();
+    const maxRoleLevel = await permissionsService.getUserMaxRoleLevel(
+      requester.id
+    );
 
     if (input.type === "skills") {
       return this.searchUsersBySkills(input, requester);
@@ -198,6 +243,7 @@ export class UsersService {
       q,
       limit: input.limit,
       excludeUserId: input.excludeSelf ? requester.id : undefined,
+      maxRoleLevel,
     });
 
     for (const user of onboardedUsers) {
@@ -213,6 +259,7 @@ export class UsersService {
         q,
         limit: input.limit,
         excludeEmail: input.excludeSelf ? requester.email : undefined,
+        maxRoleLevel,
         suggestedUsers,
         seenEmails,
       });
@@ -231,6 +278,7 @@ export class UsersService {
       q: input.q.trim(),
       limit: input.limit,
       excludeUserId: input.excludeSelf ? requester.id : undefined,
+      maxRoleLevel: await permissionsService.getUserMaxRoleLevel(requester.id),
     });
     const userIds = [...new Set(records.map((record) => record.id))];
     const skillsByUserId = await this.getSkillsByUserId(userIds);
@@ -258,6 +306,7 @@ export class UsersService {
     q: string;
     limit: number;
     excludeEmail?: string;
+    maxRoleLevel: number;
     suggestedUsers: SuggestedUser[];
     seenEmails: Set<string>;
   }) {
@@ -265,6 +314,7 @@ export class UsersService {
       q: input.q,
       limit: input.limit * INVITATION_SEARCH_LOOKAHEAD_MULTIPLIER,
       excludeEmail: input.excludeEmail,
+      maxRoleLevel: input.maxRoleLevel,
     });
     const invitationEmails = this.getUnseenInvitationEmails(
       invitations,
@@ -340,13 +390,25 @@ export class UsersService {
   }
 
   private toUserView<
-    TUser extends { role: { id: number | null; name: string | null } | null },
+    TUser extends {
+      role: {
+        id: number | null;
+        name: string | null;
+        level?: number | null;
+      } | null;
+    },
   >(user: TUser) {
     return {
       ...user,
       roleId: user.role?.id ?? null,
       roleName: user.role?.name ?? null,
     };
+  }
+
+  private canAccessUserRole<
+    TUser extends { role: { level?: number | null } | null },
+  >(user: TUser, maxRoleLevel: number) {
+    return (user.role?.level ?? 0) <= maxRoleLevel;
   }
 }
 

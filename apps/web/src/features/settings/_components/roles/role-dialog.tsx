@@ -41,6 +41,7 @@ const roleFormSchema = z.object({
     .min(3, "Role name must be at least 3 characters long")
     .max(50, "Role name must be at most 50 characters long"),
   description: z.string().optional(),
+  level: z.number().int().min(0).max(100),
 });
 
 type RoleFormValues = z.infer<typeof roleFormSchema>;
@@ -59,9 +60,12 @@ const RoleViewDialog = ({
   const queryClient = useQueryClient();
   const isEditMode = Boolean(selectedRole);
 
-  const { permissions: currentUserPermissions } = useAppSelector((state) => state.user);
-  const canManageRoles = hasPermission(currentUserPermissions, [permissions.roleManage]);
-
+  const { permissions: currentUserPermissions } = useAppSelector(
+    (state) => state.user
+  );
+  const canManageRoles = hasPermission(currentUserPermissions, [
+    permissions.roleManage,
+  ]);
 
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(
     new Set()
@@ -72,6 +76,7 @@ const RoleViewDialog = ({
     defaultValues: {
       name: "",
       description: "",
+      level: 0,
     },
   });
 
@@ -99,6 +104,7 @@ const RoleViewDialog = ({
       return {
         name: "",
         description: "",
+        level: 0,
         permissions: response.data.permissions,
       };
     },
@@ -115,6 +121,7 @@ const RoleViewDialog = ({
       form.reset({
         name: "",
         description: "",
+        level: 0,
       });
       setSelectedPermissions(new Set());
       return;
@@ -123,6 +130,7 @@ const RoleViewDialog = ({
     form.reset({
       name: selectedRole.name,
       description: selectedRole.description ?? "",
+      level: selectedRole.level,
     });
   }, [dialogOpen, selectedRole, form]);
 
@@ -133,6 +141,7 @@ const RoleViewDialog = ({
       name: roleDetailsQuery.data.name ?? selectedRole?.name ?? "",
       description:
         roleDetailsQuery.data.description ?? selectedRole?.description ?? "",
+      level: roleDetailsQuery.data.level ?? selectedRole?.level ?? 0,
     });
 
     setSelectedPermissions(
@@ -156,6 +165,7 @@ const RoleViewDialog = ({
       const response = await settingsService.createRole({
         name: values.name,
         description: values.description ?? "",
+        level: values.level,
         permissions: Array.from(selectedPermissions),
       });
 
@@ -184,6 +194,7 @@ const RoleViewDialog = ({
       const response = await settingsService.updateRole(selectedRole.id, {
         name: values.name,
         description: values.description ?? "",
+        level: values.level,
         permissions: Array.from(selectedPermissions),
       });
 
@@ -224,7 +235,9 @@ const RoleViewDialog = ({
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Role Details" : "Create Role"}</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? "Role Details" : "Create Role"}
+          </DialogTitle>
           <DialogDescription>
             Configure role details and permissions for this role.
           </DialogDescription>
@@ -235,7 +248,7 @@ const RoleViewDialog = ({
             className="space-y-4"
             onSubmit={form.handleSubmit(handleSubmit)}
           >
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <FormField
                 control={form.control}
                 name="name"
@@ -247,7 +260,9 @@ const RoleViewDialog = ({
                         <Input
                           {...field}
                           placeholder="Enter role name"
-                          disabled={isDefaultRole || isSaving || !canManageRoles}
+                          disabled={
+                            isDefaultRole || isSaving || !canManageRoles
+                          }
                         />
                       </FormControl>
                       <FormMessage className="text-[10px]" />
@@ -267,7 +282,41 @@ const RoleViewDialog = ({
                         <Input
                           {...field}
                           placeholder="Enter description"
-                          disabled={isDefaultRole || isSaving || !canManageRoles}
+                          disabled={
+                            isDefaultRole || isSaving || !canManageRoles
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage className="text-[10px]" />
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="level"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex flex-col gap-2">
+                      <FormLabel className="text-xs">Level</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="number"
+                          min={0}
+                          max={100}
+                          placeholder="0"
+                          disabled={
+                            isDefaultRole || isSaving || !canManageRoles
+                          }
+                          onChange={(event) =>
+                            field.onChange(
+                              event.target.value === ""
+                                ? 0
+                                : Number(event.target.value)
+                            )
+                          }
                         />
                       </FormControl>
                       <FormMessage className="text-[10px]" />
@@ -309,19 +358,21 @@ const RoleViewDialog = ({
               >
                 Cancel
               </Button>
-              <PermissionsWrapper requiredPermissions={[permissions.roleManage]}>
-              <Button
-                size="sm"
-                type="submit"
-                disabled={
-                  isSaving ||
-                  isDefaultRole ||
-                  roleDetailsQuery.isLoading ||
-                  roleDetailsQuery.isError
-                }
+              <PermissionsWrapper
+                requiredPermissions={[permissions.roleManage]}
               >
-                {isEditMode ? "Save changes" : "Create role"}
-              </Button>
+                <Button
+                  size="sm"
+                  type="submit"
+                  disabled={
+                    isSaving ||
+                    isDefaultRole ||
+                    roleDetailsQuery.isLoading ||
+                    roleDetailsQuery.isError
+                  }
+                >
+                  {isEditMode ? "Save changes" : "Create role"}
+                </Button>
               </PermissionsWrapper>
             </DialogFooter>
           </form>

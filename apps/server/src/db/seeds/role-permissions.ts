@@ -12,6 +12,7 @@ import {
 type SeedRole = {
   name: RoleName;
   description: string;
+  level: number;
   isDefault?: boolean;
   permissions: readonly PermissionKey[];
 };
@@ -24,6 +25,7 @@ const seedRoles: readonly SeedRole[] = [
   {
     name: roleNames.admin,
     description: "Full application access.",
+    level: 100,
     permissions: [
       // Profile permissions
       permissionKeys.profileView,
@@ -43,6 +45,7 @@ const seedRoles: readonly SeedRole[] = [
   {
     name: roleNames.manager,
     description: "Manages users, clients, projects, reports, and timesheets.",
+    level: 80,
     permissions: [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
@@ -62,21 +65,27 @@ const seedRoles: readonly SeedRole[] = [
   {
     name: roleNames.teamLead,
     description: "Manages assigned team work and reviews team timesheets.",
+    level: 60,
     permissions: [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
       permissionKeys.profileSecurityManage,
-
       // User management permissions
-      permissionKeys.userView,
 
+      permissionKeys.userView,
+      permissionKeys.userInvite,
+      permissionKeys.userManageFinancial,
+      permissionKeys.userManage,
+      permissionKeys.userViewFinancial,
       // Role management permissions
       permissionKeys.roleView,
+      permissionKeys.roleManage,
     ],
   },
   {
     name: roleNames.developer,
     description: "Works on assigned projects and manages own timesheets.",
+    level: 40,
     permissions: [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
@@ -86,6 +95,7 @@ const seedRoles: readonly SeedRole[] = [
   {
     name: roleNames.guest,
     description: "Default limited access for newly registered users.",
+    level: 10,
     isDefault: true,
     permissions: [
       permissionKeys.profileView,
@@ -117,6 +127,7 @@ async function seedRolePermissions() {
       seedRoles.map((role) => ({
         name: role.name,
         description: role.description,
+        level: role.level,
         isDefault: role.isDefault ?? false,
       }))
     )
@@ -124,6 +135,7 @@ async function seedRolePermissions() {
       target: roles.name,
       set: {
         description: sql`excluded.description`,
+        level: sql`excluded.level`,
         isDefault: sql`excluded.is_default`,
       },
     });
