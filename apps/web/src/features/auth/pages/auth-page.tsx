@@ -26,6 +26,7 @@ import {
 import { authService } from "../auth.service";
 import { userService } from "@/features/user/user.service";
 import { useAppDispatch, setUser } from "@/app/store";
+import type { SignUpFormValues } from "../_components/sign-up-tab";
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -75,6 +76,31 @@ function AuthPage() {
     navigate("/dashboard");
   }
 
+  async function onSignupSubmit(values: SignUpFormValues) {
+    const response = await authService.signUpWithEmail(values);
+    if (response.error) {
+      toast.error(
+        response.error.message || "An error occurred during sign-up."
+      );
+    } else {
+      toast.success("Sign-up successful! Please verify your email.");
+      setStep("signup-otp");
+      setStepValues({ email: values.email });
+    }
+  }
+
+  async function onSignupEmailVerify(values: { otp: string }) {
+    const result = await authService.emailVerifyOtp({
+      email: stepValues.email ?? "",
+      otp: values.otp ?? "",
+    });
+    if (result.error) {
+      toast.error(result.error.message);
+      return;
+    }
+    toast.success("Email verified successfully");
+    setStep("signup-success");
+  }
   async function onTfaVerify(values: { otp: string }) {
     const result = await authService.signInTfa({
       otp: values.otp ?? "",
@@ -110,7 +136,7 @@ function AuthPage() {
             </TabsContent>
 
             <TabsContent value="signup" className="mt-4">
-              <SignUpTab onSubmitSuccess={() => setStep("signup-otp")} />
+              <SignUpTab onSubmit={onSignupSubmit} />
             </TabsContent>
           </Tabs>
         </>
@@ -131,10 +157,7 @@ function AuthPage() {
             title="Check your inbox"
             description="Enter the 6-digit code sent to your email."
             submitLabel="Verify OTP"
-            onSubmit={async () => {
-              toast.success("OTP verified.");
-              setStep("signup-success");
-            }}
+            onSubmit={onSignupEmailVerify}
           />
           <ResendCountdownButton
             onResend={async () => {

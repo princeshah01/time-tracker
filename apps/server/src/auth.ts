@@ -1,18 +1,23 @@
 import { betterAuth } from "better-auth";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { emailOTP } from "better-auth/plugins/email-otp";
 import { genericOAuth } from "better-auth/plugins/generic-oauth";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { eq } from "drizzle-orm";
-
+import { AppError } from "@/shared/utils";
+import { authService } from "@/modules/auth";
 import {
   addAuthOtpEmailJob,
   addPasswordResetEmailJob,
 } from "@/infrastructure/queue";
 import { betterAuthRedisStorage } from "@/infrastructure/redis";
 import { permissionsService } from "@/modules/permissions/permissions.service";
-
+import { permissionKeys } from "@/shared/constants/role-permission";
 import { env } from "@/config";
 import { db } from "@/db";
 import { user } from "@/db/schema";
@@ -158,24 +163,65 @@ export const auth = betterAuth({
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
-      if (ctx.path !== "/sign-in/email") return;
+      const protectedSecurityPaths = [
+        "/two-factor/enable",
+        "/two-factor/disable",
+      ];
 
-      const email = (ctx.body as { email?: string } | undefined)?.email
-        ?.trim()
-        .toLowerCase();
+      function throwApiError(error: unknown) {
+        if (error instanceof AppError) {
+          throw new APIError(error.code as any, {
+            message: error.message,
+          });
+        }
 
-      if (!email) return;
+        throw error;
+      }
 
-      const [record] = await db
-        .select({ isActive: user.isActive })
-        .from(user)
-        .where(eq(user.email, email))
-        .limit(1);
+      if (ctx.path === "/sign-in/email") {
+        const email = (ctx.body as { email?: string } | undefined)?.email
+          ?.trim()
+          .toLowerCase();
 
-      if (record && !record.isActive) {
-        throw new APIError("FORBIDDEN", {
-          message: "Your account is inactive. Please contact an administrator.",
-        });
+        if (!email) return;
+
+        try {
+          await authService.requireActiveUserByEmail(email);
+        } catch (error) {
+          throwApiError(error);
+        }
+
+        return;
+      }
+
+      if (protectedSecurityPaths.includes(ctx.path)) {
+        const session = await getSessionFromCtx(ctx);
+        const userId = session?.user?.id;
+
+        if (!userId) {
+          throw new APIError("UNAUTHORIZED", {
+            message: "Authentication required.",
+          });
+        }
+
+        if (userId) {
+          try {
+            await authService.requireActiveUserById(userId);
+          } catch (error) {
+            throwApiError(error);
+          }
+        }
+
+        try {
+          await permissionsService.requirePermission(
+            userId,
+            permissionKeys.profileSecurityManage
+          );
+        } catch (error) {
+          throwApiError(error);
+        }
+
+        return;
       }
     }),
   },

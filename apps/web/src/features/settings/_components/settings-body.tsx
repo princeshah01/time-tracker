@@ -32,12 +32,12 @@ type SettingsTabValue = (typeof SETTINGS_TABS)[number];
 
 //TODO: add permissions for each tab later
 const TAB_PERMISSIONS: Record<SettingsTabValue, string[]> = {
-  profile: [permissions.profileView, permissions.profileUpdate],
-  users: [],
-  invitations: [],
-  roles: [],
+  profile: [permissions.profileView],
+  users: [permissions.userView],
+  invitations: [permissions.userInvite],
+  roles: [permissions.roleView],
   notifications: [],
-  security: [],
+  security: [permissions.profileSecurityManage],
   workspace: [],
 };
 

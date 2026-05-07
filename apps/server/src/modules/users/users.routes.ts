@@ -8,6 +8,8 @@ import {
   updateUserSchema,
   userIdParamSchema,
 } from "./users.validation";
+import { requirePermission } from "@/shared/middlewares";
+import { permissionKeys } from "@/shared/constants/role-permission";
 
 const usersRouter = Router();
 
@@ -34,7 +36,7 @@ usersRouter.get(
 );
 usersRouter.patch(
   "/:userId",
-  // requirePermission(permissionKeys.userManage),
+  requirePermission(permissionKeys.userManage),
   validate(updateUserSchema),
   usersController.update
 );

@@ -100,55 +100,55 @@ function TagSelect({
           <span className="text-[12px] text-muted-foreground">No tags</span>
         )}
       </div>
+      {disabled ? null : (
+        <div className="relative">
+          <Input
+            value={draft}
+            variant="search"
+            placeholder={placeholder}
+            className="h-9 text-[13px]"
+            onFocus={() => setOpen(true)}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setOpen(true);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                addTag();
+              }
 
-      <div className="relative">
-        <Input
-          value={draft}
-          variant="search"
-          disabled={disabled}
-          placeholder={placeholder}
-          className="h-9 text-[13px]"
-          onFocus={() => setOpen(true)}
-          onChange={(event) => {
-            setDraft(event.target.value);
-            setOpen(true);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              addTag();
-            }
+              if (event.key === "Backspace" && !draft && value.length > 0) {
+                onChange(value.slice(0, -1));
+              }
+            }}
+            onBlur={() => {
+              setTimeout(() => {
+                setOpen(false);
+              }, 150);
+            }}
+          />
 
-            if (event.key === "Backspace" && !draft && value.length > 0) {
-              onChange(value.slice(0, -1));
-            }
-          }}
-          onBlur={() => {
-            setTimeout(() => {
-              setOpen(false);
-            }, 150);
-          }}
-        />
-
-        {open && suggestions.length > 0 && (
-          <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover p-1 shadow-md">
-            {suggestions.map((skill) => (
-              <button
-                key={skill}
-                type="button"
-                className="flex w-full items-center rounded-sm px-2 py-1.5 text-left hover:bg-accent"
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => addTag(skill)}
-              >
-                <SkillTagRenderer
-                  skill={skill}
-                  className="border-none bg-transparent p-0"
-                />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+          {open && suggestions.length > 0 && (
+            <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover p-1 shadow-md">
+              {suggestions.map((skill) => (
+                <button
+                  key={skill}
+                  type="button"
+                  className="flex w-full items-center rounded-sm px-2 py-1.5 text-left hover:bg-accent"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => addTag(skill)}
+                >
+                  <SkillTagRenderer
+                    skill={skill}
+                    className="border-none bg-transparent p-0"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

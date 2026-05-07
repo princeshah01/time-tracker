@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth, validate } from "@/shared/middlewares";
+import { requireAuth, validate, requirePermission } from "@/shared/middlewares";
 import { invitationsController } from "./invitations.controllers";
 import {
   acceptInvitationSchema,
@@ -11,6 +11,7 @@ import {
   verifyInvitationOtpSchema,
   verifyInvitationSchema,
 } from "./invitations.validation";
+import { permissionKeys } from "@/shared/constants/role-permission";
 
 const invitationsRouter = Router();
 
@@ -35,21 +36,23 @@ invitationsRouter.post(
   invitationsController.accept
 );
 
+invitationsRouter.use(
+  requireAuth,
+  requirePermission(permissionKeys.userInvite)
+);
+
 invitationsRouter.get(
   "/",
-  requireAuth,
   validate(listInvitationsSchema),
   invitationsController.list
 );
 invitationsRouter.post(
   "/",
-  requireAuth,
   validate(createInvitationSchema),
   invitationsController.create
 );
 invitationsRouter.patch(
   "/:id/revoke",
-  requireAuth,
   validate(revokeInvitationSchema),
   invitationsController.revoke
 );

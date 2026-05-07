@@ -17,6 +17,9 @@ import {
   UserSkillsCell,
   UserStatusButton,
 } from "./users-table-cells";
+import { useAppSelector } from "@/app/store/hooks";
+import { hasPermission } from "@/shared/lib";
+import { permissions } from "@/shared/constants";
 
 type UsersTableProps = {
   data?: InfiniteData<ListUsersResponse>;
@@ -43,6 +46,10 @@ function UsersTable({
   updateUserMutation,
   resetPasswordMutation,
 }: UsersTableProps) {
+  const { permissions: currentUserPermissions } = useAppSelector((s) => s.user);
+  const canManageUsers = hasPermission(currentUserPermissions, [
+    permissions.userManage,
+  ]);
   const users = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
     [data]
@@ -87,27 +94,29 @@ function UsersTable({
         header: "Status",
         cell: ({ row }) => (
           <UserStatusButton
+            disabled={!canManageUsers}
             user={row.original}
             updateUserMutation={updateUserMutation}
           />
         ),
         size: 95,
       },
-      {
-        id: "actions",
-        header: "Action",
-        cell: ({ row }) => (
-          <UserResetPasswordButton
-            user={row.original}
-            resetPasswordMutation={resetPasswordMutation}
-          />
-        ),
-        size: 65,
-      },
     ],
     [resetPasswordMutation, updateUserMutation]
   );
-
+  if (canManageUsers) {
+    columns.push({
+      id: "actions",
+      header: "Action",
+      cell: ({ row }) => (
+        <UserResetPasswordButton
+          user={row.original}
+          resetPasswordMutation={resetPasswordMutation}
+        />
+      ),
+      size: 65,
+    });
+  }
   return (
     <DataTable
       data={users}

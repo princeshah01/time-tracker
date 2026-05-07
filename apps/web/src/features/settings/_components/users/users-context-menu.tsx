@@ -5,6 +5,7 @@ import type {
   UpdateUserMutation,
   UserMenuState,
 } from "./users.types";
+import { useDismiss } from "@/shared/hooks/use-dismiss";
 
 type UsersContextMenuProps = {
   menuState: UserMenuState;
@@ -22,6 +23,11 @@ function UsersContextMenu({
   resetPasswordMutation,
 }: UsersContextMenuProps) {
   if (!menuState) return null;
+  
+  const menuRef = useDismiss<HTMLDivElement>({
+    enabled: !!menuState,
+    onDismiss: () => setMenuState(null),
+  });
 
   const user = menuState.row;
 
@@ -35,6 +41,7 @@ function UsersContextMenu({
 
   return (
     <div
+      ref={menuRef}
       className="fixed z-50 w-52 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
       style={{ top: menuState.y, left: menuState.x }}
     >

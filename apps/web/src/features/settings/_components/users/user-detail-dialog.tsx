@@ -52,6 +52,10 @@ import { env } from "@/shared/config";
 import { QUERY_KEYS } from "@/shared/constants";
 import { capitalize, formatDate, getInitials } from "@/shared/lib";
 import type { AssignableRole } from "../../settings.type";
+import { useAppSelector } from "@/app/store";
+import { hasPermission } from "@/shared/lib/permissions";
+import { permissions } from "@/shared/constants";
+import { PermissionsWrapper } from "@/shared/components/permission-wrapper";
 
 const userEditSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -107,6 +111,11 @@ function UserDetailDialog({
   open,
   onOpenChange,
 }: UserDetailDialogProps) {
+  const { permissions: currentUserPermissions } = useAppSelector((s) => s.user);
+  const hasUserManagePermission = hasPermission(currentUserPermissions, [
+    permissions.userManage,
+  ]);
+  console.log("hasUserManagePermission", hasUserManagePermission);
   const queryClient = useQueryClient();
   const userId = user?.id;
 
@@ -246,7 +255,11 @@ function UserDetailDialog({
                     <FormItem>
                       <FormLabel className="text-[12px]">Name</FormLabel>
                       <FormControl>
-                        <Input className="h-9 text-[13px]" {...field} />
+                        <Input
+                          disabled={!hasUserManagePermission}
+                          className="h-9 text-[13px]"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage className="text-[12px]" />
                     </FormItem>
@@ -291,7 +304,10 @@ function UserDetailDialog({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={updateUserMutation.isPending}
+                        disabled={
+                          !hasUserManagePermission ||
+                          updateUserMutation.isPending
+                        }
                       >
                         <FormControl>
                           <SelectTrigger className="h-9 text-[13px]">
@@ -328,7 +344,10 @@ function UserDetailDialog({
                           <Switch
                             checked={field.value}
                             onCheckedChange={field.onChange}
-                            disabled={updateUserMutation.isPending}
+                            disabled={
+                              !hasUserManagePermission ||
+                              updateUserMutation.isPending
+                            }
                           />
                         </FormControl>
                       </div>
@@ -349,7 +368,10 @@ function UserDetailDialog({
                         value={field.value}
                         onChange={field.onChange}
                         placeholder="Add skill and press Enter"
-                        disabled={updateUserMutation.isPending}
+                        disabled={
+                          !hasUserManagePermission ||
+                          updateUserMutation.isPending
+                        }
                       />
                     </FormControl>
                     <FormMessage className="text-[12px]" />
@@ -366,9 +388,15 @@ function UserDetailDialog({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateUserMutation.isPending}>
-                  {updateUserMutation.isPending ? "Saving..." : "Save changes"}
-                </Button>
+                <PermissionsWrapper
+                  requiredPermissions={[permissions.userManage]}
+                >
+                  <Button type="submit" disabled={updateUserMutation.isPending}>
+                    {updateUserMutation.isPending
+                      ? "Saving..."
+                      : "Save changes"}
+                  </Button>
+                </PermissionsWrapper>
               </DialogFooter>
             </form>
           </Form>

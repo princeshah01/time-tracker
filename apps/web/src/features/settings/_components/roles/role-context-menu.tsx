@@ -1,5 +1,6 @@
 import { AppIcon } from "@/shared/components/app-icon";
 import type { RoleListItem } from "@/features/settings/settings.type";
+import { useDismiss } from "@/shared/hooks/use-dismiss";
 
 type RoleTableContextMenuProps = {
   menuState: {
@@ -22,9 +23,14 @@ const RoleTableContextMenu = ({
   toggleRoleStatusMutation,
 }: RoleTableContextMenuProps) => {
   if (!menuState) return null;
-
+  const menuRef = useDismiss<HTMLDivElement>({
+    enabled: !!menuState,
+    onDismiss: () => setMenuState(null),
+  });
+  
   return (
     <div
+      ref={menuRef}
       className="fixed z-50 w-44 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
       style={{ top: menuState.y, left: menuState.x }}
     >

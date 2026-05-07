@@ -39,7 +39,6 @@ export class RolesController {
     const { params } = (req as ValidatedRequest<typeof roleIdParamSchema>)
       .validated;
     const role = await rolesService.viewRole(params.roleId);
-    await new Promise((resolve) => setTimeout(resolve, 5_000)); // Simulate delay
     return sendSuccess({
       res,
       data: role,

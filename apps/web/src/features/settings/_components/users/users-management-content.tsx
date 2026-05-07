@@ -11,12 +11,13 @@ import { toast } from "@workspace/ui/components/sonner";
 import { settingsService } from "@/features/settings";
 import { userManageService } from "@/features/users-mange";
 import type { UpdateUserInput, UserListItem } from "@/features/users-mange";
-import { QUERY_KEYS } from "@/shared/constants";
+import { permissions, QUERY_KEYS } from "@/shared/constants";
 import { UserDetailDialog } from "./user-detail-dialog";
 import type { StatusFilterValue, UserMenuState } from "./users.types";
 import { UsersContextMenu } from "./users-context-menu";
 import { UsersFilters } from "./users-filters";
 import { UsersTable } from "./users-table";
+import { PermissionsWrapper } from "@/shared/components/permission-wrapper";
 
 function UsersManagementContent() {
   const queryClient = useQueryClient();
@@ -148,7 +149,7 @@ function UsersManagementContent() {
         updateUserMutation={updateUserMutation}
         resetPasswordMutation={resetPasswordMutation}
       />
-
+      <PermissionsWrapper requiredPermissions={[permissions.userInvite]}>
       <UsersContextMenu
         menuState={menuState}
         setMenuState={setMenuState}
@@ -156,15 +157,17 @@ function UsersManagementContent() {
         updateUserMutation={updateUserMutation}
         resetPasswordMutation={resetPasswordMutation}
       />
-
-      <UserDetailDialog
-        user={selectedUser}
-        roles={rolesQuery.data ?? []}
-        open={Boolean(selectedUser)}
-        onOpenChange={(open) => {
-          if (!open) setSelectedUser(null);
-        }}
-      />
+      </PermissionsWrapper>
+      <PermissionsWrapper requiredPermissions={[permissions.profileView]}>
+        <UserDetailDialog
+          user={selectedUser}
+          roles={rolesQuery.data ?? []}
+          open={Boolean(selectedUser)}
+          onOpenChange={(open) => {
+            if (!open) setSelectedUser(null);
+          }}
+        />
+      </PermissionsWrapper>
     </div>
   );
 }

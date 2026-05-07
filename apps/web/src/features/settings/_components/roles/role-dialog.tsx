@@ -30,6 +30,10 @@ import type {
   RoleListItem,
   RolePermission,
 } from "@/features/settings/settings.type";
+import { useAppSelector } from "@/app/store/hooks";
+import { hasPermission } from "@/shared/lib/permissions";
+import { permissions } from "@/shared/constants";
+import { PermissionsWrapper } from "@/shared/components/permission-wrapper";
 
 const roleFormSchema = z.object({
   name: z
@@ -54,6 +58,10 @@ const RoleViewDialog = ({
 }: RoleViewDialogProps) => {
   const queryClient = useQueryClient();
   const isEditMode = Boolean(selectedRole);
+
+  const { permissions: currentUserPermissions } = useAppSelector((state) => state.user);
+  const canManageRoles = hasPermission(currentUserPermissions, [permissions.roleManage]);
+
 
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(
     new Set()
@@ -216,7 +224,7 @@ const RoleViewDialog = ({
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit Role" : "Create Role"}</DialogTitle>
+          <DialogTitle>{isEditMode ? "Role Details" : "Create Role"}</DialogTitle>
           <DialogDescription>
             Configure role details and permissions for this role.
           </DialogDescription>
@@ -239,7 +247,7 @@ const RoleViewDialog = ({
                         <Input
                           {...field}
                           placeholder="Enter role name"
-                          disabled={isDefaultRole || isSaving}
+                          disabled={isDefaultRole || isSaving || !canManageRoles}
                         />
                       </FormControl>
                       <FormMessage className="text-[10px]" />
@@ -259,7 +267,7 @@ const RoleViewDialog = ({
                         <Input
                           {...field}
                           placeholder="Enter description"
-                          disabled={isDefaultRole || isSaving}
+                          disabled={isDefaultRole || isSaving || !canManageRoles}
                         />
                       </FormControl>
                       <FormMessage className="text-[10px]" />
@@ -275,7 +283,7 @@ const RoleViewDialog = ({
                 permissions={permissionOptions}
                 isLoading={roleDetailsQuery.isLoading}
                 selected={selectedPermissions}
-                disabled={isDefaultRole || isSaving}
+                disabled={isDefaultRole || isSaving || !canManageRoles}
                 onToggle={(name, checked) => {
                   setSelectedPermissions((prev) => {
                     const next = new Set(prev);
@@ -301,7 +309,7 @@ const RoleViewDialog = ({
               >
                 Cancel
               </Button>
-
+              <PermissionsWrapper requiredPermissions={[permissions.roleManage]}>
               <Button
                 size="sm"
                 type="submit"
@@ -314,6 +322,7 @@ const RoleViewDialog = ({
               >
                 {isEditMode ? "Save changes" : "Create role"}
               </Button>
+              </PermissionsWrapper>
             </DialogFooter>
           </form>
         </Form>

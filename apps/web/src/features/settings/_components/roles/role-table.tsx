@@ -1,4 +1,4 @@
-import { use, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -20,6 +20,10 @@ import { cn } from "@workspace/ui/lib/utils";
 
 import { RoleViewDialog } from "./role-dialog";
 import { RoleTableContextMenu } from "./role-context-menu";
+import { PermissionsWrapper } from "@/shared/components/permission-wrapper";
+import { permissions } from "@/shared/constants";
+import { useAppSelector } from "@/app/store/hooks";
+import { hasPermission } from "@/shared/lib/permissions";
 
 type RoleTableFilterProps = {
   search: string;
@@ -47,6 +51,9 @@ const RoleTableFilter = ({ search, onSearchChange }: RoleTableFilterProps) => {
 
 const RoleTable = () => {
   const queryClient = useQueryClient();
+
+  const {permissions: userPermissions} = useAppSelector((s) => s.user);
+  const canManageRoles = hasPermission(userPermissions, [permissions.roleManage]);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -177,7 +184,7 @@ const RoleTable = () => {
                   ? "border-success bg-success/10 text-success hover:bg-success/20 hover:text-success"
                   : "border-muted bg-muted text-muted-foreground hover:bg-muted/80 hover:text-muted-foreground"
               )}
-              disabled={role.isDefault || toggleRoleStatusMutation.isPending}
+              disabled={role.isDefault || toggleRoleStatusMutation.isPending || !canManageRoles}
               onClick={(event) => {
                 event.stopPropagation();
                 toggleRoleStatusMutation.mutate(role);
@@ -220,17 +227,12 @@ const RoleTable = () => {
       row: role,
     });
   }
-  console.log("render", {
-    search,
-    debouncedSearch,
-    rolesQuery: rolesQuery.status,
-  });
 
   return (
     <div className="space-y-4 border-t p-4" onClick={() => setMenuState(null)}>
       <div className="flex items-center justify-between gap-3">
         <RoleTableFilter search={search} onSearchChange={setSearch} />
-
+        <PermissionsWrapper requiredPermissions={[permissions.roleManage]}>
         <Button
           size="sm"
           className="h-8 gap-1.5 text-[12px]"
@@ -239,6 +241,7 @@ const RoleTable = () => {
           <AppIcon name="Plus" className="h-3.5 w-3.5" />
           Add Role
         </Button>
+        </PermissionsWrapper>
       </div>
 
       <DataTable
@@ -254,14 +257,14 @@ const RoleTable = () => {
         setRowLimit={setRowLimit}
         emptyText="No roles found"
       />
-
+      <PermissionsWrapper requiredPermissions={[permissions.roleManage]}>
       <RoleTableContextMenu
         menuState={menuState}
         openEdit={openEdit}
         setMenuState={setMenuState}
         toggleRoleStatusMutation={toggleRoleStatusMutation}
       />
-
+      </PermissionsWrapper>
       <RoleViewDialog
         dialogOpen={dialogOpen}
         setDialogOpen={setDialogOpen}

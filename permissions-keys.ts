@@ -1,6 +1,5 @@
 export const permissionKeys = {
   profileView: "profile:view",
   profileUpdate: "profile:update",
-  passWordUpdate: "password:update",
-  profileTFAManage: "profile:tfa-manage",
+  profileSecurityManage: "profile:security-manage",
 } as const;

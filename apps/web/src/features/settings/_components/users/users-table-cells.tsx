@@ -81,9 +81,11 @@ function UserEmailVerifiedBadge({ verified }: { verified: boolean }) {
 function UserStatusButton({
   user,
   updateUserMutation,
+  disabled = false,
 }: {
   user: UserListItem;
   updateUserMutation: Pick<UpdateUserMutation, "isPending" | "mutate">;
+  disabled?: boolean;
 }) {
   function toggleStatus(data: UpdateUserInput) {
     updateUserMutation.mutate({
@@ -103,7 +105,7 @@ function UserStatusButton({
           ? "border-success bg-success/10 text-success hover:bg-success/20 hover:text-success"
           : "border-muted bg-muted text-muted-foreground hover:bg-muted/80 hover:text-muted-foreground"
       )}
-      disabled={updateUserMutation.isPending}
+      disabled={updateUserMutation.isPending || disabled}
       onClick={(event) => {
         event.stopPropagation();
         toggleStatus({ isActive: !user.isActive });

@@ -32,13 +32,13 @@ const signUpSchema = z
     path: ["confirmPassword"],
   });
 
-type SignUpFormValues = z.infer<typeof signUpSchema>;
+export type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 type SignUpTabProps = {
-  onSubmitSuccess?: () => void;
+  onSubmit: (value: SignUpFormValues) => void;
 };
 
-function SignUpTab({ onSubmitSuccess }: SignUpTabProps) {
+function SignUpTab({ onSubmit }: SignUpTabProps) {
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -49,18 +49,6 @@ function SignUpTab({ onSubmitSuccess }: SignUpTabProps) {
       acceptTerms: false,
     },
   });
-
-  async function onSubmit(_values: SignUpFormValues) {
-    const response = await authService.signUpWithEmail(_values);
-    if (response.error) {
-      toast.error(
-        response.error.message || "An error occurred during sign-up."
-      );
-    } else {
-      toast.success("Sign-up completed successfully.");
-      onSubmitSuccess?.();
-    }
-  }
 
   return (
     <Form {...form}>

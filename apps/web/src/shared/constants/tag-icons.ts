@@ -1,5 +1,3 @@
-// shared/constants/tag-icon-map.ts
-
 export const DEFAULT_TAG_ICON = "devicon-devicon-plain";
 
 export const TAG_ICON_MAP: Record<string, string> = {

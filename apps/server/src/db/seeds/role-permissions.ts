@@ -25,9 +25,19 @@ const seedRoles: readonly SeedRole[] = [
     name: roleNames.admin,
     description: "Full application access.",
     permissions: [
+      // Profile permissions
       permissionKeys.profileView,
       permissionKeys.profileSecurityManage,
       permissionKeys.profileUpdate,
+      // User management permissions
+      permissionKeys.userView,
+      permissionKeys.userInvite,
+      permissionKeys.userManageFinancial,
+      permissionKeys.userManage,
+      permissionKeys.userViewFinancial,
+      // Role management permissions
+      permissionKeys.roleView,
+      permissionKeys.roleManage,
     ],
   },
   {
@@ -37,6 +47,16 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
       permissionKeys.profileSecurityManage,
+
+      // User management permissions
+      permissionKeys.userView,
+      permissionKeys.userInvite,
+      permissionKeys.userManageFinancial,
+      permissionKeys.userManage,
+      permissionKeys.userViewFinancial,
+      // Role management permissions
+      permissionKeys.roleView,
+      permissionKeys.roleManage,
     ],
   },
   {
@@ -46,6 +66,12 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
       permissionKeys.profileSecurityManage,
+
+      // User management permissions
+      permissionKeys.userView,
+
+      // Role management permissions
+      permissionKeys.roleView,
     ],
   },
   {
