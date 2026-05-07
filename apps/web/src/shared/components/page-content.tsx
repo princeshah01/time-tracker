@@ -60,7 +60,7 @@ function Body({ children, className }: BodyProps) {
   return (
     <div
       className={cn(
-        "flex-1 overflow-y-auto min-h-0", // ✅ critical fix
+        "flex-1 overflow-y-auto min-h-0",
         className
       )}
     >

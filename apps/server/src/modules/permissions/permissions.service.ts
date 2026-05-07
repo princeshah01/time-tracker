@@ -2,6 +2,7 @@ import {
   defaultRoleName,
   type PermissionKey,
 } from "@/shared/constants/role-permission";
+import type { AccessScope } from "@/shared/types";
 import { AppError } from "@/shared/utils";
 import { PermissionsRepository } from "./permissions.repository";
 
@@ -78,6 +79,37 @@ export class PermissionsService {
         code: "FORBIDDEN",
       });
     }
+  }
+
+  async resolveAccessScope(
+    userId: string,
+    permissions: { all: PermissionInput; own: PermissionInput }
+  ): Promise<AccessScope | null> {
+    if (await this.checkPermission(userId, permissions.all)) {
+      return "all";
+    }
+
+    if (await this.checkPermission(userId, permissions.own)) {
+      return "own";
+    }
+
+    return null;
+  }
+
+  async requireAccessScope(
+    userId: string,
+    permissions: { all: PermissionInput; own: PermissionInput }
+  ): Promise<AccessScope> {
+    const scope = await this.resolveAccessScope(userId, permissions);
+
+    if (!scope) {
+      throw new AppError({
+        message: "You do not have permission to access this resource.",
+        code: "FORBIDDEN",
+      });
+    }
+
+    return scope;
   }
 
   async attachDefaultRole(userId: string) {

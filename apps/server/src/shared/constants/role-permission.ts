@@ -13,6 +13,12 @@ export const permissionKeys = {
   roleView: "role:view",
   roleManage: "role:manage",
 
+  // Client management permissions
+  clientCreate: "client:create",
+  clientViewAll: "client:view:all",
+  clientViewOwn: "client:view:own",
+  clientManageAll: "client:manage:all",
+  clientManageOwn: "client:manage:own",
 } as const;
 
 export const roleNames = {

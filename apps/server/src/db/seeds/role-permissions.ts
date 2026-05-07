@@ -40,6 +40,13 @@ const seedRoles: readonly SeedRole[] = [
       // Role management permissions
       permissionKeys.roleView,
       permissionKeys.roleManage,
+
+      // Client management permissions
+      permissionKeys.clientCreate,
+      permissionKeys.clientViewAll,
+      permissionKeys.clientViewOwn,
+      permissionKeys.clientManageAll,
+      permissionKeys.clientManageOwn,
     ],
   },
   {
@@ -60,6 +67,11 @@ const seedRoles: readonly SeedRole[] = [
       // Role management permissions
       permissionKeys.roleView,
       permissionKeys.roleManage,
+
+      // Client management permissions
+      permissionKeys.clientCreate,
+      permissionKeys.clientViewOwn,
+      permissionKeys.clientManageOwn,
     ],
   },
   {
@@ -74,12 +86,10 @@ const seedRoles: readonly SeedRole[] = [
 
       permissionKeys.userView,
       permissionKeys.userInvite,
-      permissionKeys.userManageFinancial,
-      permissionKeys.userManage,
-      permissionKeys.userViewFinancial,
       // Role management permissions
       permissionKeys.roleView,
       permissionKeys.roleManage,
+
     ],
   },
   {

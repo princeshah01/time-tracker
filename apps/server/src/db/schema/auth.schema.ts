@@ -197,6 +197,32 @@ export const userSkills = pgTable(
   ]
 );
 
+export const clients = pgTable(
+  "clients",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    company: text("company"),
+    email: text("email").notNull(),
+    phone: text("phone"),
+    address: text("address"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("clients_created_by_idx").on(table.createdBy),
+    index("clients_email_idx").on(table.email),
+    index("clients_is_active_idx").on(table.isActive),
+  ]
+);
+
 export const userInvites = pgTable(
   "user_invites",
   {
@@ -235,6 +261,7 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   userRoles: many(userRoles),
   skills: many(userSkills),
+  clientsCreated: many(clients),
   invitesSent: many(userInvites),
 }));
 
@@ -297,6 +324,13 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
 export const userSkillsRelations = relations(userSkills, ({ one }) => ({
   user: one(user, {
     fields: [userSkills.userId],
+    references: [user.id],
+  }),
+}));
+
+export const clientsRelations = relations(clients, ({ one }) => ({
+  createdByUser: one(user, {
+    fields: [clients.createdBy],
     references: [user.id],
   }),
 }));
