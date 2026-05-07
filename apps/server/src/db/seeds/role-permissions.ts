@@ -16,38 +16,27 @@ type SeedRole = {
   permissions: readonly PermissionKey[];
 };
 
-const allPermissions = Object.values(permissionKeys);
+const allPermissions = Object.values(
+  permissionKeys
+) as readonly PermissionKey[];
 
 const seedRoles: readonly SeedRole[] = [
   {
     name: roleNames.admin,
     description: "Full application access.",
-    permissions: allPermissions,
+    permissions: [
+      permissionKeys.profileView,
+      permissionKeys.profileSecurityManage,
+      permissionKeys.profileUpdate,
+    ],
   },
   {
     name: roleNames.manager,
     description: "Manages users, clients, projects, reports, and timesheets.",
     permissions: [
-      permissionKeys.userInvite,
-      permissionKeys.userView,
-      permissionKeys.roleView,
       permissionKeys.profileView,
-      permissionKeys.profileEdit,
-      permissionKeys.clientCreate,
-      permissionKeys.clientViewAll,
-      permissionKeys.clientManageAll,
-      permissionKeys.projectCreate,
-      permissionKeys.projectViewAll,
-      permissionKeys.projectManageAll,
-      permissionKeys.timeSheetCreate,
-      permissionKeys.timeSheetViewOwn,
-      permissionKeys.timeSheetViewTeam,
-      permissionKeys.timeSheetViewAll,
-      permissionKeys.timeSheetManageOwn,
-      permissionKeys.timeSheetManageTeam,
-      permissionKeys.timeSheetManageAll,
-      permissionKeys.dashboardView,
-      permissionKeys.analyticsView,
+      permissionKeys.profileUpdate,
+      permissionKeys.profileSecurityManage,
     ],
   },
   {
@@ -55,20 +44,8 @@ const seedRoles: readonly SeedRole[] = [
     description: "Manages assigned team work and reviews team timesheets.",
     permissions: [
       permissionKeys.profileView,
-      permissionKeys.profileEdit,
-      permissionKeys.clientViewOwn,
-      permissionKeys.clientViewTeam,
-      permissionKeys.projectViewOwn,
-      permissionKeys.projectManageOwn,
-      permissionKeys.projectViewTeam,
-      permissionKeys.projectManageTeam,
-      permissionKeys.timeSheetCreate,
-      permissionKeys.timeSheetViewOwn,
-      permissionKeys.timeSheetViewTeam,
-      permissionKeys.timeSheetManageOwn,
-      permissionKeys.timeSheetManageTeam,
-      permissionKeys.dashboardView,
-      permissionKeys.analyticsView,
+      permissionKeys.profileUpdate,
+      permissionKeys.profileSecurityManage,
     ],
   },
   {
@@ -76,22 +53,19 @@ const seedRoles: readonly SeedRole[] = [
     description: "Works on assigned projects and manages own timesheets.",
     permissions: [
       permissionKeys.profileView,
-      permissionKeys.profileEdit,
-      permissionKeys.clientViewOwn,
-      permissionKeys.clientViewTeam,
-      permissionKeys.projectViewOwn,
-      permissionKeys.projectViewTeam,
-      permissionKeys.timeSheetCreate,
-      permissionKeys.timeSheetViewOwn,
-      permissionKeys.timeSheetManageOwn,
-      permissionKeys.dashboardView,
+      permissionKeys.profileUpdate,
+      permissionKeys.profileSecurityManage,
     ],
   },
   {
     name: roleNames.guest,
     description: "Default limited access for newly registered users.",
     isDefault: true,
-    permissions: [permissionKeys.profileView, permissionKeys.profileEdit],
+    permissions: [
+      permissionKeys.profileView,
+      permissionKeys.profileUpdate,
+      permissionKeys.profileSecurityManage,
+    ],
   },
 ];
 

@@ -68,7 +68,7 @@ export class PermissionsService {
 
     if (!hasPermission) {
       throw new AppError({
-        message: "Forbidden",
+        message: "You do not have permission to access this resource.",
         code: "FORBIDDEN",
       });
     }

@@ -46,35 +46,31 @@ export class ProfileRepository {
     return updatedUser ?? null;
   }
 
- async replaceUserSkills(userId: string, skills: string[]) {
-  await db.transaction(async (tx) => {
-    const existingSkills = await tx
-      .select({
-        name: userSkills.name,
-      })
-      .from(userSkills)
-      .where(eq(userSkills.userId, userId));
+  async replaceUserSkills(userId: string, skills: string[]) {
+    await db.transaction(async (tx) => {
+      const existingSkills = await tx
+        .select({
+          name: userSkills.name,
+        })
+        .from(userSkills)
+        .where(eq(userSkills.userId, userId));
 
-    const existingSet = new Set(
-      existingSkills.map((s) => s.name.toLowerCase())
-    );
+      const existingSet = new Set(
+        existingSkills.map((s) => s.name.toLowerCase())
+      );
 
-    const incomingSet = new Set(
-      skills.map((s) => s.toLowerCase())
-    );
+      const incomingSet = new Set(skills.map((s) => s.toLowerCase()));
 
-    const toInsert = skills.filter(
-      (skill) => !existingSet.has(skill.toLowerCase())
-    );
+      const toInsert = skills.filter(
+        (skill) => !existingSet.has(skill.toLowerCase())
+      );
 
-    const toDelete = existingSkills.filter(
-      (skill) => !incomingSet.has(skill.name.toLowerCase())
-    );
+      const toDelete = existingSkills.filter(
+        (skill) => !incomingSet.has(skill.name.toLowerCase())
+      );
 
-    if (toDelete.length > 0) {
-      await tx
-        .delete(userSkills)
-        .where(
+      if (toDelete.length > 0) {
+        await tx.delete(userSkills).where(
           and(
             eq(userSkills.userId, userId),
             inArray(
@@ -83,19 +79,19 @@ export class ProfileRepository {
             )
           )
         );
-    }
+      }
 
-    if (toInsert.length > 0) {
-      await tx
-        .insert(userSkills)
-        .values(
-          toInsert.map((name) => ({
-            userId,
-            name,
-          }))
-        )
-        .onConflictDoNothing();
-    }
-  });
-}
+      if (toInsert.length > 0) {
+        await tx
+          .insert(userSkills)
+          .values(
+            toInsert.map((name) => ({
+              userId,
+              name,
+            }))
+          )
+          .onConflictDoNothing();
+      }
+    });
+  }
 }

@@ -1,9 +1,10 @@
 import { Router } from "express";
 
-import { requireAuth, validate } from "@/shared/middlewares";
+import { requireAuth, requirePermission, validate } from "@/shared/middlewares";
 import { profileController } from "./profile.controllers";
 import { updateProfileSchema, setPasswordSchema } from "./profile.validators";
 import { profileUpload } from "@/shared/utils";
+import { permissionKeys } from "@/shared/constants/role-permission";
 
 const profileRouter = Router();
 
@@ -23,6 +24,7 @@ profileRouter.patch(
 profileRouter.post(
   "/set-password",
   validate(setPasswordSchema),
+  requirePermission(permissionKeys.profileSecurityManage),
   profileController.setPassword
 );
 

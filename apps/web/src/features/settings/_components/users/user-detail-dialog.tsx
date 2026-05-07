@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -170,35 +170,11 @@ function UserDetailDialog({
   const currentUser = userDetailQuery.data;
   const watchedIsActive = form.watch("isActive");
 
-  const roleOptions = useMemo(() => {
-    if (!currentUser?.roleId) return roles;
-
-    const hasCurrentRole = roles.some(
-      (role) => role.value === currentUser.roleId
-    );
-
-    return hasCurrentRole
-      ? roles
-      : [
-          ...roles,
-          {
-            value: currentUser.roleId,
-            label: currentUser.roleName ?? "Current role",
-          },
-        ];
-  }, [currentUser?.roleId, currentUser?.roleName, roles]);
-
   useEffect(() => {
     if (open && currentUser) {
       form.reset(toFormValues(currentUser));
     }
-  }, [currentUser, form, open]);
-
-  useEffect(() => {
-    if (!open) {
-      form.reset();
-    }
-  }, [form, open]);
+  }, [currentUser, form.getValues().roleId, open]);
 
   function handleSubmit(values: UserEditFormValues) {
     if (!currentUser) return;
@@ -323,9 +299,9 @@ function UserDetailDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {roleOptions.map((role) => (
+                          {roles.map((role) => (
                             <SelectItem
-                              key={role.value}
+                              key={String(role.value)}
                               value={String(role.value)}
                             >
                               {capitalize(role.label)}
