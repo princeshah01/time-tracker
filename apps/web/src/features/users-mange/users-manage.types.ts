@@ -1,6 +1,6 @@
 export type UserSearchRequestBody = {
   q: string;
-  type: "invite" | "skills";
+  type: "invite" | "skills" | "project-assign";
   excludeSelf?: boolean;
   limit?: number;
 };

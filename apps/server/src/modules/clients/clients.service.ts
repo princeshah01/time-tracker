@@ -4,6 +4,7 @@ import type { AccessScope } from "@/shared/types";
 import { AppError } from "@/shared/utils";
 import { ClientsRepository } from "./clients.repository";
 import type {
+  AutocompleteClientsInput,
   CreateClientInput,
   ListClientsInput,
   UpdateClientInput,
@@ -26,7 +27,7 @@ export class ClientsService {
       });
     }
 
-    return this.viewClient(client.id, requesterId, "all");
+    return this.getClient(client.id, requesterId);
   }
 
   async listClients(input: ListClientsInput, requesterId: string) {
@@ -47,6 +48,35 @@ export class ClientsService {
     };
   }
 
+  async autocompleteClients(
+    input: AutocompleteClientsInput,
+    requesterId: string
+  ) {
+    const scope = await this.resolveViewScope(requesterId);
+    const clients = await this.clientsRepository.autocompleteClients({
+      ...input,
+      requesterId,
+      scope,
+    });
+
+    return { clients };
+  }
+
+  async getClient(clientId: number, requesterId: string) {
+    const scope = await this.resolveViewScope(requesterId);
+    const client = await this.viewClient(clientId, requesterId, scope);
+    const projects = await this.clientsRepository.listClientProjects({
+      clientId,
+      requesterId,
+      scope,
+    });
+
+    return {
+      ...client,
+      projects,
+    };
+  }
+
   async updateClient(
     clientId: number,
     input: UpdateClientInput,
@@ -64,7 +94,7 @@ export class ClientsService {
       });
     }
 
-    return this.viewClient(client.id, requesterId, scope);
+    return this.getClient(client.id, requesterId);
   }
 
   private async viewClient(

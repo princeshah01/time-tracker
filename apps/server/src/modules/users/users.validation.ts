@@ -15,8 +15,8 @@ export const searchUsersSchema = z.object({
   body: z
     .object({
       q: z.string().trim().min(1, "Query is required"),
-      type: z.enum(["invite", "skills"], {
-        message: "Type must be either 'invite' or 'skills'",
+      type: z.enum(["invite", "skills", "project-assign"], {
+        message: "Type must be 'invite', 'skills', or 'project-assign'",
       }),
       excludeSelf: z.boolean().default(true),
       limit: z.number().int().min(1).max(20).default(5),

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import debounce from "lodash.debounce";
 import { useQuery } from "@tanstack/react-query";
 
@@ -12,6 +12,7 @@ import { EmptyState } from "@/shared/components/empty-container";
 import { toast } from "@workspace/ui/components/sonner";
 import { QUERY_KEYS } from "@/shared/constants";
 import { useAppSelector } from "@/app/store";
+import { cn } from "@workspace/ui/lib/utils";
 
 type InviteEmailComboboxProps = {
   value: string;
@@ -30,6 +31,7 @@ function SuggestionSkeleton() {
 function InviteEmailCombobox({ value, onChange }: InviteEmailComboboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
   const { user } = useAppSelector((s) => s.user);
   const currentUserEmail = user?.email;
   const debouncedSetSearch = useMemo(
@@ -71,6 +73,10 @@ function InviteEmailCombobox({ value, onChange }: InviteEmailComboboxProps) {
 
   const globalLoading = isLoading || isFetching;
 
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [suggestions.length, isOpen]);
+
   function handleSelectSuggestion(
     user: UserSearchResponse["suggestedUsers"][number]
   ) {
@@ -80,6 +86,40 @@ function InviteEmailCombobox({ value, onChange }: InviteEmailComboboxProps) {
     }
     onChange(user.email);
     setIsOpen(false);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setIsOpen(false);
+      return;
+    }
+
+    if (!isOpen && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      setIsOpen(true);
+      return;
+    }
+
+    if (!isOpen || suggestions.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((current) => (current + 1) % suggestions.length);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex(
+        (current) => (current - 1 + suggestions.length) % suggestions.length
+      );
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const selectedUser = suggestions[activeIndex];
+      if (selectedUser) handleSelectSuggestion(selectedUser);
+    }
   }
 
   return (
@@ -93,15 +133,28 @@ function InviteEmailCombobox({ value, onChange }: InviteEmailComboboxProps) {
           onChange(event.target.value);
           setIsOpen(true);
         }}
+        onKeyDown={handleKeyDown}
         onBlur={() => {
           window.setTimeout(() => setIsOpen(false), 120);
         }}
         placeholder="Type invitee email"
         className="h-8 text-[13px]"
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-controls="invite-user-options"
+        aria-activedescendant={
+          isOpen && suggestions[activeIndex]
+            ? `invite-user-option-${suggestions[activeIndex].email}`
+            : undefined
+        }
       />
 
       {isOpen && value.trim() ? (
-        <div className="absolute top-full z-20 mt-1 max-h-52 w-full overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+        <div
+          id="invite-user-options"
+          className="absolute top-full z-20 mt-1 max-h-52 w-full overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          role="listbox"
+        >
           {globalLoading ? (
             <div className="space-y-1">
               <SuggestionSkeleton />
@@ -114,12 +167,19 @@ function InviteEmailCombobox({ value, onChange }: InviteEmailComboboxProps) {
               containerClassName="min-h-24"
             />
           ) : suggestions.length > 0 ? (
-            suggestions.map((user) => (
+            suggestions.map((user, index) => (
               <button
                 key={user.email}
+                id={`invite-user-option-${user.email}`}
                 type="button"
-                className="flex w-full items-start justify-between rounded-sm px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"
+                className={cn(
+                  "flex w-full items-start justify-between rounded-sm px-2 py-1.5 text-left hover:bg-accent hover:text-accent-foreground",
+                  index === activeIndex && "bg-accent text-accent-foreground"
+                )}
+                role="option"
+                aria-selected={index === activeIndex}
                 onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => handleSelectSuggestion(user)}
               >
                 <div className="flex min-w-0 flex-col">

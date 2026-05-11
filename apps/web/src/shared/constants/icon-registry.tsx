@@ -17,6 +17,7 @@ import {
   Lock,
   User,
   Camera,
+  CalendarDays,
   Search,
   Plus,
   Inbox,
@@ -25,6 +26,7 @@ import {
   CircleOff,
   Trash2,
   X,
+  Eye,
   type LucideIcon,
 } from "lucide-react";
 
@@ -47,6 +49,7 @@ export const ICON_REGISTRY = {
   Lock,
   User,
   Camera,
+  CalendarDays,
   Search,
   Plus,
   Inbox,
@@ -55,6 +58,7 @@ export const ICON_REGISTRY = {
   CircleOff,
   Trash2,
   X,
+  Eye,
 } as const satisfies Record<string, LucideIcon>;
 
 export type AppIconName = keyof typeof ICON_REGISTRY;

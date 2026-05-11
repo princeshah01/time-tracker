@@ -1,9 +1,20 @@
-import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 
 import { db } from "@/db";
-import { clients, user } from "@/db/schema";
+import { clients, projectTeamMembers, projects, user } from "@/db/schema";
 import type { AccessScope } from "@/shared/types";
 import type {
+  AutocompleteClientsInput,
   CreateClientInput,
   ListClientsInput,
   UpdateClientInput,
@@ -45,6 +56,11 @@ export class ClientsRepository {
         createdBy: clients.createdBy,
         createdAt: clients.createdAt,
         updatedAt: clients.updatedAt,
+        projectTotal: sql<number>`(
+          select count(*)::int
+          from ${projects}
+          where ${projects.clientId} = ${clients.id}
+        )`,
         creator: {
           id: user.id,
           name: user.name,
@@ -78,6 +94,11 @@ export class ClientsRepository {
           createdBy: clients.createdBy,
           createdAt: clients.createdAt,
           updatedAt: clients.updatedAt,
+          projectTotal: sql<number>`(
+            select count(*)::int
+            from ${projects}
+            where ${projects.clientId} = ${clients.id}
+          )`,
           creator: {
             id: user.id,
             name: user.name,
@@ -121,6 +142,75 @@ export class ClientsRepository {
       .returning();
 
     return client ?? null;
+  }
+
+  async autocompleteClients(
+    input: AutocompleteClientsInput & ScopedClientInput
+  ) {
+    const conditions: SQL[] = [eq(clients.isActive, true)];
+    const q = input.q?.trim();
+
+    if (input.scope === "own") {
+      conditions.push(eq(clients.createdBy, input.requesterId));
+    }
+
+    if (q) {
+      const query = `%${q}%`;
+      const searchWhere = or(
+        ilike(clients.name, query),
+        ilike(clients.company, query),
+        ilike(clients.email, query),
+        sql`${clients.id}::text ILIKE ${query}`
+      );
+
+      if (searchWhere) conditions.push(searchWhere);
+    }
+
+    return db
+      .select({
+        label: clients.name,
+        value: clients.id,
+      })
+      .from(clients)
+      .where(and(...conditions))
+      .orderBy(asc(clients.name))
+      .limit(5);
+  }
+
+  async listClientProjects(input: {
+    clientId: number;
+    requesterId: string;
+    scope: AccessScope;
+  }) {
+    const conditions: SQL[] = [eq(projects.clientId, input.clientId)];
+
+    if (input.scope === "own") {
+      const ownAccess = or(
+        eq(projects.createdBy, input.requesterId),
+        sql`exists (
+          select 1 from ${projectTeamMembers}
+          where ${projectTeamMembers.projectId} = ${projects.id}
+            and ${projectTeamMembers.userId} = ${input.requesterId}
+        )`
+      );
+
+      if (ownAccess) conditions.push(ownAccess);
+    }
+
+    return db
+      .select({
+        id: projects.id,
+        name: projects.name,
+        priority: projects.priority,
+        status: sql<string>`case when ${projects.isActive} then 'active' else 'inactive' end`,
+        billingType: projects.billingType,
+        startDate: projects.startDate,
+        expectedEndDate: projects.expectedEndDate,
+        updatedAt: projects.updatedAt,
+      })
+      .from(projects)
+      .where(and(...conditions))
+      .orderBy(desc(projects.updatedAt), asc(projects.name));
   }
 
   private buildListWhere(input: ListClientsInput & ScopedClientInput) {

@@ -47,6 +47,14 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.clientViewOwn,
       permissionKeys.clientManageAll,
       permissionKeys.clientManageOwn,
+
+      // Project management permissions
+      permissionKeys.projectCreate,
+      permissionKeys.projectViewAll,
+      permissionKeys.projectViewOwn,
+      permissionKeys.projectManageAll,
+      permissionKeys.projectManageOwn,
+      permissionKeys.projectFinanceManagement,
     ],
   },
   {
@@ -72,6 +80,12 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.clientCreate,
       permissionKeys.clientViewOwn,
       permissionKeys.clientManageOwn,
+
+      // Project management permissions
+      permissionKeys.projectCreate,
+      permissionKeys.projectViewOwn,
+      permissionKeys.projectManageOwn,
+      permissionKeys.projectFinanceManagement,
     ],
   },
   {
@@ -90,6 +104,9 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.roleView,
       permissionKeys.roleManage,
 
+      // Project management permissions
+      permissionKeys.projectViewOwn,
+      permissionKeys.projectManageOwn,
     ],
   },
   {
@@ -100,6 +117,7 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
       permissionKeys.profileSecurityManage,
+      permissionKeys.projectViewOwn,
     ],
   },
   {

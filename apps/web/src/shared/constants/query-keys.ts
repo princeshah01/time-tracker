@@ -5,6 +5,11 @@ const QUERY_KEYS = {
   INVITATIONS: "invitations",
   USERS: "users",
   USER_DETAIL: "user-detail",
+  CLIENTS: "clients",
+  CLIENT_DETAIL: "client-detail",
+  CLIENT_AUTOCOMPLETE: "client-autocomplete",
+  PROJECTS: "projects",
+  PROJECT_DETAIL: "project-detail",
 };
 
 export { QUERY_KEYS };

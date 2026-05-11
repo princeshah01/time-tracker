@@ -43,6 +43,13 @@
       "when": 1778152607185,
       "tag": "0005_long_dazzler",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778496424757,
+      "tag": "0006_tiresome_omega_flight",
+      "breakpoints": true
     }
   ]
 }

@@ -239,10 +239,12 @@ export class UsersService {
       return this.searchUsersBySkills(input, requester);
     }
 
+    const isProjectAssignment = input.type === "project-assign";
     const onboardedUsers = await this.usersRepository.searchOnboardedUsers({
       q,
       limit: input.limit,
       excludeUserId: input.excludeSelf ? requester.id : undefined,
+      activeOnly: isProjectAssignment,
       maxRoleLevel,
     });
 

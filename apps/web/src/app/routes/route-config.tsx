@@ -4,7 +4,18 @@ import {
   ForgotPasswordPage,
   ResetPasswordPage,
 } from "@/features/auth/pages";
+import {
+  ClientDetailsPage,
+  ClientMainPage,
+  CreateClientPage,
+} from "@/features/client";
+import {
+  CreateProjectPage,
+  ProjectDetailsPage,
+  ProjectMainPage,
+} from "@/features/project";
 import { SettingsPage } from "@/features/settings";
+import { permissions } from "@/shared/constants";
 import type { AppRoute } from "@/shared/types";
 
 export const appRoutes: AppRoute[] = [
@@ -59,40 +70,82 @@ export const appRoutes: AppRoute[] = [
     path: "/clients",
     label: "Clients",
     icon: "Users",
-    element: <div>Clients Overview</div>,
+    element: <ClientMainPage />,
     showInSidebar: true,
     sideBarGroup: "Management",
+    permissions: [permissions.clientViewAll, permissions.clientViewOwn],
   },
   {
     path: "/clients/new",
     label: "Create Client",
-    element: <div>Create Client</div>,
+    element: <CreateClientPage />,
+    permissions: [permissions.clientCreate],
   },
   {
     path: "/clients/:clientId",
     label: "Client Details",
-    element: <div>Client Details</div>,
+    element: <ClientDetailsPage />,
+    permissions: [permissions.clientViewAll, permissions.clientViewOwn],
+  },
+  {
+    path: "/client",
+    label: "Clients",
+    element: <ClientMainPage />,
+    permissions: [permissions.clientViewAll, permissions.clientViewOwn],
+  },
+  {
+    path: "/client/new",
+    label: "Create Client",
+    element: <CreateClientPage />,
+    permissions: [permissions.clientCreate],
+  },
+  {
+    path: "/client/:clientId",
+    label: "Client Details",
+    element: <ClientDetailsPage />,
+    permissions: [permissions.clientViewAll, permissions.clientViewOwn],
   },
   // --------------------
   // PROJECTS
   // --------------------
   {
-    path: "/projects",
+    path: "/project",
     label: "Projects",
     icon: "FolderKanban",
-    element: <div>Projects Overview</div>,
+    element: <ProjectMainPage />,
     showInSidebar: true,
     sideBarGroup: "Management",
+    permissions: [permissions.projectViewAll, permissions.projectViewOwn],
+  },
+  {
+    path: "/project/new",
+    label: "Create Project",
+    element: <CreateProjectPage />,
+    permissions: [permissions.projectCreate],
+  },
+  {
+    path: "/project/:projectId",
+    label: "Project Details",
+    element: <ProjectDetailsPage />,
+    permissions: [permissions.projectViewAll, permissions.projectViewOwn],
+  },
+  {
+    path: "/projects",
+    label: "Projects",
+    element: <ProjectMainPage />,
+    permissions: [permissions.projectViewAll, permissions.projectViewOwn],
   },
   {
     path: "/projects/new",
     label: "Create Project",
-    element: <div>Create Project</div>,
+    element: <CreateProjectPage />,
+    permissions: [permissions.projectCreate],
   },
   {
     path: "/projects/:projectId",
     label: "Project Details",
-    element: <div>Project Details</div>,
+    element: <ProjectDetailsPage />,
+    permissions: [permissions.projectViewAll, permissions.projectViewOwn],
   },
   // --------------------
   // TASKS

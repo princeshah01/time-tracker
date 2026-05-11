@@ -26,6 +26,7 @@ type SearchOnboardedUsersInput = {
   q: string;
   limit: number;
   excludeUserId?: string;
+  activeOnly?: boolean;
 };
 
 type SearchInvitedUsersInput = {
@@ -190,6 +191,7 @@ export class UsersRepository {
     const whereClause = and(
       searchWhere,
       input.excludeUserId ? ne(user.id, input.excludeUserId) : undefined,
+      input.activeOnly ? eq(user.isActive, true) : undefined,
       this.roleLevelWhere(input.maxRoleLevel)
     );
 

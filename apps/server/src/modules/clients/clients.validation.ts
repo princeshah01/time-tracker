@@ -18,6 +18,13 @@ export const listClientsSchema = z.object({
   params: z.object({}),
 });
 
+export const autocompleteClientsSchema = z.object({
+  query: z.object({
+    q: z.string().trim().optional().default(""),
+  }),
+  params: z.object({}),
+});
+
 export const createClientSchema = z.object({
   body: z
     .object({
@@ -62,6 +69,16 @@ export const updateClientSchema = z.object({
   query: z.object({}),
 });
 
+export const viewClientSchema = z.object({
+  params: z.object({
+    clientId: z.coerce.number().int().positive(),
+  }),
+  query: z.object({}),
+});
+
 export type ListClientsInput = z.infer<typeof listClientsSchema>["query"];
+export type AutocompleteClientsInput = z.infer<
+  typeof autocompleteClientsSchema
+>["query"];
 export type CreateClientInput = z.infer<typeof createClientSchema>["body"];
 export type UpdateClientInput = z.infer<typeof updateClientSchema>["body"];
