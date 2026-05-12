@@ -8,6 +8,43 @@ function formatRequestContext(req: Request) {
   return `${req.method} ${req.originalUrl}`;
 }
 
+function getFirstValidationMessage(details: unknown): string | null {
+  if (!details || typeof details !== "object") {
+    return null;
+  }
+
+  const validationDetails = details as {
+    errors?: unknown;
+    properties?: Record<string, unknown>;
+    items?: unknown[];
+  };
+
+  if (
+    Array.isArray(validationDetails.errors) &&
+    typeof validationDetails.errors[0] === "string"
+  ) {
+    return validationDetails.errors[0];
+  }
+
+  for (const property of Object.values(validationDetails.properties ?? {})) {
+    const message = getFirstValidationMessage(property);
+
+    if (message) {
+      return message;
+    }
+  }
+
+  for (const item of validationDetails.items ?? []) {
+    const message = getFirstValidationMessage(item);
+
+    if (message) {
+      return message;
+    }
+  }
+
+  return null;
+}
+
 export const errorMiddleware: ErrorRequestHandler = (err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
@@ -28,9 +65,14 @@ export const errorMiddleware: ErrorRequestHandler = (err, req, res, next) => {
       });
     }
 
+    const message =
+      err.code === "VALIDATION_ERROR"
+        ? (getFirstValidationMessage(err.details) ?? err.message)
+        : err.message;
+
     return sendError({
       res,
-      message: err.message,
+      message,
       status: err.statusCode,
       code: err.code,
       details: err.details ?? null,

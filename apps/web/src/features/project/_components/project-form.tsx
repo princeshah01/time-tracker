@@ -183,20 +183,22 @@ function toProjectPayload(values: ProjectFormValues): CreateProjectInput {
 }
 
 function toBillingPayload(
-  values: ProjectFormValues
+  values: ProjectFormValues,
+  billingUserIds?: string[]
 ): UpdateProjectBillingInput {
-  const members = selectedTeamMembers(values);
-
   if (values.billingType === "fixed_bill") {
     return {
       totalProjectIncome: values.totalProjectIncome ?? null,
     };
   }
 
+  const userIds =
+    billingUserIds ?? selectedTeamMembers(values).map((member) => member.userId);
+
   return {
-    teamMembers: members.map((member) => ({
-      userId: member.userId,
-      hourlyRate: values.billingRates[member.userId] ?? null,
+    teamMembers: userIds.map((userId) => ({
+      userId,
+      hourlyRate: values.billingRates[userId] ?? null,
     })),
   };
 }
@@ -240,6 +242,21 @@ function ProjectForm({
     () => teamRows.map((row) => row.userId).filter(Boolean),
     [teamRows]
   );
+  const persistedTeamUserIds = useMemo(
+    () => new Set(project?.teamMembers.map((member) => member.userId) ?? []),
+    [project?.teamMembers]
+  );
+  const billingRows = useMemo(
+    () =>
+      project?.teamMembers.map((member, index) => ({
+        rowId: `${member.role}-${member.userId}-${index}`,
+        userId: member.userId,
+        userName: member.user.name,
+        userEmail: member.user.email,
+        role: member.role,
+      })) ?? [],
+    [project?.teamMembers]
+  );
 
   useEffect(() => {
     form.reset(toFormValues(project));
@@ -271,6 +288,15 @@ function ProjectForm({
     });
   }
 
+  function changeRowRole(rowId: string, role: ProjectTeamRole) {
+    updateRow(rowId, {
+      role,
+      userId: "",
+      userName: "",
+      userEmail: "",
+    });
+  }
+
   function addRow() {
     form.setValue(
       "teamRows",
@@ -287,7 +313,7 @@ function ProjectForm({
       { shouldDirty: true, shouldValidate: true }
     );
 
-    if (row?.userId) {
+    if (row?.userId && !persistedTeamUserIds.has(row.userId)) {
       const nextRates = { ...form.getValues("billingRates") };
       delete nextRates[row.userId];
       form.setValue("billingRates", nextRates, { shouldDirty: true });
@@ -312,10 +338,14 @@ function ProjectForm({
 
   function handleBillingSubmit() {
     if (!onBillingSubmit) return;
-    onBillingSubmit(toBillingPayload(form.getValues()));
+    onBillingSubmit(
+      toBillingPayload(
+        form.getValues(),
+        billingRows.map((row) => row.userId)
+      )
+    );
   }
 
-  const selectedRows = teamRows.filter((row) => row.userId);
   const isHourlyBilling = billingType === "hours_worked";
 
   return (
@@ -517,7 +547,7 @@ function ProjectForm({
                 disabled={projectReadOnly || isSubmitting}
                 onAddRow={addRow}
                 onRemoveRow={removeRow}
-                onRoleChange={(rowId, role) => updateRow(rowId, { role })}
+                onRoleChange={changeRowRole}
                 onUserSelect={selectUser}
               />
               {form.formState.errors.teamRows?.message ? (
@@ -576,8 +606,8 @@ function ProjectForm({
                     {isHourlyBilling ? <div>Rate/hr</div> : null}
                   </div>
 
-                  {selectedRows.length > 0 ? (
-                    selectedRows.map((row) => (
+                  {billingRows.length > 0 ? (
+                    billingRows.map((row) => (
                       <div
                         key={row.rowId}
                         className={
@@ -636,7 +666,7 @@ function ProjectForm({
                     ))
                   ) : (
                     <div className="px-3 py-8 text-center text-[13px] text-muted-foreground">
-                      Add team members before setting billing rates
+                      Save team members before setting billing rates
                     </div>
                   )}
                 </div>
@@ -754,8 +784,8 @@ function TeamTable({
   onUserSelect: (rowId: string, user: UserOption) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-md border">
-      <div className="grid grid-cols-[150px_1fr_40px] border-b bg-muted/40 px-3 py-2 text-[12px] font-medium md:grid-cols-[170px_1fr_48px]">
+    <div className="relative h-fit overflow-visible rounded-md border">
+      <div className="grid grid-cols-[150px_1fr_40px] rounded-t-md border-b bg-muted/40 px-3 py-2 text-[12px] font-medium md:grid-cols-[170px_1fr_48px]">
         <div>Role</div>
         <div>User</div>
         <div className="flex justify-end">
@@ -775,7 +805,7 @@ function TeamTable({
       {rows.map((row) => (
         <div
           key={row.rowId}
-          className="grid grid-cols-[150px_1fr_40px] items-start gap-2 border-b px-3 py-2 last:border-b-0 md:grid-cols-[170px_1fr_48px]"
+          className="relative grid grid-cols-[150px_1fr_40px] items-start gap-2 border-b bg-background px-3 py-2 last:rounded-b-md last:border-b-0 focus-within:z-30 md:grid-cols-[170px_1fr_48px]"
         >
           <Select
             value={row.role}
@@ -804,6 +834,7 @@ function TeamTable({
           <div className="min-w-0">
             <UserCombobox
               value={row.userName}
+              role={row.role}
               disabled={disabled}
               excludeUserIds={selectedUserIds.filter((id) => id !== row.userId)}
               placeholder={`Search ${roleLabel(row.role).toLowerCase()}`}

@@ -245,6 +245,7 @@ export class UsersService {
       limit: input.limit,
       excludeUserId: input.excludeSelf ? requester.id : undefined,
       activeOnly: isProjectAssignment,
+      projectAssignmentRole: isProjectAssignment ? input.role : undefined,
       maxRoleLevel,
     });
 

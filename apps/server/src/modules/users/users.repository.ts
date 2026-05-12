@@ -15,6 +15,7 @@ import {
 
 import { db } from "@/db";
 import { roles, user, userInvites, userRoles, userSkills } from "@/db/schema";
+import { roleNames } from "@/shared/constants/role-permission";
 import type {
   InvitedUserSearchRecord,
   OnboardedUserSearchRecord,
@@ -27,6 +28,7 @@ type SearchOnboardedUsersInput = {
   limit: number;
   excludeUserId?: string;
   activeOnly?: boolean;
+  projectAssignmentRole?: "manager" | "lead" | "member" | "employee";
 };
 
 type SearchInvitedUsersInput = {
@@ -192,7 +194,8 @@ export class UsersRepository {
       searchWhere,
       input.excludeUserId ? ne(user.id, input.excludeUserId) : undefined,
       input.activeOnly ? eq(user.isActive, true) : undefined,
-      this.roleLevelWhere(input.maxRoleLevel)
+      this.roleLevelWhere(input.maxRoleLevel),
+      this.projectAssignmentRoleWhere(input.projectAssignmentRole)
     );
 
     return db
@@ -335,5 +338,26 @@ export class UsersRepository {
 
   private roleLevelWhere(maxRoleLevel: number) {
     return or(isNull(roles.level), lte(roles.level, maxRoleLevel));
+  }
+
+  private projectAssignmentRoleWhere(
+    projectAssignmentRole?: "manager" | "lead" | "member" | "employee"
+  ) {
+    if (projectAssignmentRole === "manager") {
+      return eq(roles.name, roleNames.manager);
+    }
+
+    if (projectAssignmentRole === "lead") {
+      return eq(roles.name, roleNames.teamLead);
+    }
+
+    if (
+      projectAssignmentRole === "member" ||
+      projectAssignmentRole === "employee"
+    ) {
+      return lte(roles.level, 80);
+    }
+
+    return undefined;
   }
 }

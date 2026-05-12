@@ -1,6 +1,7 @@
 export type UserSearchRequestBody = {
   q: string;
   type: "invite" | "skills" | "project-assign";
+  role?: "manager" | "lead" | "member" | "employee";
   excludeSelf?: boolean;
   limit?: number;
 };

@@ -15,6 +15,7 @@ type UserOption = UserSearchResponse["suggestedUsers"][number] & {
 
 type UserComboboxProps = {
   value: string;
+  role?: "manager" | "lead" | "member";
   disabled?: boolean;
   excludeUserIds?: string[];
   placeholder?: string;
@@ -23,6 +24,7 @@ type UserComboboxProps = {
 
 function UserCombobox({
   value,
+  role,
   disabled,
   excludeUserIds = [],
   placeholder = "Search user",
@@ -59,13 +61,14 @@ function UserCombobox({
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["project-user-search", search],
+    queryKey: ["project-user-search", search, role],
     enabled: isOpen && search.length > 0 && !disabled,
     staleTime: 1000 * 60,
     queryFn: async () => {
       const response = await userManageService.searchUsers({
         q: search,
         type: "project-assign",
+        role,
         excludeSelf: false,
         limit: 5,
       });
@@ -155,7 +158,7 @@ function UserCombobox({
       {isOpen && inputValue.trim() ? (
         <div
           id="project-user-options"
-          className="absolute top-full z-20 mt-1 max-h-52 w-full overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          className="absolute top-full left-0 z-50 mt-1 max-h-52 w-full overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
           role="listbox"
         >
           {globalLoading ? (

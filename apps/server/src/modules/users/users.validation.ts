@@ -18,6 +18,7 @@ export const searchUsersSchema = z.object({
       type: z.enum(["invite", "skills", "project-assign"], {
         message: "Type must be 'invite', 'skills', or 'project-assign'",
       }),
+      role: z.enum(["manager", "lead", "member", "employee"]).optional(),
       excludeSelf: z.boolean().default(true),
       limit: z.number().int().min(1).max(20).default(5),
     })
