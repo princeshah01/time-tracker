@@ -28,7 +28,11 @@ const clientFormSchema = z.object({
     .trim()
     .min(2, "Client name must be at least 2 characters")
     .max(120, "Client name must be at most 120 characters"),
-  company: z.string().trim().max(160).optional(),
+  company: z
+    .string()
+    .trim()
+    .min(1, "Company name is required")
+    .max(160, "Company name must be at most 160 characters"),
   email: z.email("Valid email is required"),
   phone: z.string().trim().max(40).optional(),
   address: z.string().trim().max(500).optional(),
@@ -65,7 +69,7 @@ function toFormValues(client?: ClientDetail | null): ClientFormValues {
 function toPayload(values: ClientFormValues) {
   return {
     name: values.name.trim(),
-    company: emptyToNull(values.company),
+    company: values.company.trim(),
     email: values.email.trim().toLowerCase(),
     phone: emptyToNull(values.phone),
     address: emptyToNull(values.address),
@@ -134,6 +138,7 @@ function ClientForm({
                       {...field}
                       className="h-8 text-[13px]"
                       placeholder="Acme Inc"
+                      required
                       disabled={!canSubmit || isSubmitting}
                     />
                   </FormControl>

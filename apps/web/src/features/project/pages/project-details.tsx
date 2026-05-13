@@ -131,7 +131,7 @@ function ProjectDetailsPage() {
   return (
     <PageContent.Root className="h-full min-h-0">
       <PageContent.Header
-        title={project?.name ?? "Project Details"}
+        title="Project Details"
         className="sticky top-0 z-10"
       />
       <PageContent.Body className="min-h-0 overflow-y-auto border-border border-r max-w-4xl">

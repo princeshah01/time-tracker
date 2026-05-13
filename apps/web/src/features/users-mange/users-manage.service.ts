@@ -2,7 +2,9 @@ import { apiFetch } from "@/shared/lib";
 import type {
   ListUsersResponse,
   UpdateUserInput,
+  UpsertUserSalaryInput,
   UserDetail,
+  UserFinancials,
   UserSearchRequestBody,
   UserSearchResponse,
   UserStatusFilter,
@@ -48,6 +50,33 @@ const userManageService = {
     return apiFetch<{ email: string; sent: boolean }>({
       url: `/users/${userId}/reset-password`,
       method: "POST",
+    });
+  },
+
+  getUserFinancials: async (userId: string) => {
+    return apiFetch<UserFinancials>({
+      url: `/users/${userId}/financial`,
+      method: "GET",
+    });
+  },
+
+  createUserSalary: async (userId: string, data: UpsertUserSalaryInput) => {
+    return apiFetch<UserFinancials>({
+      url: `/users/${userId}/financial/salaries`,
+      method: "POST",
+      data,
+    });
+  },
+
+  updateUserSalary: async (
+    userId: string,
+    salaryId: number,
+    data: Partial<UpsertUserSalaryInput>
+  ) => {
+    return apiFetch<UserFinancials>({
+      url: `/users/${userId}/financial/salaries/${salaryId}`,
+      method: "PATCH",
+      data,
     });
   },
 

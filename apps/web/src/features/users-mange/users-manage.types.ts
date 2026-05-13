@@ -44,6 +44,27 @@ export type UserListItem = {
 
 export type UserDetail = UserListItem;
 
+export type UserSalaryHistoryItem = {
+  id: number;
+  userId: string;
+  salary: string;
+  effectiveDate: string;
+  note: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UserFinancials = {
+  currentSalary: UserSalaryHistoryItem | null;
+  nextSalary: UserSalaryHistoryItem | null;
+  analytics: {
+    hikeAmount: string | null;
+    hikePercentage: string | null;
+  };
+  salaryHistory: UserSalaryHistoryItem[];
+};
+
 export type ListUsersResponse = {
   items: UserListItem[];
   page: number;
@@ -58,4 +79,10 @@ export type UpdateUserInput = {
   name?: string;
   roleId?: number | null;
   skills?: string[];
+};
+
+export type UpsertUserSalaryInput = {
+  salary: number;
+  effectiveDate: string;
+  note?: string | null;
 };

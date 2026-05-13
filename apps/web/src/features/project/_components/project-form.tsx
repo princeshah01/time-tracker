@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -85,6 +85,7 @@ const projectFormSchema = z
   });
 
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;
+type ProjectFormTab = "basic" | "team" | "billing";
 
 type ProjectFormProps = {
   project?: ProjectDetail | null;
@@ -232,6 +233,7 @@ function ProjectForm({
   const readOnly = mode === "view";
   const projectReadOnly = readOnly || !canSubmit;
   const billingReadOnly = readOnly || !canManageFinance;
+  const [activeTab, setActiveTab] = useState<ProjectFormTab>("basic");
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: toFormValues(project),
@@ -351,7 +353,11 @@ function ProjectForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <Tabs defaultValue="basic" className="min-h-0">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as ProjectFormTab)}
+          className="min-h-0"
+        >
           <div className="border-b px-4 py-2">
             <TabsList className="h-8 rounded-md bg-muted/40 p-1">
               <TabsTrigger value="basic" className="h-6 text-[12px]">
@@ -689,7 +695,7 @@ function ProjectForm({
           ) : null}
         </Tabs>
 
-        {mode !== "view" ? (
+        {mode !== "view" && activeTab !== "billing" ? (
           <footer className="flex justify-end gap-2 border-t p-4">
             <Button
               type="button"

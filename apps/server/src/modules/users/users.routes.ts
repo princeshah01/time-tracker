@@ -1,15 +1,16 @@
 import { Router } from "express";
 
-import { requireAuth, validate } from "@/shared/middlewares";
+import { permissionKeys } from "@/shared/constants/role-permission";
+import { requireAuth, requirePermission, validate } from "@/shared/middlewares";
 import { usersController } from "./users.controllers";
 import {
+  createUserSalarySchema,
   listUsersSchema,
   searchUsersSchema,
+  updateUserSalarySchema,
   updateUserSchema,
   userIdParamSchema,
 } from "./users.validation";
-import { requirePermission } from "@/shared/middlewares";
-import { permissionKeys } from "@/shared/constants/role-permission";
 
 const usersRouter = Router();
 
@@ -33,6 +34,24 @@ usersRouter.get(
   validate(userIdParamSchema),
   // Simulate network delay
   usersController.view
+);
+usersRouter.get(
+  "/:userId/financial",
+  requirePermission(permissionKeys.userManageFinancial),
+  validate(userIdParamSchema),
+  usersController.getFinancials
+);
+usersRouter.post(
+  "/:userId/financial/salaries",
+  requirePermission(permissionKeys.userManageFinancial),
+  validate(createUserSalarySchema),
+  usersController.createSalary
+);
+usersRouter.patch(
+  "/:userId/financial/salaries/:salaryId",
+  requirePermission(permissionKeys.userManageFinancial),
+  validate(updateUserSalarySchema),
+  usersController.updateSalary
 );
 usersRouter.patch(
   "/:userId",

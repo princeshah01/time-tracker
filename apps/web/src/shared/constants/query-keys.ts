@@ -5,6 +5,7 @@ const QUERY_KEYS = {
   INVITATIONS: "invitations",
   USERS: "users",
   USER_DETAIL: "user-detail",
+  USER_FINANCIALS: "user-financials",
   CLIENTS: "clients",
   CLIENT_DETAIL: "client-detail",
   CLIENT_AUTOCOMPLETE: "client-autocomplete",

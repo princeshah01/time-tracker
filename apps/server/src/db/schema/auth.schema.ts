@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  numeric,
   pgTable,
   serial,
   text,
@@ -197,6 +198,31 @@ export const userSkills = pgTable(
   ]
 );
 
+export const userSalaryHistory = pgTable(
+  "user_salary_history",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    salary: numeric("salary", { precision: 12, scale: 2 }).notNull(),
+    effectiveDate: timestamp("effective_date").notNull(),
+    note: text("note"),
+    createdBy: text("created_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("user_salary_history_user_id_idx").on(table.userId),
+    index("user_salary_history_effective_date_idx").on(table.effectiveDate),
+  ]
+);
+
 export const userInvites = pgTable(
   "user_invites",
   {
@@ -235,6 +261,7 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   userRoles: many(userRoles),
   skills: many(userSkills),
+  salaryHistory: many(userSalaryHistory),
   invitesSent: many(userInvites),
 }));
 
@@ -300,6 +327,20 @@ export const userSkillsRelations = relations(userSkills, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const userSalaryHistoryRelations = relations(
+  userSalaryHistory,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [userSalaryHistory.userId],
+      references: [user.id],
+    }),
+    createdByUser: one(user, {
+      fields: [userSalaryHistory.createdBy],
+      references: [user.id],
+    }),
+  })
+);
 
 export const userInvitesRelations = relations(userInvites, ({ one }) => ({
   role: one(roles, {

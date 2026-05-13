@@ -34,6 +34,14 @@ export const userIdParamSchema = z.object({
   query: z.object({}),
 });
 
+export const salaryIdParamSchema = z.object({
+  params: z.object({
+    userId: z.string().trim().min(1, "User id is required"),
+    salaryId: z.coerce.number().int().positive("Salary id is required"),
+  }),
+  query: z.object({}),
+});
+
 const skillSchema = z.string().trim().min(1).max(60);
 
 export const updateUserSchema = z.object({
@@ -66,6 +74,50 @@ export const updateUserSchema = z.object({
   query: z.object({}),
 });
 
+const salaryBodySchema = z
+  .object({
+    salary: z.coerce
+      .number()
+      .positive("Salary must be greater than zero")
+      .max(9999999999.99, "Salary is too large"),
+    effectiveDate: z.coerce.date(),
+    note: z.string().trim().max(500).nullable().optional(),
+  })
+  .strict();
+
+export const createUserSalarySchema = z.object({
+  body: salaryBodySchema,
+  params: z.object({
+    userId: z.string().trim().min(1, "User id is required"),
+  }),
+  query: z.object({}),
+});
+
+export const updateUserSalarySchema = z.object({
+  body: salaryBodySchema
+    .partial()
+    .refine(
+      (value) =>
+        value.salary !== undefined ||
+        value.effectiveDate !== undefined ||
+        value.note !== undefined,
+      {
+        message: "At least one field must be provided to update salary",
+      }
+    ),
+  params: z.object({
+    userId: z.string().trim().min(1, "User id is required"),
+    salaryId: z.coerce.number().int().positive("Salary id is required"),
+  }),
+  query: z.object({}),
+});
+
 export type SearchUsersInput = z.infer<typeof searchUsersSchema>["body"];
 export type ListUsersInput = z.infer<typeof listUsersSchema>["query"];
 export type UpdateUserInput = z.infer<typeof updateUserSchema>["body"];
+export type CreateUserSalaryInput = z.infer<
+  typeof createUserSalarySchema
+>["body"];
+export type UpdateUserSalaryInput = z.infer<
+  typeof updateUserSalarySchema
+>["body"];

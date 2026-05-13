@@ -14,7 +14,14 @@ import {
 } from "drizzle-orm";
 
 import { db } from "@/db";
-import { roles, user, userInvites, userRoles, userSkills } from "@/db/schema";
+import {
+  roles,
+  user,
+  userInvites,
+  userRoles,
+  userSalaryHistory,
+  userSkills,
+} from "@/db/schema";
 import { roleNames } from "@/shared/constants/role-permission";
 import type {
   InvitedUserSearchRecord,
@@ -183,6 +190,77 @@ export class UsersRepository {
         )
         .onConflictDoNothing();
     });
+  }
+
+  async listUserSalaryHistory(userId: string) {
+    return db
+      .select({
+        id: userSalaryHistory.id,
+        userId: userSalaryHistory.userId,
+        salary: userSalaryHistory.salary,
+        effectiveDate: userSalaryHistory.effectiveDate,
+        note: userSalaryHistory.note,
+        createdBy: userSalaryHistory.createdBy,
+        createdAt: userSalaryHistory.createdAt,
+        updatedAt: userSalaryHistory.updatedAt,
+      })
+      .from(userSalaryHistory)
+      .where(eq(userSalaryHistory.userId, userId))
+      .orderBy(
+        desc(userSalaryHistory.effectiveDate),
+        desc(userSalaryHistory.createdAt)
+      );
+  }
+
+  async createUserSalary(input: {
+    userId: string;
+    salary: string;
+    effectiveDate: Date;
+    note?: string | null;
+    createdBy: string;
+  }) {
+    const [record] = await db
+      .insert(userSalaryHistory)
+      .values({
+        userId: input.userId,
+        salary: input.salary,
+        effectiveDate: input.effectiveDate,
+        note: input.note ?? null,
+        createdBy: input.createdBy,
+      })
+      .returning();
+
+    return record ?? null;
+  }
+
+  async updateUserSalary(
+    salaryId: number,
+    userId: string,
+    input: {
+      salary?: string;
+      effectiveDate?: Date;
+      note?: string | null;
+    }
+  ) {
+    const [record] = await db
+      .update(userSalaryHistory)
+      .set({
+        ...(input.salary !== undefined ? { salary: input.salary } : {}),
+        ...(input.effectiveDate !== undefined
+          ? { effectiveDate: input.effectiveDate }
+          : {}),
+        ...(input.note !== undefined ? { note: input.note } : {}),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(userSalaryHistory.id, salaryId),
+          eq(userSalaryHistory.userId, userId)
+        )
+      )
+      .returning();
+
+    return record ?? null;
   }
 
   async searchOnboardedUsers(

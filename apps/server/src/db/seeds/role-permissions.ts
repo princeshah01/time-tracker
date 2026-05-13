@@ -3,10 +3,10 @@ import { inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { permissions, rolePermissions, roles } from "@/db/schema";
 import {
-  permissionKeys,
-  roleNames,
   type PermissionKey,
+  permissionKeys,
   type RoleName,
+  roleNames,
 } from "@/shared/constants/role-permission";
 
 type SeedRole = {
@@ -36,7 +36,6 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.userInvite,
       permissionKeys.userManageFinancial,
       permissionKeys.userManage,
-      permissionKeys.userViewFinancial,
       // Role management permissions
       permissionKeys.roleView,
       permissionKeys.roleManage,
@@ -69,9 +68,7 @@ const seedRoles: readonly SeedRole[] = [
       // User management permissions
       permissionKeys.userView,
       permissionKeys.userInvite,
-      permissionKeys.userManageFinancial,
       permissionKeys.userManage,
-      permissionKeys.userViewFinancial,
       // Role management permissions
       permissionKeys.roleView,
       permissionKeys.roleManage,
@@ -133,7 +130,7 @@ const seedRoles: readonly SeedRole[] = [
   },
 ];
 
-async function seedRolePermissions() {
+export async function seedRolePermissions() {
   const permissionValues = allPermissions.map((key) => ({
     key,
     description: key,
@@ -228,13 +225,18 @@ async function seedRolePermissions() {
   }
 }
 
-seedRolePermissions()
-  .then(() => {
-    console.log("Role permission seed completed.");
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error("Role permission seed failed.");
-    console.error(error);
-    process.exit(1);
-  });
+if (process.argv[1]?.endsWith("role-permissions.ts")) {
+  seedRolePermissions()
+    .then(() => {
+      // biome-ignore lint/suspicious/noConsole: Seed scripts report CLI status.
+      console.log("Role permission seed completed.");
+      process.exit(0);
+    })
+    .catch((error) => {
+      // biome-ignore lint/suspicious/noConsole: Seed scripts report CLI status.
+      console.error("Role permission seed failed.");
+      // biome-ignore lint/suspicious/noConsole: Seed scripts report CLI errors.
+      console.error(error);
+      process.exit(1);
+    });
+}

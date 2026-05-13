@@ -50,6 +50,20 @@
       "when": 1778496424757,
       "tag": "0006_tiresome_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778663410144,
+      "tag": "0007_fearless_trish_tilby",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778665409709,
+      "tag": "0008_famous_wither",
+      "breakpoints": true
     }
   ]
 }

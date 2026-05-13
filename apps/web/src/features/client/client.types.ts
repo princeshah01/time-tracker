@@ -43,7 +43,7 @@ export type ListClientsResponse = {
 
 export type CreateClientInput = {
   name: string;
-  company?: string | null;
+  company: string;
   email: string;
   phone?: string | null;
   address?: string | null;

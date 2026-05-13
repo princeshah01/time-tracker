@@ -1,3 +1,6 @@
+import { auth } from "@/auth";
+import { permissionsService } from "@/modules/permissions/permissions.service";
+import { AppError, runAuthApi } from "@/shared/utils";
 import { UsersRepository } from "./users.repository";
 import type {
   InvitedUserSearchRecord,
@@ -7,13 +10,12 @@ import type {
   SuggestedUser,
 } from "./users.types";
 import type {
+  CreateUserSalaryInput,
   ListUsersInput,
   SearchUsersInput,
   UpdateUserInput,
+  UpdateUserSalaryInput,
 } from "./users.validation";
-import { AppError, runAuthApi } from "@/shared/utils";
-import { permissionsService } from "@/modules/permissions/permissions.service";
-import { auth } from "@/auth";
 
 const INVITATION_SEARCH_LOOKAHEAD_MULTIPLIER = 3;
 
@@ -227,6 +229,85 @@ export class UsersService {
     };
   }
 
+  async getUserFinancials(userId: string, requesterId: string) {
+    await this.ensureCanAccessUser(userId, requesterId);
+    const salaryHistory =
+      await this.usersRepository.listUserSalaryHistory(userId);
+    const now = new Date();
+    const currentSalary =
+      salaryHistory.find((salary) => salary.effectiveDate <= now) ?? null;
+    const nextSalary =
+      [...salaryHistory]
+        .reverse()
+        .find((salary) => salary.effectiveDate > now) ?? null;
+
+    return {
+      currentSalary,
+      nextSalary,
+      analytics: this.getSalaryAnalytics(currentSalary, nextSalary),
+      salaryHistory,
+    };
+  }
+
+  async createUserSalary(
+    userId: string,
+    input: CreateUserSalaryInput,
+    requesterId: string
+  ) {
+    await this.ensureCanAccessUser(userId, requesterId);
+
+    const salary = await this.usersRepository.createUserSalary({
+      userId,
+      salary: input.salary.toFixed(2),
+      effectiveDate: input.effectiveDate,
+      note: input.note?.trim() || null,
+      createdBy: requesterId,
+    });
+
+    if (!salary) {
+      throw new AppError({
+        message: "Failed to save salary",
+        code: "INTERNAL_SERVER_ERROR",
+      });
+    }
+
+    return this.getUserFinancials(userId, requesterId);
+  }
+
+  async updateUserSalary(
+    userId: string,
+    salaryId: number,
+    input: UpdateUserSalaryInput,
+    requesterId: string
+  ) {
+    await this.ensureCanAccessUser(userId, requesterId);
+
+    const salary = await this.usersRepository.updateUserSalary(
+      salaryId,
+      userId,
+      {
+        ...(input.salary !== undefined
+          ? { salary: input.salary.toFixed(2) }
+          : {}),
+        ...(input.effectiveDate !== undefined
+          ? { effectiveDate: input.effectiveDate }
+          : {}),
+        ...(input.note !== undefined
+          ? { note: input.note?.trim() || null }
+          : {}),
+      }
+    );
+
+    if (!salary) {
+      throw new AppError({
+        message: "Salary record not found",
+        code: "NOT_FOUND",
+      });
+    }
+
+    return this.getUserFinancials(userId, requesterId);
+  }
+
   async searchUsers(input: SearchUsersInput, requester: SearchRequester) {
     const suggestedUsers: SuggestedUser[] = [];
     const seenEmails = new Set<string>();
@@ -380,6 +461,49 @@ export class UsersService {
     }
 
     return skillsByUserId;
+  }
+
+  private async ensureCanAccessUser(userId: string, requesterId: string) {
+    const user = await this.usersRepository.findUserById(userId);
+
+    if (
+      !user ||
+      !this.canAccessUserRole(
+        user,
+        await permissionsService.getUserMaxRoleLevel(requesterId)
+      )
+    ) {
+      throw new AppError({
+        message: "User not found",
+        code: "NOT_FOUND",
+      });
+    }
+
+    return user;
+  }
+
+  private getSalaryAnalytics(
+    currentSalary: { salary: string } | null,
+    nextSalary: { salary: string } | null
+  ) {
+    if (!currentSalary || !nextSalary) {
+      return {
+        hikeAmount: null,
+        hikePercentage: null,
+      };
+    }
+
+    const currentAmount = Number(currentSalary.salary);
+    const nextAmount = Number(nextSalary.salary);
+    const hikeAmount = nextAmount - currentAmount;
+
+    return {
+      hikeAmount: hikeAmount.toFixed(2),
+      hikePercentage:
+        currentAmount > 0
+          ? ((hikeAmount / currentAmount) * 100).toFixed(2)
+          : null,
+    };
   }
 
   private normalizeSkills(skills: string[]) {

@@ -8,6 +8,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seeds/role-permissions.ts",
+    "db:seed:dummy": "tsx src/db/seeds/dummy-data.ts",
     "db:studio": "drizzle-kit studio",
     "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:worker\"",
     "dev:server": "tsx watch src/index.ts",

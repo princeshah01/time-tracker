@@ -1,0 +1,1 @@
+ALTER TABLE "user_salary_history" DROP COLUMN "currency";

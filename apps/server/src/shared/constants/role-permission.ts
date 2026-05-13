@@ -7,7 +7,6 @@ export const permissionKeys = {
   userInvite: "user:invite",
   userManage: "user:manage",
   userManageFinancial: "user:manage-financial",
-  userViewFinancial: "user:view-financial",
 
   // Role management permissions
   roleView: "role:view",
