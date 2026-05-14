@@ -15,6 +15,7 @@ import {
   ProjectMainPage,
 } from "@/features/project";
 import { SettingsPage } from "@/features/settings";
+import { CreateTaskPage, TaskDetailsPage, TaskMainPage } from "@/features/task";
 import { permissions } from "@/shared/constants";
 import type { AppRoute } from "@/shared/types";
 
@@ -154,19 +155,22 @@ export const appRoutes: AppRoute[] = [
     path: "/tasks",
     label: "Tasks",
     icon: "CheckSquare",
-    element: <div>Tasks Overview</div>,
+    element: <TaskMainPage />,
     showInSidebar: true,
     sideBarGroup: "Management",
+    permissions: [permissions.taskViewAll, permissions.taskViewOwn],
   },
   {
     path: "/tasks/new",
     label: "Create Task",
-    element: <div>Create Task</div>,
+    element: <CreateTaskPage />,
+    permissions: [permissions.taskCreate],
   },
   {
     path: "/tasks/:taskId",
-    label: "Task Details",
-    element: <div>Task Details</div>,
+    label: "Edit Task",
+    element: <TaskDetailsPage />,
+    permissions: [permissions.taskCreate],
   },
 
   // --------------------

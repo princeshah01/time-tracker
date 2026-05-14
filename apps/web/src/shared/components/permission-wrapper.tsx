@@ -1,7 +1,7 @@
 import { useAppSelector } from "@/app/store";
 import { hasPermission } from "@/shared/lib";
 
-const PermissionsWrapper = ({
+const RequirePermissions = ({
   children,
   requiredPermissions,
 }: {
@@ -16,4 +16,6 @@ const PermissionsWrapper = ({
   return hasRequiredPermissions ? children : null;
 };
 
-export { PermissionsWrapper };
+const PermissionsWrapper = RequirePermissions;
+
+export { PermissionsWrapper, RequirePermissions };

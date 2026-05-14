@@ -12,7 +12,7 @@ import {
 } from "drizzle-orm";
 
 import { db } from "@/db";
-import { clients, projectTeamMembers, projects, user } from "@/db/schema";
+import { clients, projectTeamMembers, projects, tasks, user } from "@/db/schema";
 import type { AccessScope } from "@/shared/types";
 import type {
   CreateProjectInput,
@@ -105,7 +105,11 @@ export class ProjectsRepository {
             name: user.name,
             email: user.email,
           },
-          taskTotal: sql<number>`0`,
+          taskTotal: sql<number>`(
+            select count(*)::int
+            from ${tasks}
+            where ${tasks.projectId} = ${projects.id}
+          )`,
           teamMemberTotal: sql<number>`(
             select count(*)::int
             from ${projectTeamMembers}

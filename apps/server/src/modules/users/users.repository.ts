@@ -9,6 +9,7 @@ import {
   isNull,
   lte,
   ne,
+  notInArray,
   or,
   sql,
 } from "drizzle-orm";
@@ -433,7 +434,14 @@ export class UsersRepository {
       projectAssignmentRole === "member" ||
       projectAssignmentRole === "employee"
     ) {
-      return lte(roles.level, 80);
+      return or(
+        isNull(roles.name),
+        notInArray(roles.name, [
+          roleNames.admin,
+          roleNames.manager,
+          roleNames.teamLead,
+        ])
+      );
     }
 
     return undefined;

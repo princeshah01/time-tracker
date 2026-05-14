@@ -32,6 +32,12 @@ export const projectTeamRole = pgEnum("project_team_role", [
   "member",
 ]);
 
+export const taskStatus = pgEnum("task_status", [
+  "todo",
+  "inprogress",
+  "completed",
+]);
+
 export const clients = pgTable(
   "clients",
   {
@@ -122,6 +128,32 @@ export const projectTeamMembers = pgTable(
   ]
 );
 
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    status: taskStatus("status").default("todo").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("tasks_project_id_idx").on(table.projectId),
+    index("tasks_created_by_idx").on(table.createdBy),
+    index("tasks_status_idx").on(table.status),
+  ]
+);
+
 export const clientsRelations = relations(clients, ({ one, many }) => ({
   createdByUser: one(user, {
     fields: [clients.createdBy],
@@ -140,6 +172,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [user.id],
   }),
   teamMembers: many(projectTeamMembers),
+  tasks: many(tasks),
 }));
 
 export const projectTeamMembersRelations = relations(
@@ -155,3 +188,14 @@ export const projectTeamMembersRelations = relations(
     }),
   })
 );
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  project: one(projects, {
+    fields: [tasks.projectId],
+    references: [projects.id],
+  }),
+  creator: one(user, {
+    fields: [tasks.createdBy],
+    references: [user.id],
+  }),
+}));

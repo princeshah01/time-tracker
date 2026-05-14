@@ -11,6 +11,8 @@ const QUERY_KEYS = {
   CLIENT_AUTOCOMPLETE: "client-autocomplete",
   PROJECTS: "projects",
   PROJECT_DETAIL: "project-detail",
+  TASKS: "tasks",
+  TASK_DETAIL: "task-detail",
 };
 
 export { QUERY_KEYS };

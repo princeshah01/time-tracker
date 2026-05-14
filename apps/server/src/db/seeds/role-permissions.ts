@@ -54,6 +54,11 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.projectManageAll,
       permissionKeys.projectManageOwn,
       permissionKeys.projectFinanceManagement,
+
+      // Task management permissions
+      permissionKeys.taskViewAll,
+      permissionKeys.taskViewOwn,
+      permissionKeys.taskCreate,
     ],
   },
   {
@@ -83,6 +88,10 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.projectViewOwn,
       permissionKeys.projectManageOwn,
       permissionKeys.projectFinanceManagement,
+
+      // Task management permissions
+      permissionKeys.taskViewOwn,
+      permissionKeys.taskCreate,
     ],
   },
   {
@@ -104,6 +113,10 @@ const seedRoles: readonly SeedRole[] = [
       // Project management permissions
       permissionKeys.projectViewOwn,
       permissionKeys.projectManageOwn,
+
+      // Task management permissions
+      permissionKeys.taskViewOwn,
+      permissionKeys.taskCreate,
     ],
   },
   {
@@ -115,6 +128,8 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.profileUpdate,
       permissionKeys.profileSecurityManage,
       permissionKeys.projectViewOwn,
+      permissionKeys.taskViewOwn,
+      permissionKeys.taskCreate,
     ],
   },
   {

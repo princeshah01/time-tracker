@@ -64,6 +64,13 @@
       "when": 1778665409709,
       "tag": "0008_famous_wither",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778729602840,
+      "tag": "0009_ambitious_patch",
+      "breakpoints": true
     }
   ]
 }

@@ -26,6 +26,11 @@ export const permissionKeys = {
   projectManageAll: "project:manage:all",
   projectManageOwn: "project:manage:own",
   projectFinanceManagement: "project:finance:management",
+
+  // Task management permissions
+  taskViewAll: "task:view:all",
+  taskViewOwn: "task:view:own",
+  taskCreate: "task:create",
 } as const;
 
 export const roleNames = {
