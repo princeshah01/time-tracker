@@ -7,6 +7,7 @@ import { AppIcon } from "@/shared/components/app-icon";
 import { PageContent } from "@/shared/components/page-content";
 import { QUERY_KEYS } from "@/shared/constants";
 import { formatDate } from "@/shared/lib";
+import { TimesheetSheetsTable } from "../_components";
 import { timesheetService } from "../service";
 
 function TimesheetSheetsPage() {
@@ -102,16 +103,7 @@ function TimesheetSheetsPage() {
               </div>
             </section>
 
-            <section className="flex min-h-72 flex-col items-center justify-center rounded-md border border-dashed border-border bg-muted/20 text-center">
-              <AppIcon
-                name="FileSpreadsheet"
-                className="mb-2 size-8 text-muted-foreground"
-              />
-              <h3 className="text-[13px] font-medium">Sheets workspace</h3>
-              <p className="mt-1 text-[12px] text-muted-foreground">
-                No sheet entries yet.
-              </p>
-            </section>
+            <TimesheetSheetsTable timesheetId={timesheetId} />
           </div>
         ) : null}
       </PageContent.Body>

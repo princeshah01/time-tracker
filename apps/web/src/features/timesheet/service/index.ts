@@ -1,9 +1,13 @@
 import { apiFetch } from "@/shared/lib";
 import type {
   CreateTimesheetInput,
+  ListTimesheetSheetsResponse,
   ListTimesheetsResponse,
   TimesheetListItem,
+  TimesheetSheetRow,
+  TimesheetTaskSuggestion,
   UpdateTimesheetInput,
+  UpsertTimesheetSheetInput,
 } from "../timesheet.types";
 
 export const timesheetService = {
@@ -44,6 +48,42 @@ export const timesheetService = {
     return apiFetch<TimesheetListItem>({
       method: "PATCH",
       url: `/timesheets/${timesheetId}`,
+      data: input,
+    });
+  },
+
+  listSheets(input: {
+    timesheetId: number;
+    page: number;
+    limit: number;
+    userId?: string;
+  }) {
+    return apiFetch<ListTimesheetSheetsResponse>({
+      method: "GET",
+      url: `/timesheets/${input.timesheetId}/sheets`,
+      params: {
+        page: input.page,
+        limit: input.limit,
+        ...(input.userId ? { userId: input.userId } : {}),
+      },
+    });
+  },
+
+  searchSheetTasks(input: { timesheetId: number; q: string }) {
+    return apiFetch<TimesheetTaskSuggestion[]>({
+      method: "GET",
+      url: `/timesheets/${input.timesheetId}/tasks/search`,
+      params: {
+        q: input.q,
+        limit: 5,
+      },
+    });
+  },
+
+  upsertSheet(timesheetId: number, input: UpsertTimesheetSheetInput) {
+    return apiFetch<TimesheetSheetRow>({
+      method: "PATCH",
+      url: `/timesheets/${timesheetId}/sheets`,
       data: input,
     });
   },

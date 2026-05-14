@@ -102,10 +102,76 @@ export const timesheetIdParamSchema = z.object({
   query: z.object({}),
 });
 
+export const listTimesheetSheetsSchema = z.object({
+  params: z.object({
+    timesheetId: z.coerce.number().int().positive(),
+  }),
+  query: z.object({
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(30),
+    userId: z.string().trim().min(1).optional(),
+  }),
+});
+
+export const searchTimesheetTasksSchema = z.object({
+  params: z.object({
+    timesheetId: z.coerce.number().int().positive(),
+  }),
+  query: z.object({
+    q: z.string().trim().optional().default(""),
+    limit: z.coerce.number().int().positive().max(5).default(5),
+  }),
+});
+
+export const upsertTimesheetSheetSchema = z.object({
+  params: z.object({
+    timesheetId: z.coerce.number().int().positive(),
+  }),
+  query: z.object({}),
+  body: z
+    .object({
+      entryDate: z.coerce.date(),
+      userId: z.string().trim().min(1).optional(),
+      taskId: z.coerce.number().int().positive().nullable().optional(),
+      taskTitle: z.string().trim().min(2).max(160).optional(),
+      hours: z.coerce.number().int().min(0).max(24).default(0),
+      minutes: z.coerce.number().int().min(0).max(59).default(0),
+    })
+    .strict()
+    .superRefine((value, ctx) => {
+      const totalMinutes = value.hours * 60 + value.minutes;
+
+      if (value.hours === 24 && value.minutes > 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["minutes"],
+          message: "Minutes must be 0 when hours is 24",
+        });
+      }
+
+      if (totalMinutes > 0 && !value.taskId && !value.taskTitle?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["taskTitle"],
+          message: "Task is required when time spent is greater than 0",
+        });
+      }
+    }),
+});
+
 export type CreateTimesheetInput = z.infer<
   typeof createTimesheetSchema
 >["body"];
 export type ListTimesheetsInput = z.infer<typeof listTimesheetsSchema>["query"];
 export type UpdateTimesheetInput = z.infer<
   typeof updateTimesheetSchema
+>["body"];
+export type ListTimesheetSheetsInput = z.infer<
+  typeof listTimesheetSheetsSchema
+>["query"];
+export type SearchTimesheetTasksInput = z.infer<
+  typeof searchTimesheetTasksSchema
+>["query"];
+export type UpsertTimesheetSheetInput = z.infer<
+  typeof upsertTimesheetSheetSchema
 >["body"];

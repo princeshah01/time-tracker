@@ -47,3 +47,42 @@ export type CreateTimesheetInput = {
 };
 
 export type UpdateTimesheetInput = Partial<CreateTimesheetInput>;
+
+export type TimesheetTaskSuggestion = {
+  id: number;
+  projectId: number;
+  title: string;
+  status: "todo" | "inprogress" | "completed";
+};
+
+export type TimesheetSheetRow = {
+  rowKey: string;
+  date: string;
+  user: TimesheetUser;
+  entryId: number | null;
+  task: TimesheetTaskSuggestion | null;
+  minutesSpent: number;
+  hours: number;
+  minutes: number;
+  updatedAt: string | null;
+};
+
+export type ListTimesheetSheetsResponse = {
+  items: TimesheetSheetRow[];
+  users: TimesheetUser[];
+  canManageAllUsers: boolean;
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+};
+
+export type UpsertTimesheetSheetInput = {
+  entryDate: string;
+  userId?: string;
+  taskId?: number | null;
+  taskTitle?: string;
+  hours: number;
+  minutes: number;
+};

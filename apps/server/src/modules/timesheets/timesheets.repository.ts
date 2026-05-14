@@ -15,6 +15,8 @@ import { db } from "@/db";
 import {
   projects,
   projectTeamMembers,
+  tasks,
+  timesheetEntries,
   timesheets,
   timesheetUsers,
   user,
@@ -23,6 +25,7 @@ import type {
   CreateTimesheetInput,
   ListTimesheetsInput,
   UpdateTimesheetInput,
+  UpsertTimesheetSheetInput,
 } from "./timesheets.validation";
 
 type CreateTimesheetRecordInput = Pick<
@@ -31,6 +34,14 @@ type CreateTimesheetRecordInput = Pick<
 > & {
   startDate: Date;
   endDate: Date;
+  createdBy: string;
+};
+
+type UpsertSheetEntryRecordInput = Pick<UpsertTimesheetSheetInput, "taskId"> & {
+  timesheetId: number;
+  userId: string;
+  entryDate: Date;
+  minutesSpent: number;
   createdBy: string;
 };
 
@@ -238,6 +249,182 @@ export class TimesheetsRepository {
       .limit(1);
 
     return Boolean(record);
+  }
+
+  async listSheetEntriesForRows(input: {
+    timesheetId: number;
+    userIds: string[];
+    entryDates: Date[];
+  }) {
+    if (input.userIds.length === 0 || input.entryDates.length === 0) {
+      return [];
+    }
+
+    return db
+      .select({
+        id: timesheetEntries.id,
+        timesheetId: timesheetEntries.timesheetId,
+        userId: timesheetEntries.userId,
+        entryDate: timesheetEntries.entryDate,
+        taskId: timesheetEntries.taskId,
+        minutesSpent: timesheetEntries.minutesSpent,
+        createdAt: timesheetEntries.createdAt,
+        updatedAt: timesheetEntries.updatedAt,
+        task: {
+          id: tasks.id,
+          title: tasks.title,
+          status: tasks.status,
+        },
+      })
+      .from(timesheetEntries)
+      .leftJoin(tasks, eq(timesheetEntries.taskId, tasks.id))
+      .where(
+        and(
+          eq(timesheetEntries.timesheetId, input.timesheetId),
+          inArray(timesheetEntries.userId, input.userIds),
+          inArray(timesheetEntries.entryDate, input.entryDates)
+        )
+      );
+  }
+
+  async findSheetEntry(input: {
+    timesheetId: number;
+    userId: string;
+    entryDate: Date;
+  }) {
+    const [entry] = await db
+      .select({
+        id: timesheetEntries.id,
+        timesheetId: timesheetEntries.timesheetId,
+        userId: timesheetEntries.userId,
+        entryDate: timesheetEntries.entryDate,
+        taskId: timesheetEntries.taskId,
+        minutesSpent: timesheetEntries.minutesSpent,
+        createdAt: timesheetEntries.createdAt,
+        updatedAt: timesheetEntries.updatedAt,
+        task: {
+          id: tasks.id,
+          title: tasks.title,
+          status: tasks.status,
+        },
+      })
+      .from(timesheetEntries)
+      .leftJoin(tasks, eq(timesheetEntries.taskId, tasks.id))
+      .where(
+        and(
+          eq(timesheetEntries.timesheetId, input.timesheetId),
+          eq(timesheetEntries.userId, input.userId),
+          eq(timesheetEntries.entryDate, input.entryDate)
+        )
+      )
+      .limit(1);
+
+    return entry ?? null;
+  }
+
+  async upsertSheetEntry(input: UpsertSheetEntryRecordInput) {
+    const [entry] = await db
+      .insert(timesheetEntries)
+      .values({
+        timesheetId: input.timesheetId,
+        userId: input.userId,
+        entryDate: input.entryDate,
+        taskId: input.taskId ?? null,
+        minutesSpent: input.minutesSpent,
+        createdBy: input.createdBy,
+      })
+      .onConflictDoUpdate({
+        target: [
+          timesheetEntries.timesheetId,
+          timesheetEntries.userId,
+          timesheetEntries.entryDate,
+        ],
+        set: {
+          taskId: input.taskId ?? null,
+          minutesSpent: input.minutesSpent,
+          updatedAt: new Date(),
+        },
+      })
+      .returning({ id: timesheetEntries.id });
+
+    return entry ?? null;
+  }
+
+  async searchProjectTasks(input: {
+    projectId: number;
+    q: string;
+    limit: number;
+  }) {
+    const conditions: SQL[] = [
+      eq(tasks.projectId, input.projectId),
+      inArray(tasks.status, ["todo", "inprogress"]),
+    ];
+    const q = input.q.trim();
+
+    if (q) {
+      conditions.push(ilike(tasks.title, `%${q}%`));
+    }
+
+    return db
+      .select({
+        id: tasks.id,
+        projectId: tasks.projectId,
+        title: tasks.title,
+        status: tasks.status,
+      })
+      .from(tasks)
+      .where(and(...conditions))
+      .orderBy(
+        q
+          ? sql`case when ${tasks.title} ilike ${`${q}%`} then 0 else 1 end`
+          : sql`0`,
+        asc(tasks.title)
+      )
+      .limit(input.limit);
+  }
+
+  async findFillableTaskById(taskId: number, projectId: number) {
+    const [task] = await db
+      .select({
+        id: tasks.id,
+        projectId: tasks.projectId,
+        title: tasks.title,
+        status: tasks.status,
+      })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.projectId, projectId),
+          inArray(tasks.status, ["todo", "inprogress"])
+        )
+      )
+      .limit(1);
+
+    return task ?? null;
+  }
+
+  async createTodoTask(input: {
+    projectId: number;
+    title: string;
+    createdBy: string;
+  }) {
+    const [task] = await db
+      .insert(tasks)
+      .values({
+        projectId: input.projectId,
+        title: input.title,
+        status: "todo",
+        createdBy: input.createdBy,
+      })
+      .returning({
+        id: tasks.id,
+        projectId: tasks.projectId,
+        title: tasks.title,
+        status: tasks.status,
+      });
+
+    return task ?? null;
   }
 
   private async listUsersByTimesheetIds(timesheetIds: number[]) {

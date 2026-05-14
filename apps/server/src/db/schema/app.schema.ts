@@ -202,6 +202,43 @@ export const timesheetUsers = pgTable(
   ]
 );
 
+export const timesheetEntries = pgTable(
+  "timesheet_entries",
+  {
+    id: serial("id").primaryKey(),
+    timesheetId: integer("timesheet_id")
+      .notNull()
+      .references(() => timesheets.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    entryDate: timestamp("entry_date").notNull(),
+    taskId: integer("task_id").references(() => tasks.id, {
+      onDelete: "set null",
+    }),
+    minutesSpent: integer("minutes_spent").default(0).notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("timesheet_entries_timesheet_user_date_unique").on(
+      table.timesheetId,
+      table.userId,
+      table.entryDate
+    ),
+    index("timesheet_entries_timesheet_id_idx").on(table.timesheetId),
+    index("timesheet_entries_user_id_idx").on(table.userId),
+    index("timesheet_entries_entry_date_idx").on(table.entryDate),
+    index("timesheet_entries_task_id_idx").on(table.taskId),
+  ]
+);
+
 export const clientsRelations = relations(clients, ({ one, many }) => ({
   createdByUser: one(user, {
     fields: [clients.createdBy],
@@ -259,6 +296,7 @@ export const timesheetsRelations = relations(timesheets, ({ one, many }) => ({
     references: [user.id],
   }),
   users: many(timesheetUsers),
+  entries: many(timesheetEntries),
 }));
 
 export const timesheetUsersRelations = relations(timesheetUsers, ({ one }) => ({
@@ -271,3 +309,25 @@ export const timesheetUsersRelations = relations(timesheetUsers, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const timesheetEntriesRelations = relations(
+  timesheetEntries,
+  ({ one }) => ({
+    timesheet: one(timesheets, {
+      fields: [timesheetEntries.timesheetId],
+      references: [timesheets.id],
+    }),
+    user: one(user, {
+      fields: [timesheetEntries.userId],
+      references: [user.id],
+    }),
+    task: one(tasks, {
+      fields: [timesheetEntries.taskId],
+      references: [tasks.id],
+    }),
+    creator: one(user, {
+      fields: [timesheetEntries.createdBy],
+      references: [user.id],
+    }),
+  })
+);

@@ -6,9 +6,12 @@ import { sendSuccess } from "@/shared/utils";
 import { timesheetsService } from "./timesheets.service";
 import type {
   createTimesheetSchema,
+  listTimesheetSheetsSchema,
   listTimesheetsSchema,
+  searchTimesheetTasksSchema,
   timesheetIdParamSchema,
   updateTimesheetSchema,
+  upsertTimesheetSheetSchema,
 } from "./timesheets.validation";
 
 export class TimesheetsController {
@@ -70,6 +73,60 @@ export class TimesheetsController {
       res,
       data: timesheet,
       message: "Timesheet updated successfully",
+    });
+  }
+
+  async listSheets(req: Request, res: Response) {
+    const { params, query } = (
+      req as ValidatedRequest<typeof listTimesheetSheetsSchema>
+    ).validated;
+    const user = requireRouteUser(req);
+    const sheets = await timesheetsService.listSheetRows(
+      params.timesheetId,
+      query,
+      user.id
+    );
+
+    return sendSuccess({
+      res,
+      data: sheets,
+      message: "Timesheet sheets fetched successfully",
+    });
+  }
+
+  async searchTasks(req: Request, res: Response) {
+    const { params, query } = (
+      req as ValidatedRequest<typeof searchTimesheetTasksSchema>
+    ).validated;
+    const user = requireRouteUser(req);
+    const tasks = await timesheetsService.searchSheetTasks(
+      params.timesheetId,
+      query,
+      user.id
+    );
+
+    return sendSuccess({
+      res,
+      data: tasks,
+      message: "Timesheet task suggestions fetched successfully",
+    });
+  }
+
+  async upsertSheet(req: Request, res: Response) {
+    const { params, body } = (
+      req as ValidatedRequest<typeof upsertTimesheetSheetSchema>
+    ).validated;
+    const user = requireRouteUser(req);
+    const sheet = await timesheetsService.upsertSheetRow(
+      params.timesheetId,
+      body,
+      user.id
+    );
+
+    return sendSuccess({
+      res,
+      data: sheet,
+      message: "Timesheet sheet saved successfully",
     });
   }
 }
