@@ -58,7 +58,13 @@ const seedRoles: readonly SeedRole[] = [
       // Task management permissions
       permissionKeys.taskViewAll,
       permissionKeys.taskViewOwn,
-      permissionKeys.taskCreate,
+      // permissionKeys.taskCreate,
+
+      // Timesheet management permissions
+      permissionKeys.timesheetCreate,
+      permissionKeys.timesheetFill,
+      permissionKeys.timesheetApprove,
+      permissionKeys.timesheetSubmit,
     ],
   },
   {
@@ -92,6 +98,12 @@ const seedRoles: readonly SeedRole[] = [
       // Task management permissions
       permissionKeys.taskViewOwn,
       permissionKeys.taskCreate,
+
+      // Timesheet management permissions
+      permissionKeys.timesheetCreate,
+      permissionKeys.timesheetFill,
+      permissionKeys.timesheetApprove,
+      permissionKeys.timesheetSubmit,
     ],
   },
   {
@@ -117,6 +129,12 @@ const seedRoles: readonly SeedRole[] = [
       // Task management permissions
       permissionKeys.taskViewOwn,
       permissionKeys.taskCreate,
+
+      // Timesheet management permissions
+      permissionKeys.timesheetCreate,
+      permissionKeys.timesheetFill,
+      permissionKeys.timesheetApprove,
+      permissionKeys.timesheetSubmit,
     ],
   },
   {
@@ -130,6 +148,8 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.projectViewOwn,
       permissionKeys.taskViewOwn,
       permissionKeys.taskCreate,
+      permissionKeys.timesheetFill,
+      permissionKeys.timesheetSubmit,
     ],
   },
   {

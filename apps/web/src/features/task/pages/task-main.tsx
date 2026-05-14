@@ -1,6 +1,7 @@
 import {
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
@@ -10,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAppSelector } from "@/app/store/hooks";
+import { projectService } from "@/features/project";
 import { AppIcon } from "@/shared/components/app-icon";
 import { PageContent } from "@/shared/components/page-content";
 import { RequirePermissions } from "@/shared/components/permission-wrapper";
@@ -28,6 +30,7 @@ function TaskMainPage() {
   ]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [projectId, setProjectId] = useState<number | null>(null);
   const [status, setStatus] = useState<TaskStatusFilter>("all");
   const [rowLimit, setRowLimit] = useState(0);
 
@@ -47,8 +50,30 @@ function TaskMainPage() {
     };
   }, [search, debouncedFn]);
 
+  const projectsQuery = useQuery({
+    queryKey: [QUERY_KEYS.PROJECTS, "task-list-filter"],
+    queryFn: async () => {
+      const response = await projectService.listProjects({
+        page: 1,
+        limit: 100,
+      });
+
+      if (!response.success || !response.data) {
+        throw new Error(response.message || "Failed to fetch projects");
+      }
+
+      return response.data.items;
+    },
+  });
+
   const tasksQuery = useInfiniteQuery({
-    queryKey: [QUERY_KEYS.TASKS, debouncedSearch, status, rowLimit],
+    queryKey: [
+      QUERY_KEYS.TASKS,
+      debouncedSearch,
+      projectId ?? "all",
+      status,
+      rowLimit,
+    ],
     enabled: Boolean(rowLimit),
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
@@ -56,6 +81,7 @@ function TaskMainPage() {
         page: pageParam,
         limit: rowLimit,
         q: debouncedSearch,
+        projectId,
         status,
       });
 
@@ -106,8 +132,12 @@ function TaskMainPage() {
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
             <TaskFilters
               search={search}
+              projectId={projectId}
+              projects={projectsQuery.data ?? []}
+              isProjectsLoading={projectsQuery.isLoading}
               status={status}
               onSearchChange={setSearch}
+              onProjectChange={setProjectId}
               onStatusChange={setStatus}
             />
 
@@ -132,6 +162,7 @@ function TaskMainPage() {
             setRowLimit={setRowLimit}
             canMutate={canMutateTasks}
             updatingTaskId={updateStatusMutation.variables?.task.id ?? null}
+            updatingStatus={updateStatusMutation.isPending}
             onEdit={editTask}
             onStatusChange={(task, nextStatus) => {
               if (task.status === nextStatus) return;

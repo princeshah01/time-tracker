@@ -154,6 +154,54 @@ export const tasks = pgTable(
   ]
 );
 
+export const timesheets = pgTable(
+  "timesheets",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    timesheetName: text("timesheet_name").notNull(),
+    startDate: timestamp("start_date").notNull(),
+    endDate: timestamp("end_date").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("timesheets_project_id_idx").on(table.projectId),
+    index("timesheets_created_by_idx").on(table.createdBy),
+    index("timesheets_range_idx").on(table.startDate, table.endDate),
+  ]
+);
+
+export const timesheetUsers = pgTable(
+  "timesheet_users",
+  {
+    id: serial("id").primaryKey(),
+    timesheetId: integer("timesheet_id")
+      .notNull()
+      .references(() => timesheets.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("timesheet_users_timesheet_id_user_id_unique").on(
+      table.timesheetId,
+      table.userId
+    ),
+    index("timesheet_users_timesheet_id_idx").on(table.timesheetId),
+    index("timesheet_users_user_id_idx").on(table.userId),
+  ]
+);
+
 export const clientsRelations = relations(clients, ({ one, many }) => ({
   createdByUser: one(user, {
     fields: [clients.createdBy],
@@ -173,6 +221,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   }),
   teamMembers: many(projectTeamMembers),
   tasks: many(tasks),
+  timesheets: many(timesheets),
 }));
 
 export const projectTeamMembersRelations = relations(
@@ -196,6 +245,29 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
   }),
   creator: one(user, {
     fields: [tasks.createdBy],
+    references: [user.id],
+  }),
+}));
+
+export const timesheetsRelations = relations(timesheets, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [timesheets.projectId],
+    references: [projects.id],
+  }),
+  creator: one(user, {
+    fields: [timesheets.createdBy],
+    references: [user.id],
+  }),
+  users: many(timesheetUsers),
+}));
+
+export const timesheetUsersRelations = relations(timesheetUsers, ({ one }) => ({
+  timesheet: one(timesheets, {
+    fields: [timesheetUsers.timesheetId],
+    references: [timesheets.id],
+  }),
+  user: one(user, {
+    fields: [timesheetUsers.userId],
     references: [user.id],
   }),
 }));

@@ -13,6 +13,8 @@ const QUERY_KEYS = {
   PROJECT_DETAIL: "project-detail",
   TASKS: "tasks",
   TASK_DETAIL: "task-detail",
+  TIMESHEETS: "timesheets",
+  TIMESHEET_DETAIL: "timesheet-detail",
 };
 
 export { QUERY_KEYS };

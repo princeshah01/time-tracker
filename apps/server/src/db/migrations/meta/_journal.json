@@ -71,6 +71,13 @@
       "when": 1778729602840,
       "tag": "0009_ambitious_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778740716216,
+      "tag": "0010_brave_randall",
+      "breakpoints": true
     }
   ]
 }

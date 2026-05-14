@@ -46,6 +46,8 @@ function ProjectContextMenu({
         View project
       </button>
 
+     {canManage && (
+      <>
       <button
         type="button"
         className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] hover:bg-accent disabled:opacity-50"
@@ -74,6 +76,8 @@ function ProjectContextMenu({
         />
         {project.isActive ? "Disable project" : "Activate project"}
       </button>
+      </>
+      )}
     </div>
   );
 }

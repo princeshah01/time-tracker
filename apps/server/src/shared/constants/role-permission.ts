@@ -31,6 +31,12 @@ export const permissionKeys = {
   taskViewAll: "task:view:all",
   taskViewOwn: "task:view:own",
   taskCreate: "task:create",
+
+  // Timesheet management permissions
+  timesheetCreate: "timesheet:create",
+  timesheetFill: "timesheet:fill",
+  timesheetApprove: "timesheet:approve",
+  timesheetSubmit: "timesheet:submit",
 } as const;
 
 export const roleNames = {

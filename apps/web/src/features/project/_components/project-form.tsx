@@ -46,6 +46,8 @@ import type {
 } from "../project.types";
 import { ClientCombobox } from "./client-combobox";
 import { UserCombobox, type UserOption } from "./user-combobox";
+import { PermissionsWrapper } from "@/shared/components/permission-wrapper";
+import { permissions } from "@/shared/constants";
 
 const teamRowSchema = z.object({
   rowId: z.string().min(1),
@@ -240,14 +242,17 @@ function ProjectForm({
   });
   const teamRows = form.watch("teamRows");
   const billingType = form.watch("billingType");
+
   const selectedUserIds = useMemo(
     () => teamRows.map((row) => row.userId).filter(Boolean),
     [teamRows]
   );
+  
   const persistedTeamUserIds = useMemo(
     () => new Set(project?.teamMembers.map((member) => member.userId) ?? []),
     [project?.teamMembers]
   );
+
   const billingRows = useMemo(
     () =>
       project?.teamMembers.map((member, index) => ({
@@ -789,13 +794,15 @@ function TeamTable({
   onRoleChange: (rowId: string, role: ProjectTeamRole) => void;
   onUserSelect: (rowId: string, user: UserOption) => void;
 }) {
+  const canManageProjectReqPermissions = [permissions.projectManageAll, permissions.projectManageOwn];
   return (
     <div className="relative h-fit overflow-visible rounded-md border">
       <div className="grid grid-cols-[150px_1fr_40px] rounded-t-md border-b bg-muted/40 px-3 py-2 text-[12px] font-medium md:grid-cols-[170px_1fr_48px]">
         <div>Role</div>
         <div>User</div>
         <div className="flex justify-end">
-          <Button
+          <PermissionsWrapper requiredPermissions={canManageProjectReqPermissions}>
+            <Button
             type="button"
             variant="ghost"
             size="icon"
@@ -805,6 +812,7 @@ function TeamTable({
           >
             <AppIcon name="Plus" className="size-3.5" />
           </Button>
+          </PermissionsWrapper>
         </div>
       </div>
 
@@ -852,7 +860,7 @@ function TeamTable({
               </div>
             ) : null}
           </div>
-
+          <PermissionsWrapper requiredPermissions={canManageProjectReqPermissions}>
           <div className="flex justify-end">
             <Button
               type="button"
@@ -865,6 +873,7 @@ function TeamTable({
               <AppIcon name="X" className="size-3.5" />
             </Button>
           </div>
+          </PermissionsWrapper>
         </div>
       ))}
     </div>

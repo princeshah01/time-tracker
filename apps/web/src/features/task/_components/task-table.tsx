@@ -27,6 +27,7 @@ type TaskTableProps = {
   setRowLimit: (limit: number) => void;
   canMutate: boolean;
   updatingTaskId?: number | null;
+  updatingStatus?: boolean;
   onEdit: (task: TaskListItem) => void;
   onStatusChange: (task: TaskListItem, status: TaskStatus) => void;
 };
@@ -40,6 +41,7 @@ function TaskTable({
   setRowLimit,
   canMutate,
   updatingTaskId,
+  updatingStatus,
   onEdit,
   onStatusChange,
 }: TaskTableProps) {
@@ -124,7 +126,7 @@ function TaskTable({
           canMutate ? (
             <Select
               value={row.original.status}
-              disabled={updatingTaskId === row.original.id}
+              disabled={updatingStatus}
               onValueChange={(value) =>
                 onStatusChange(row.original, value as TaskStatus)
               }

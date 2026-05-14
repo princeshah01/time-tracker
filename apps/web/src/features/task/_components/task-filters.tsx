@@ -11,17 +11,30 @@ import { AppIcon } from "@/shared/components/app-icon";
 import type { TaskStatusFilter } from "../task.types";
 import { TASK_STATUS_OPTIONS } from "./task-status";
 
+type ProjectFilterOption = {
+  id: number;
+  name: string;
+};
+
 type TaskFiltersProps = {
   search: string;
+  projectId: number | null;
+  projects: ProjectFilterOption[];
+  isProjectsLoading?: boolean;
   status: TaskStatusFilter;
   onSearchChange: (value: string) => void;
+  onProjectChange: (value: number | null) => void;
   onStatusChange: (value: TaskStatusFilter) => void;
 };
 
 function TaskFilters({
   search,
+  projectId,
+  projects,
+  isProjectsLoading = false,
   status,
   onSearchChange,
+  onProjectChange,
   onStatusChange,
 }: TaskFiltersProps) {
   return (
@@ -39,6 +52,35 @@ function TaskFilters({
           className="h-8 pl-8 text-[13px]"
         />
       </div>
+
+      <Select
+        value={projectId ? String(projectId) : "all"}
+        onValueChange={(value) =>
+          onProjectChange(value === "all" ? null : Number(value))
+        }
+      >
+        <SelectTrigger className="h-8 w-full text-[12px] sm:w-48">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All projects</SelectItem>
+          {projects.map((project) => (
+            <SelectItem key={project.id} value={String(project.id)}>
+              {project.name}
+            </SelectItem>
+          ))}
+          {isProjectsLoading && projects.length === 0 ? (
+            <SelectItem value="loading-projects" disabled>
+              Loading projects...
+            </SelectItem>
+          ) : null}
+          {!isProjectsLoading && projects.length === 0 ? (
+            <SelectItem value="no-projects" disabled>
+              No projects available
+            </SelectItem>
+          ) : null}
+        </SelectContent>
+      </Select>
 
       <Select value={status} onValueChange={onStatusChange}>
         <SelectTrigger className="h-8 w-full text-[12px] sm:w-40">

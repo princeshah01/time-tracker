@@ -208,8 +208,8 @@ function ProjectDetailsPage() {
                     className="h-8 text-[12px]"
                     onClick={() => navigate("/project")}
                   >
-                    <AppIcon name="X" className="size-3.5" />
-                    Close
+                    <AppIcon name="ChevronLeft" className="size-3.5" />
+                    Back to list
                   </Button>
                 </div>
               </>

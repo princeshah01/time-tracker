@@ -16,6 +16,12 @@ import {
 } from "@/features/project";
 import { SettingsPage } from "@/features/settings";
 import { CreateTaskPage, TaskDetailsPage, TaskMainPage } from "@/features/task";
+import {
+  CreateTimesheetPage,
+  TimesheetDetailsPage,
+  TimesheetMainPage,
+  TimesheetSheetsPage,
+} from "@/features/timesheet";
 import { permissions } from "@/shared/constants";
 import type { AppRoute } from "@/shared/types";
 
@@ -177,22 +183,59 @@ export const appRoutes: AppRoute[] = [
   // TIMESHEETS
   // --------------------
   {
-    path: "/timesheets",
+    path: "/timesheet",
     label: "Timesheets",
     icon: "Clock",
-    element: <div>Timesheets Overview</div>,
+    element: <TimesheetMainPage />,
     showInSidebar: true,
     sideBarGroup: "Management",
   },
   {
+    path: "/timesheet/new",
+    label: "Create Timesheet",
+    element: <CreateTimesheetPage />,
+    permissions: [permissions.timesheetCreate],
+  },
+  {
+    path: "/timesheet/:timesheetId/sheets",
+    label: "Timesheet Sheets",
+    element: <TimesheetSheetsPage />,
+    permissions: [
+      permissions.timesheetFill,
+      permissions.timesheetSubmit,
+      permissions.timesheetApprove,
+    ],
+  },
+  {
+    path: "/timesheet/:timesheetId",
+    label: "Timesheet Details",
+    element: <TimesheetDetailsPage />,
+  },
+  {
+    path: "/timesheets",
+    label: "Timesheets",
+    element: <TimesheetMainPage />,
+  },
+  {
     path: "/timesheets/new",
     label: "Create Timesheet",
-    element: <div>Create Timesheet</div>,
+    element: <CreateTimesheetPage />,
+    permissions: [permissions.timesheetCreate],
+  },
+  {
+    path: "/timesheets/:timesheetId/sheets",
+    label: "Timesheet Sheets",
+    element: <TimesheetSheetsPage />,
+    permissions: [
+      permissions.timesheetFill,
+      permissions.timesheetSubmit,
+      permissions.timesheetApprove,
+    ],
   },
   {
     path: "/timesheets/:timesheetId",
     label: "Timesheet Details",
-    element: <div>Timesheet Details</div>,
+    element: <TimesheetDetailsPage />,
   },
   // --------------------
   // ANALYTICS

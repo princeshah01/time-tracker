@@ -6,6 +6,7 @@ import { profileRouter } from "@/modules/profile/profile.routes";
 import { projectsRouter } from "@/modules/projects/projects.routes";
 import { rolesRouter } from "@/modules/roles/roles.routes";
 import { tasksRouter } from "@/modules/tasks/tasks.routes";
+import { timesheetsRouter } from "@/modules/timesheets/timesheets.routes";
 import { usersRouter } from "@/modules/users/users.routes";
 
 const appRouter = Router();
@@ -15,6 +16,7 @@ appRouter.use("/client", clientsRouter);
 appRouter.use("/clients", clientsRouter);
 appRouter.use("/projects", projectsRouter);
 appRouter.use("/tasks", tasksRouter);
+appRouter.use("/timesheets", timesheetsRouter);
 appRouter.use("/invitations", invitationsRouter);
 appRouter.use("/roles", rolesRouter);
 appRouter.use("/users", usersRouter);

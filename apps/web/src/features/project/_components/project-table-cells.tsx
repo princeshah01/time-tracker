@@ -70,7 +70,7 @@ function ProjectActionsCell({
   onToggleStatus: (project: ProjectListItem) => void;
 }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-px">
       <Button
         type="button"
         variant="ghost"
@@ -85,12 +85,13 @@ function ProjectActionsCell({
       >
         <AppIcon name="Eye" className="size-3.5" />
       </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-7 text-muted-foreground"
-        disabled={!canManage}
+      {canManage && (
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground"
         title="Edit project"
         aria-label="Edit project"
         onClick={(event) => {
@@ -118,6 +119,7 @@ function ProjectActionsCell({
           className="size-3.5"
         />
       </Button>
+      </>)}
     </div>
   );
 }
