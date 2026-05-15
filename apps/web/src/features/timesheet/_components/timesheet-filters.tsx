@@ -1,27 +1,38 @@
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 import type { ReactNode } from "react";
 
+import type { ProjectListItem } from "@/features/project";
 import { AppIcon } from "@/shared/components/app-icon";
+
+const ALL_PROJECTS = "all";
 
 type TimesheetFiltersProps = {
   search: string;
-  projectName: string;
+  selectedProjectId: number | null;
+  projects: ProjectListItem[];
+  isLoadingProjects?: boolean;
   actions?: ReactNode;
   onSearchChange: (value: string) => void;
-  onProjectNameChange: (value: string) => void;
-  onClear: () => void;
+  onProjectChange: (value: number | null) => void;
 };
 
 function TimesheetFilters({
   search,
-  projectName,
+  selectedProjectId,
+  projects,
+  isLoadingProjects,
   actions,
   onSearchChange,
-  onProjectNameChange,
-  onClear,
+  onProjectChange,
 }: TimesheetFiltersProps) {
-  const hasFilters = search.trim().length > 0 || projectName.trim().length > 0;
 
   return (
     <div className="flex w-full flex-col justify-between gap-2 sm:flex-row sm:items-center">
@@ -35,36 +46,32 @@ function TimesheetFilters({
             value={search}
             variant="search"
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search timesheet, creator..."
+            placeholder="Search timesheet"
             className="h-8 pl-8 text-[13px]"
           />
         </div>
 
-        <div className="relative w-full sm:max-w-56">
-          <AppIcon
-            name="FolderKanban"
-            className="-translate-y-1/2 absolute top-1/2 left-2.5 size-3.5 text-muted-foreground"
-          />
-          <Input
-            value={projectName}
-            variant="search"
-            onChange={(event) => onProjectNameChange(event.target.value)}
-            placeholder="Project name"
-            className="h-8 pl-8 text-[13px]"
-          />
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1.5 text-[12px]"
-          disabled={!hasFilters}
-          onClick={onClear}
+        <Select
+          value={selectedProjectId ? String(selectedProjectId) : ALL_PROJECTS}
+          disabled={isLoadingProjects}
+          onValueChange={(value) =>
+            onProjectChange(value === ALL_PROJECTS ? null : Number(value))
+          }
         >
-          <AppIcon name="X" className="size-3.5" />
-          Clear
-        </Button>
+          <SelectTrigger className="h-8 w-full gap-2 text-[13px] sm:max-w-64">
+            <SelectValue
+              placeholder={isLoadingProjects ? "Loading projects" : "Project"}
+            />
+          </SelectTrigger>
+          <SelectContent align="start">
+            <SelectItem value={ALL_PROJECTS}>All projects</SelectItem>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={String(project.id)}>
+                {project.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {actions ? <div className="shrink-0">{actions}</div> : null}

@@ -209,6 +209,19 @@ export const setTimesheetSheetLeaveSchema = z.object({
     .strict(),
 });
 
+export const setTimesheetSheetVerificationSchema = z.object({
+  params: z.object({
+    timesheetId: z.coerce.number().int().positive(),
+  }),
+  query: z.object({}),
+  body: z
+    .object({
+      userId: z.string().trim().min(1),
+      isVerified: z.boolean(),
+    })
+    .strict(),
+});
+
 export type CreateTimesheetInput = z.infer<
   typeof createTimesheetSchema
 >["body"];
@@ -227,4 +240,7 @@ export type UpsertTimesheetSheetInput = z.infer<
 >["body"];
 export type SetTimesheetSheetLeaveInput = z.infer<
   typeof setTimesheetSheetLeaveSchema
+>["body"];
+export type SetTimesheetSheetVerificationInput = z.infer<
+  typeof setTimesheetSheetVerificationSchema
 >["body"];

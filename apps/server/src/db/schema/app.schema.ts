@@ -190,6 +190,10 @@ export const timesheetUsers = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
+    verifiedBy: text("verified_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    verifiedAt: timestamp("verified_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -330,6 +334,10 @@ export const timesheetUsersRelations = relations(timesheetUsers, ({ one }) => ({
   }),
   user: one(user, {
     fields: [timesheetUsers.userId],
+    references: [user.id],
+  }),
+  verifier: one(user, {
+    fields: [timesheetUsers.verifiedBy],
     references: [user.id],
   }),
 }));

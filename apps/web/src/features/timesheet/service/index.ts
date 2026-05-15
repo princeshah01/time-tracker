@@ -4,8 +4,10 @@ import type {
   ListTimesheetSheetsResponse,
   ListTimesheetsResponse,
   SetTimesheetSheetLeaveInput,
+  SetTimesheetSheetVerificationInput,
   TimesheetListItem,
   TimesheetSheetRow,
+  TimesheetUser,
   TimesheetTaskSuggestion,
   UpdateTimesheetInput,
   UpsertTimesheetSheetInput,
@@ -17,6 +19,7 @@ export const timesheetService = {
     limit: number;
     q?: string;
     projectName?: string;
+    projectId?: number;
   }) {
     return apiFetch<ListTimesheetsResponse>({
       method: "GET",
@@ -26,6 +29,7 @@ export const timesheetService = {
         limit: input.limit,
         q: input.q ?? "",
         projectName: input.projectName ?? "",
+        ...(input.projectId ? { projectId: input.projectId } : {}),
       },
     });
   },
@@ -93,6 +97,17 @@ export const timesheetService = {
     return apiFetch<TimesheetSheetRow>({
       method: "PATCH",
       url: `/timesheets/${timesheetId}/sheets/leave`,
+      data: input,
+    });
+  },
+
+  setSheetVerification(
+    timesheetId: number,
+    input: SetTimesheetSheetVerificationInput
+  ) {
+    return apiFetch<TimesheetUser>({
+      method: "PATCH",
+      url: `/timesheets/${timesheetId}/sheets/verification`,
       data: input,
     });
   },

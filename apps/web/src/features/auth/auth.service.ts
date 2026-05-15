@@ -58,6 +58,20 @@ export const authService = {
     });
     return result;
   },
+  verifyTotp: async (input: { otp: string }) => {
+    const result = await authClient.twoFactor.verifyTotp({
+      code: input.otp.trim(),
+      trustDevice: false,
+    });
+    return result;
+  },
+  verifyPassword: async (input: { password: string }) => {
+    return apiFetch<{ verified: boolean }>({
+      method: "POST",
+      url: "/me/verify-password",
+      data: input,
+    });
+  },
   verifyInvitation: async (token: string) => {
     return apiFetch<InvitationVerifyResponse>({
       method: "GET",

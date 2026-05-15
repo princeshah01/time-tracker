@@ -1,8 +1,9 @@
+import { env } from "@/config";
 import { permissionsService } from "@/modules/permissions/permissions.service";
 import { AppError } from "@/shared/utils";
 import { ProfileRepository } from "./profile.repository";
 import type { ProfileMe, UpdateProfileInput } from "./profile.types";
-import { env } from "@/config";
+
 export class ProfileService {
   constructor(private readonly profileRepository = new ProfileRepository()) {}
 
@@ -81,6 +82,7 @@ export class ProfileService {
       ),
     ];
   }
+
   async getProfilePicture(userId: string): Promise<{
     url?: string;
     hasLocalImage?: boolean;

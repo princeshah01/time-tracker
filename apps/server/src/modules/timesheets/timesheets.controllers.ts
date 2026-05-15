@@ -10,6 +10,7 @@ import type {
   listTimesheetsSchema,
   searchTimesheetTasksSchema,
   setTimesheetSheetLeaveSchema,
+  setTimesheetSheetVerificationSchema,
   timesheetIdParamSchema,
   updateTimesheetSchema,
   upsertTimesheetSheetSchema,
@@ -148,6 +149,26 @@ export class TimesheetsController {
       message: body.isLeave
         ? "Timesheet day marked as leave"
         : "Timesheet day unmarked as leave",
+    });
+  }
+
+  async setSheetVerification(req: Request, res: Response) {
+    const { params, body } = (
+      req as ValidatedRequest<typeof setTimesheetSheetVerificationSchema>
+    ).validated;
+    const user = requireRouteUser(req);
+    const sheet = await timesheetsService.setSheetVerification(
+      params.timesheetId,
+      body,
+      user.id
+    );
+
+    return sendSuccess({
+      res,
+      data: sheet,
+      message: body.isVerified
+        ? "Timesheet sheet verified"
+        : "Timesheet sheet verification removed",
     });
   }
 }

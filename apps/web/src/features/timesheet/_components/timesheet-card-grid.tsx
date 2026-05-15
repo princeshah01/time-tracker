@@ -15,8 +15,10 @@ import {
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import { useAppSelector } from "@/app/store";
 import { AppIcon } from "@/shared/components/app-icon";
-import { formatDate } from "@/shared/lib";
+import { permissions } from "@/shared/constants";
+import { formatDate, hasPermission } from "@/shared/lib";
 import type {
   ListTimesheetsResponse,
   TimesheetListItem,
@@ -35,16 +37,21 @@ type TimesheetCardGridProps = {
   fetchNextPage: () => void;
   setPageLimit: (limit: number) => void;
   onView?: (timesheet: TimesheetListItem) => void;
+  onEdit?: (timesheet: TimesheetListItem) => void;
   onOpenSheets?: (timesheet: TimesheetListItem) => void;
 };
 
 function TimesheetCard({
   timesheet,
+  canEditTimesheet,
   onView,
+  onEdit,
   onOpenSheets,
 }: {
   timesheet: TimesheetListItem;
+  canEditTimesheet: boolean;
   onView?: (timesheet: TimesheetListItem) => void;
+  onEdit?: (timesheet: TimesheetListItem) => void;
   onOpenSheets?: (timesheet: TimesheetListItem) => void;
 }) {
   return (
@@ -66,8 +73,10 @@ function TimesheetCard({
               </div>
               <TimesheetCardActions
                 timesheet={timesheet}
+                canEditTimesheet={canEditTimesheet}
                 onOpenSheets={onOpenSheets}
                 onView={onView}
+                onEdit={onEdit}
               />
             </div>
 
@@ -103,11 +112,13 @@ function TimesheetCard({
           </div>
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-40">
+      <ContextMenuContent className="w-48">
         <TimesheetCardContextItems
           timesheet={timesheet}
+          canEditTimesheet={canEditTimesheet}
           onOpenSheets={onOpenSheets}
           onView={onView}
+          onEdit={onEdit}
         />
       </ContextMenuContent>
     </ContextMenu>
@@ -116,11 +127,15 @@ function TimesheetCard({
 
 function TimesheetCardActions({
   timesheet,
+  canEditTimesheet,
   onView,
+  onEdit,
   onOpenSheets,
 }: {
   timesheet: TimesheetListItem;
+  canEditTimesheet: boolean;
   onView?: (timesheet: TimesheetListItem) => void;
+  onEdit?: (timesheet: TimesheetListItem) => void;
   onOpenSheets?: (timesheet: TimesheetListItem) => void;
 }) {
   return (
@@ -136,7 +151,7 @@ function TimesheetCardActions({
           <AppIcon name="MoreHorizontal" className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
+      <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem
           className="gap-2 text-[12px]"
           onSelect={() => onOpenSheets?.(timesheet)}
@@ -149,8 +164,17 @@ function TimesheetCardActions({
           onSelect={() => onView?.(timesheet)}
         >
           <AppIcon name="Eye" className="size-3.5" />
-          View / edit
+          View timesheet details
         </DropdownMenuItem>
+        {canEditTimesheet ? (
+          <DropdownMenuItem
+            className="gap-2 text-[12px]"
+            onSelect={() => onEdit?.(timesheet)}
+          >
+            <AppIcon name="Pencil" className="size-3.5" />
+            Edit timesheet details
+          </DropdownMenuItem>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -158,11 +182,15 @@ function TimesheetCardActions({
 
 function TimesheetCardContextItems({
   timesheet,
+  canEditTimesheet,
   onView,
+  onEdit,
   onOpenSheets,
 }: {
   timesheet: TimesheetListItem;
+  canEditTimesheet: boolean;
   onView?: (timesheet: TimesheetListItem) => void;
+  onEdit?: (timesheet: TimesheetListItem) => void;
   onOpenSheets?: (timesheet: TimesheetListItem) => void;
 }) {
   return (
@@ -179,8 +207,17 @@ function TimesheetCardContextItems({
         onSelect={() => onView?.(timesheet)}
       >
         <AppIcon name="Eye" className="size-3.5" />
-        View / edit
+        View timesheet details
       </ContextMenuItem>
+      {canEditTimesheet ? (
+        <ContextMenuItem
+          className="gap-2 text-[12px]"
+          onSelect={() => onEdit?.(timesheet)}
+        >
+          <AppIcon name="Pencil" className="size-3.5" />
+          Edit timesheet details
+        </ContextMenuItem>
+      ) : null}
     </>
   );
 }
@@ -210,10 +247,17 @@ function TimesheetCardGrid({
   fetchNextPage,
   setPageLimit,
   onView,
+  onEdit,
   onOpenSheets,
 }: TimesheetCardGridProps) {
+  const { permissions: userPermissions } = useAppSelector(
+    (state) => state.user
+  );
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastLimitRef = useRef<number | null>(null);
+  const canEditTimesheet = hasPermission(userPermissions, [
+    permissions.timesheetCreate,
+  ]);
   const timesheets = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
     [data]
@@ -284,8 +328,10 @@ function TimesheetCardGrid({
               <TimesheetCard
                 key={timesheet.id}
                 timesheet={timesheet}
+                canEditTimesheet={canEditTimesheet}
                 onOpenSheets={onOpenSheets}
                 onView={onView}
+                onEdit={onEdit}
               />
             ))}
 

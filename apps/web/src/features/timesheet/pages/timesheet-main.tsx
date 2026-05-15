@@ -1,9 +1,10 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import debounce from "lodash.debounce";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { projectService } from "@/features/project";
 import { AppIcon } from "@/shared/components/app-icon";
 import { PageContent } from "@/shared/components/page-content";
 import { RequirePermissions } from "@/shared/components/permission-wrapper";
@@ -14,33 +15,59 @@ import { timesheetService } from "../service";
 function TimesheetMainPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [projectName, setProjectName] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+    null
+  );
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [debouncedProjectName, setDebouncedProjectName] = useState("");
   const [pageLimit, setPageLimit] = useState(0);
 
   const debouncedFn = useMemo(
     () =>
-      debounce((nextSearch: string, nextProjectName: string) => {
+      debounce((nextSearch: string) => {
         setDebouncedSearch(nextSearch.trim());
-        setDebouncedProjectName(nextProjectName.trim());
       }, 500),
     []
   );
 
   useEffect(() => {
-    debouncedFn(search, projectName);
+    debouncedFn(search);
 
     return () => {
       debouncedFn.cancel();
     };
-  }, [search, projectName, debouncedFn]);
+  }, [search, debouncedFn]);
+
+  const projectsQuery = useQuery({
+    queryKey: [QUERY_KEYS.PROJECTS, "timesheet-filter-projects"],
+    queryFn: async () => {
+      const projects = [];
+      let page = 1;
+      let hasNextPage = true;
+
+      while (hasNextPage) {
+        const response = await projectService.listProjects({
+          page,
+          limit: 100,
+        });
+
+        if (!response.success || !response.data) {
+          throw new Error(response.message || "Failed to fetch projects");
+        }
+
+        projects.push(...response.data.items);
+        hasNextPage = response.data.hasNextPage;
+        page += 1;
+      }
+
+      return projects;
+    },
+  });
 
   const timesheetsQuery = useInfiniteQuery({
     queryKey: [
       QUERY_KEYS.TIMESHEETS,
       debouncedSearch,
-      debouncedProjectName,
+      selectedProjectId,
       pageLimit,
     ],
     enabled: Boolean(pageLimit),
@@ -50,7 +77,7 @@ function TimesheetMainPage() {
         page: pageParam,
         limit: pageLimit,
         q: debouncedSearch,
-        projectName: debouncedProjectName,
+        projectId: selectedProjectId ?? undefined,
       });
 
       if (!response.success || !response.data) {
@@ -70,7 +97,9 @@ function TimesheetMainPage() {
         <div className="space-y-3 p-4">
           <TimesheetFilters
             search={search}
-            projectName={projectName}
+            selectedProjectId={selectedProjectId}
+            projects={projectsQuery.data ?? []}
+            isLoadingProjects={projectsQuery.isLoading}
             actions={
               <RequirePermissions
                 requiredPermissions={[permissions.timesheetCreate]}
@@ -86,11 +115,7 @@ function TimesheetMainPage() {
               </RequirePermissions>
             }
             onSearchChange={setSearch}
-            onProjectNameChange={setProjectName}
-            onClear={() => {
-              setSearch("");
-              setProjectName("");
-            }}
+            onProjectChange={setSelectedProjectId}
           />
 
           <TimesheetCardGrid
@@ -104,6 +129,9 @@ function TimesheetMainPage() {
               navigate(`/timesheet/${timesheet.id}/sheets`)
             }
             onView={(timesheet) => navigate(`/timesheet/${timesheet.id}`)}
+            onEdit={(timesheet) =>
+              navigate(`/timesheet/${timesheet.id}?mode=edit`)
+            }
           />
         </div>
       </PageContent.Body>

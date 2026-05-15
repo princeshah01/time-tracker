@@ -1,14 +1,15 @@
 import type { Request, Response } from "express";
 
 import type { ValidatedRequest } from "@/shared/middlewares";
-import { AppError, runAuthApi, sendSuccess, authHeaders } from "@/shared/utils";
+import { auth } from "@/auth";
+import { requireRouteUser } from "@/shared/session";
+import { AppError, authHeaders, runAuthApi, sendSuccess } from "@/shared/utils";
 import { profileService } from "./profile.service";
 import type {
   setPasswordSchema,
   updateProfileSchema,
+  verifyPasswordSchema,
 } from "./profile.validators";
-import { requireRouteUser } from "@/shared/session";
-import { auth } from "@/auth";
 
 export class ProfileController {
   async me(req: Request, res: Response) {
@@ -110,6 +111,25 @@ export class ProfileController {
       res,
       data: result,
       message: "Password set successfully",
+    });
+  }
+
+  async verifyPassword(req: Request, res: Response) {
+    const { body } = (req as ValidatedRequest<typeof verifyPasswordSchema>)
+      .validated;
+    const result = await runAuthApi(() =>
+      auth.api.verifyPassword({
+        headers: authHeaders(req),
+        body: {
+          password: body.password,
+        },
+      })
+    );
+
+    return sendSuccess({
+      res,
+      data: result,
+      message: "Password verified successfully",
     });
   }
 }

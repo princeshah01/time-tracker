@@ -64,6 +64,7 @@ import type {
 import { userManageService } from "@/features/users-mange";
 import { AppIcon } from "@/shared/components/app-icon";
 import { PermissionsWrapper } from "@/shared/components/permission-wrapper";
+import { SensitiveContentGate } from "@/shared/components/sensitive-content-gate";
 import { TagSelect } from "@/shared/components/tag-select";
 import { env } from "@/shared/config";
 import { permissions, QUERY_KEYS } from "@/shared/constants";
@@ -191,6 +192,7 @@ function UserDetailDialog({
 
   const queryClient = useQueryClient();
   const userId = user?.id;
+  const [financialVerified, setFinancialVerified] = useState(false);
 
   const form = useForm<UserEditFormValues>({
     resolver: zodResolver(userEditSchema),
@@ -257,6 +259,16 @@ function UserDetailDialog({
 
     form.reset(toFormValues(currentUser));
   }, [open, currentUser?.id, form]);
+
+  useEffect(() => {
+    if (!open) {
+      setFinancialVerified(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    setFinancialVerified(false);
+  }, [currentUser?.id]);
 
   function handleSubmit(values: UserEditFormValues) {
     if (!currentUser) return;
@@ -499,10 +511,16 @@ function UserDetailDialog({
                   requiredPermissions={[permissions.userManageFinancial]}
                 >
                   <TabsContent value="financial" className="m-0">
-                    <UserFinancialTab
-                      userId={currentUser.id}
-                      enabled={open && hasFinancialPermission}
-                    />
+                    <SensitiveContentGate
+                      onVerifiedChange={setFinancialVerified}
+                    >
+                      <UserFinancialTab
+                        userId={currentUser.id}
+                        enabled={
+                          open && hasFinancialPermission && financialVerified
+                        }
+                      />
+                    </SensitiveContentGate>
                   </TabsContent>
                 </PermissionsWrapper>
               </Tabs>

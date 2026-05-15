@@ -3,6 +3,15 @@ export type TimesheetUser = {
   name: string;
   email: string;
   image: string | null;
+  role: "manager" | "lead" | "member" | null;
+  verifiedAt: string | null;
+  verifiedBy: string | null;
+  verifier: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+  } | null;
 };
 
 export type TimesheetListItem = {
@@ -18,6 +27,7 @@ export type TimesheetListItem = {
     id: number;
     name: string;
     isActive: boolean;
+    createdBy: string;
   };
   creator: {
     id: string;
@@ -63,6 +73,13 @@ export type TimesheetSheetRow = {
   isExplicitLeave: boolean;
   isLeave: boolean;
   leaveType: "weekly_off" | "leave" | null;
+  verification: {
+    isVerified: boolean;
+    verifiedAt: string | null;
+    verifiedBy: string | null;
+    verifier: TimesheetUser["verifier"];
+    canVerify: boolean;
+  };
   entryId: number | null;
   task: TimesheetTaskSuggestion | null;
   entries: TimesheetSheetEntry[];
@@ -84,7 +101,16 @@ export type TimesheetSheetEntry = {
 export type ListTimesheetSheetsResponse = {
   items: TimesheetSheetRow[];
   users: TimesheetUser[];
+  selectedSheet: {
+    user: TimesheetUser;
+    totalDays: number;
+    weekendDays: number;
+    explicitLeaveDays: number;
+    availableDays: number;
+    verification: TimesheetSheetRow["verification"];
+  } | null;
   canManageAllUsers: boolean;
+  canVerifySheets: boolean;
   page: number;
   limit: number;
   total: number;
@@ -112,4 +138,9 @@ export type UpsertTimesheetSheetInput = {
 export type SetTimesheetSheetLeaveInput = {
   entryDate: string;
   isLeave: boolean;
+};
+
+export type SetTimesheetSheetVerificationInput = {
+  userId: string;
+  isVerified: boolean;
 };

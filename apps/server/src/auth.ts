@@ -117,7 +117,7 @@ export const auth = betterAuth({
       totpOptions: {
         digits: 6,
         period: 30,
-        window: 3,
+        window: 0,
       },
 
       backupCodeOptions: {

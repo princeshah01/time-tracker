@@ -10,6 +10,7 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/db";
 import {
@@ -22,12 +23,15 @@ import {
   timesheetUsers,
   user,
 } from "@/db/schema";
+import type { AccessScope } from "@/shared/types";
 import type {
   CreateTimesheetInput,
   ListTimesheetsInput,
   UpdateTimesheetInput,
   UpsertTimesheetSheetInput,
 } from "./timesheets.validation";
+
+const verifierUser = alias(user, "timesheet_verifier_user");
 
 type CreateTimesheetRecordInput = Pick<
   CreateTimesheetInput,
@@ -65,6 +69,7 @@ type SheetDayLeaveRecordInput = {
 
 type ScopedTimesheetInput = ListTimesheetsInput & {
   requesterId: string;
+  scope: AccessScope;
 };
 
 export class TimesheetsRepository {
@@ -206,6 +211,7 @@ export class TimesheetsRepository {
         id: projects.id,
         name: projects.name,
         isActive: projects.isActive,
+        createdBy: projects.createdBy,
       })
       .from(projects)
       .where(eq(projects.id, projectId))
@@ -267,6 +273,50 @@ export class TimesheetsRepository {
       .limit(1);
 
     return Boolean(record);
+  }
+
+  async setTimesheetUserVerification(input: {
+    timesheetId: number;
+    userId: string;
+    verifiedBy: string | null;
+    verifiedAt: Date | null;
+  }) {
+    const [record] = await db
+      .update(timesheetUsers)
+      .set({
+        verifiedBy: input.verifiedBy,
+        verifiedAt: input.verifiedAt,
+      })
+      .where(
+        and(
+          eq(timesheetUsers.timesheetId, input.timesheetId),
+          eq(timesheetUsers.userId, input.userId)
+        )
+      )
+      .returning({
+        timesheetId: timesheetUsers.timesheetId,
+        userId: timesheetUsers.userId,
+      });
+
+    return record ?? null;
+  }
+
+  async clearTimesheetUserVerification(input: {
+    timesheetId: number;
+    userId: string;
+  }) {
+    await db
+      .update(timesheetUsers)
+      .set({
+        verifiedBy: null,
+        verifiedAt: null,
+      })
+      .where(
+        and(
+          eq(timesheetUsers.timesheetId, input.timesheetId),
+          eq(timesheetUsers.userId, input.userId)
+        )
+      );
   }
 
   async listSheetEntriesForRows(input: {
@@ -603,6 +653,15 @@ export class TimesheetsRepository {
         name: string;
         email: string;
         image: string | null;
+        role: "manager" | "lead" | "member" | null;
+        verifiedAt: Date | null;
+        verifiedBy: string | null;
+        verifier: {
+          id: string;
+          name: string;
+          email: string;
+          image: string | null;
+        } | null;
       }[]
     >();
 
@@ -611,21 +670,60 @@ export class TimesheetsRepository {
     const records = await db
       .select({
         timesheetId: timesheetUsers.timesheetId,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-        },
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: projectTeamMembers.role,
+        verifiedAt: timesheetUsers.verifiedAt,
+        verifiedBy: timesheetUsers.verifiedBy,
+        verifierId: verifierUser.id,
+        verifierName: verifierUser.name,
+        verifierEmail: verifierUser.email,
+        verifierImage: verifierUser.image,
       })
       .from(timesheetUsers)
+      .innerJoin(timesheets, eq(timesheetUsers.timesheetId, timesheets.id))
       .innerJoin(user, eq(timesheetUsers.userId, user.id))
+      .leftJoin(
+        projectTeamMembers,
+        and(
+          eq(projectTeamMembers.projectId, timesheets.projectId),
+          eq(projectTeamMembers.userId, timesheetUsers.userId)
+        )
+      )
+      .leftJoin(verifierUser, eq(timesheetUsers.verifiedBy, verifierUser.id))
       .where(inArray(timesheetUsers.timesheetId, timesheetIds))
-      .orderBy(asc(user.name), asc(user.email));
+      .orderBy(
+        sql`case ${projectTeamMembers.role}
+          when 'manager' then 1
+          when 'lead' then 2
+          else 3
+        end`,
+        asc(user.name),
+        asc(user.email)
+      );
 
     for (const record of records) {
       const users = usersByTimesheetId.get(record.timesheetId) ?? [];
-      users.push(record.user);
+      users.push({
+        id: record.id,
+        name: record.name,
+        email: record.email,
+        image: record.image,
+        role: record.role,
+        verifiedAt: record.verifiedAt,
+        verifiedBy: record.verifiedBy,
+        verifier:
+          record.verifiedBy && record.verifierId
+            ? {
+                id: record.verifierId,
+                name: record.verifierName ?? "",
+                email: record.verifierEmail ?? "",
+                image: record.verifierImage,
+              }
+            : null,
+      });
       usersByTimesheetId.set(record.timesheetId, users);
     }
 
@@ -646,6 +744,7 @@ export class TimesheetsRepository {
         id: projects.id,
         name: projects.name,
         isActive: projects.isActive,
+        createdBy: projects.createdBy,
       },
       creator: {
         id: user.id,
@@ -665,16 +764,25 @@ export class TimesheetsRepository {
     const conditions: SQL[] = [];
     const q = input.q?.trim();
     const projectName = input.projectName?.trim();
-    const accessWhere = or(
-      eq(timesheets.createdBy, input.requesterId),
-      sql`exists (
-        select 1 from ${timesheetUsers}
-        where ${timesheetUsers.timesheetId} = ${timesheets.id}
-          and ${timesheetUsers.userId} = ${input.requesterId}
-      )`
-    );
 
-    if (accessWhere) conditions.push(accessWhere);
+    if (input.scope === "own") {
+      const accessWhere = or(
+        eq(timesheets.createdBy, input.requesterId),
+        eq(projects.createdBy, input.requesterId),
+        sql`exists (
+          select 1 from ${timesheetUsers}
+          where ${timesheetUsers.timesheetId} = ${timesheets.id}
+            and ${timesheetUsers.userId} = ${input.requesterId}
+        )`,
+        sql`exists (
+          select 1 from ${projectTeamMembers}
+          where ${projectTeamMembers.projectId} = ${timesheets.projectId}
+            and ${projectTeamMembers.userId} = ${input.requesterId}
+        )`
+      );
+
+      if (accessWhere) conditions.push(accessWhere);
+    }
 
     if (q) {
       const query = `%${q}%`;
@@ -697,6 +805,6 @@ export class TimesheetsRepository {
       conditions.push(ilike(projects.name, `%${projectName}%`));
     }
 
-    return and(...conditions);
+    return conditions.length > 0 ? and(...conditions) : undefined;
   }
 }

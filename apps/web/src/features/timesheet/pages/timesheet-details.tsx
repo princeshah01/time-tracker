@@ -1,14 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { toast } from "@workspace/ui/components/sonner";
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
+import { useAppSelector } from "@/app/store";
 import { AppIcon } from "@/shared/components/app-icon";
 import { PageContent } from "@/shared/components/page-content";
-import { RequirePermissions } from "@/shared/components/permission-wrapper";
 import { permissions, QUERY_KEYS } from "@/shared/constants";
+import { hasPermission } from "@/shared/lib";
 import { TimesheetForm } from "../_components";
 import { timesheetService } from "../service";
 import type {
@@ -21,9 +28,22 @@ type DetailsMode = "view" | "edit";
 function TimesheetDetailsPage() {
   const navigate = useNavigate();
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const timesheetId = Number(params.timesheetId);
   const [mode, setMode] = useState<DetailsMode>("view");
+  const { permissions: userPermissions } = useAppSelector(
+    (state) => state.user
+  );
+  const canEditTimesheet = hasPermission(userPermissions, [
+    permissions.timesheetCreate,
+  ]);
+
+  useEffect(() => {
+    setMode(
+      searchParams.get("mode") === "edit" && canEditTimesheet ? "edit" : "view"
+    );
+  }, [canEditTimesheet, searchParams]);
 
   const timesheetQuery = useQuery({
     queryKey: [QUERY_KEYS.TIMESHEET_DETAIL, timesheetId],
@@ -70,8 +90,7 @@ function TimesheetDetailsPage() {
       <PageContent.Header
         title={mode === "edit" ? "Edit Timesheet" : "Timesheet Details"}
         className="sticky top-0 z-10"
-      >
-      </PageContent.Header>
+      />
 
       <PageContent.Body className="min-h-0 max-w-4xl border-r border-border overflow-y-auto">
         {timesheetQuery.isLoading ? (
@@ -81,42 +100,51 @@ function TimesheetDetailsPage() {
             onRetry={() => void timesheetQuery.refetch()}
           />
         ) : timesheetQuery.data ? (
-          <div className="flex flex-col py-4">
-            <div className="flex items-center justify-between self-end  px-4 pb-4">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1.5 text-[12px]"
-          onClick={() => navigate("/timesheet")}
-        >
-          <AppIcon name="ChevronLeft" className="size-3.5" />
-          Back
-        </Button>
-        {mode === "view" ? (
-          <RequirePermissions
-            requiredPermissions={[permissions.timesheetCreate]}
-          >
-            <Button
-              type="button"
-              size="sm"
-              className="h-8 gap-1.5 text-[12px]"
-              onClick={() => setMode("edit")}
-            >
-              <AppIcon name="Pencil" className="size-3.5" />
-              Edit
-            </Button>
-          </RequirePermissions>
-        ) : null}
+          <div className="flex flex-col pb-4">
+            <div className="self-end p-2 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 text-[12px]"
+                onClick={() => navigate("/timesheet")}
+              >
+                <AppIcon name="ChevronLeft" className="size-3.5" />
+                Back
+              </Button>
+              {mode === "view" && canEditTimesheet ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label="Open timesheet actions"
+                    >
+                      <AppIcon name="MoreHorizontal" className="size-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem
+                      className="gap-2 text-[12px]"
+                      onSelect={() => setMode("edit")}
+                    >
+                      <AppIcon name="Pencil" className="size-3.5" />
+                      Edit timesheet details
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+            </div>
 
-        </div>
-          <TimesheetForm
-            key={`${timesheetQuery.data.id}-${mode}`}
-            timesheet={timesheetQuery.data}
-            mode={mode}
-            isSubmitting={updateTimesheetMutation.isPending}
-            onCancel={() => setMode("view")}
-            onSubmit={(input) => updateTimesheetMutation.mutate(input)}
+            <TimesheetForm
+              key={`${timesheetQuery.data.id}-${mode}`}
+              timesheet={timesheetQuery.data}
+              mode={mode}
+              isSubmitting={updateTimesheetMutation.isPending}
+              onCancel={() => setMode("view")}
+              onSubmit={(input) => updateTimesheetMutation.mutate(input)}
             />
           </div>
         ) : null}

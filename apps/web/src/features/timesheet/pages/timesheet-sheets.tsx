@@ -1,12 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { useAppSelector } from "@/app/store";
 import { AppIcon } from "@/shared/components/app-icon";
 import { PageContent } from "@/shared/components/page-content";
-import { QUERY_KEYS } from "@/shared/constants";
-import { formatDate } from "@/shared/lib";
+import { permissions, QUERY_KEYS } from "@/shared/constants";
+import { formatDate, hasPermission } from "@/shared/lib";
 import { TimesheetSheetsTable } from "../_components";
 import { timesheetService } from "../service";
 
@@ -14,6 +21,12 @@ function TimesheetSheetsPage() {
   const navigate = useNavigate();
   const params = useParams();
   const timesheetId = Number(params.timesheetId);
+  const { permissions: userPermissions } = useAppSelector(
+    (state) => state.user
+  );
+  const canEditTimesheet = hasPermission(userPermissions, [
+    permissions.timesheetCreate,
+  ]);
 
   const timesheetQuery = useQuery({
     queryKey: [QUERY_KEYS.TIMESHEET_DETAIL, timesheetId],
@@ -44,7 +57,7 @@ function TimesheetSheetsPage() {
         ) : timesheetQuery.data ? (
           <div className="space-y-3 p-4">
             <section className="rounded-md border border-border bg-card">
-              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3">
+              <div className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <h2
                     className="truncate text-[13px] font-medium"
@@ -84,21 +97,43 @@ function TimesheetSheetsPage() {
                       variant="outline"
                       size="sm"
                       className="h-8 gap-1.5 text-[12px]"
-                      onClick={() => navigate(`/timesheet/${timesheetId}`)}
-                    >
-                      <AppIcon name="Eye" className="size-3.5" />
-                      View / edit
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5 text-[12px]"
                       onClick={() => navigate("/timesheet")}
                     >
                       <AppIcon name="ChevronLeft" className="size-3.5" />
                       Back
                     </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label="Open timesheet actions"
+                        >
+                          <AppIcon name="MoreHorizontal" className="size-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuItem
+                          className="gap-2 text-[12px]"
+                          disabled={!canEditTimesheet}
+                          onSelect={() =>
+                            navigate(`/timesheet/${timesheetId}?mode=edit`)
+                          }
+                        >
+                          <AppIcon name="Pencil" className="size-3.5" />
+                          Edit timesheet details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="gap-2 text-[12px]"
+                          onSelect={() => navigate(`/timesheet/${timesheetId}`)}
+                        >
+                          <AppIcon name="Eye" className="size-3.5" />
+                          View timesheet details
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5">

@@ -46,6 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { cn } from "@workspace/ui/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -57,12 +58,12 @@ import { timesheetService } from "../service";
 import type {
   TimesheetSheetRow,
   TimesheetTaskSuggestion,
+  TimesheetUser,
   UpsertTimesheetSheetInput,
 } from "../timesheet.types";
 
 const ROW_HEIGHT = 44;
 const ROW_BUFFER = 8;
-const ALL_USERS = "__all__";
 const HOUR_OPTIONS = Array.from({ length: 25 }, (_, index) => index);
 const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) => index);
 
@@ -87,7 +88,7 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastLimitRef = useRef<number | null>(null);
   const [pageLimit, setPageLimit] = useState(30);
-  const [selectedUserId, setSelectedUserId] = useState(ALL_USERS);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [editingRow, setEditingRow] = useState<TimesheetSheetRow | null>(null);
   const [leaveConfirmRow, setLeaveConfirmRow] =
     useState<TimesheetSheetRow | null>(null);
@@ -135,7 +136,7 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
         timesheetId,
         page: pageParam,
         limit: pageLimit,
-        userId: selectedUserId === ALL_USERS ? undefined : selectedUserId,
+        userId: selectedUserId ?? undefined,
       });
 
       if (!response.success || !response.data) {
@@ -154,10 +155,33 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
   );
   const firstPage = sheetsQuery.data?.pages[0];
   const canManageAllUsers = Boolean(firstPage?.canManageAllUsers);
+  const tabUsers = firstPage?.users ?? [];
+  const selectedSheet = firstPage?.selectedSheet ?? null;
+  const defaultTabUser =
+    tabUsers.find((tabUser) => tabUser.id === user?.id) ?? tabUsers[0] ?? null;
+  const activeTabUserId = selectedUserId ?? defaultTabUser?.id ?? "";
   const canFillTimesheet = hasPermission(userPermissions, [
     permissions.timesheetFill,
   ]);
-  const visibleColumnCount = canManageAllUsers ? 5 : 4;
+  const visibleColumnCount = canManageAllUsers ? 6 : 5;
+
+  useEffect(() => {
+    if (!canManageAllUsers || tabUsers.length === 0) return;
+    if (
+      selectedUserId &&
+      tabUsers.some((tabUser) => tabUser.id === selectedUserId)
+    ) {
+      return;
+    }
+
+    const nextUser =
+      tabUsers.find((tabUser) => tabUser.id === user?.id) ?? tabUsers[0];
+
+    if (!nextUser) return;
+
+    setEditingRow(null);
+    setSelectedUserId(nextUser.id);
+  }, [canManageAllUsers, selectedUserId, tabUsers, user?.id]);
 
   const saveMutation = useMutation({
     mutationFn: async (input: UpsertTimesheetSheetInput) => {
@@ -207,6 +231,38 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
       toast.error(error.message);
     },
   });
+  const verificationMutation = useMutation({
+    mutationFn: async (input: { userId: string; isVerified: boolean }) => {
+      const response = await timesheetService.setSheetVerification(
+        timesheetId,
+        {
+          userId: input.userId,
+          isVerified: input.isVerified,
+        }
+      );
+
+      if (!response.success || !response.data) {
+        throw new Error(
+          response.message || "Failed to update sheet verification"
+        );
+      }
+
+      return response.data;
+    },
+    onSuccess: (_user, input) => {
+      toast.success(
+        input.isVerified
+          ? "Timesheet sheet verified"
+          : "Timesheet sheet verification removed"
+      );
+      void queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TIMESHEET_SHEETS, timesheetId],
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
 
   const handleScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
@@ -234,44 +290,52 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
       <section className="min-h-0 rounded-md border border-border bg-card">
         <div className="flex h-11 items-center justify-between gap-3 border-b border-border px-3">
           <div className="flex min-w-0 items-center gap-2">
-            <AppIcon
-              name="FileSpreadsheet"
-              className="size-3.5 text-muted-foreground"
-            />
             <div className="min-w-0">
-              <h2 className="truncate text-[13px] font-medium">Sheets</h2>
+              <h2 className="truncate text-[13px] font-medium">
+                {selectedSheet?.user.name ?? "Sheets"}
+              </h2>
               <p className="text-[11px] text-muted-foreground">
-                {firstPage ? `${firstPage.total} rows` : "Loading rows"}
+                {selectedSheet
+                  ? `${selectedSheet.availableDays} available days`
+                  : firstPage
+                    ? `${firstPage.total} rows`
+                    : "Loading sheet"}
               </p>
             </div>
           </div>
 
-          {canManageAllUsers ? (
-            <Select
-              value={selectedUserId}
-              onValueChange={(value) => {
-                setEditingRow(null);
-                setSelectedUserId(value);
-              }}
-            >
-              <SelectTrigger className="h-8 w-56 text-[12px]">
-                <SelectValue placeholder="All users" />
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value={ALL_USERS}>All users</SelectItem>
-                {firstPage?.users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
+          <div className="flex min-w-0 items-center gap-2">
+            {selectedSheet?.verification.canVerify ? (
+              <Button
+                type="button"
+                variant={
+                  selectedSheet.verification.isVerified ? "outline" : "default"
+                }
+                size="sm"
+                className="h-7 gap-1.5 text-[10px]"
+                disabled={verificationMutation.isPending}
+                onClick={() =>
+                  verificationMutation.mutate({
+                    userId: selectedSheet.user.id,
+                    isVerified: !selectedSheet.verification.isVerified,
+                  })
+                }
+              >
+                <AppIcon name="CheckCircle2" className="size-3" />
+                {selectedSheet.verification.isVerified
+                  ? "Remove verified"
+                  : "Mark verified"}
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         <div
           ref={containerRef}
-          className="h-[calc(100vh-250px)] min-h-80 overflow-auto"
+          className={cn(
+            "h-[calc(100vh-228px)] min-h-80 overflow-auto",
+            canManageAllUsers && tabUsers.length > 0 && "h-[calc(100vh-276px)]"
+          )}
           onScroll={handleScroll}
         >
           <Table>
@@ -290,6 +354,9 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
                 </TableHead>
                 <TableHead className="h-9 w-32 px-3 text-[12px]">
                   Time
+                </TableHead>
+                <TableHead className="h-9 w-32 px-3 text-[12px]">
+                  Status
                 </TableHead>
                 <TableHead className="h-9 w-20 px-3 text-right text-[12px]">
                   Action
@@ -348,6 +415,17 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
             </TableBody>
           </Table>
         </div>
+
+        {canManageAllUsers && tabUsers.length > 0 ? (
+          <UserTabs
+            activeUserId={activeTabUserId}
+            users={tabUsers}
+            onChange={(nextUserId) => {
+              setEditingRow(null);
+              setSelectedUserId(nextUserId);
+            }}
+          />
+        ) : null}
       </section>
 
       <AlertDialog
@@ -447,7 +525,10 @@ function TimesheetSheetDisplayRows({
             {canManageAllUsers ? (
               <TableCell className="px-3 py-2 text-[12px]">
                 <div className="min-w-0">
-                  <p className="truncate">{row.user.name}</p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <p className="truncate">{row.user.name}</p>
+                    <RoleBadge role={row.user.role} />
+                  </div>
                   <p className="truncate text-[11px] text-muted-foreground">
                     {row.user.email}
                   </p>
@@ -492,6 +573,9 @@ function TimesheetSheetDisplayRows({
             <TableCell className="px-3 py-2 text-[12px]">
               {formatSpentTime(row.minutesSpent)}
             </TableCell>
+            <TableCell className="px-3 py-2 text-[12px]">
+              <VerificationBadge row={row} />
+            </TableCell>
             <TableCell className="px-3 py-2 text-right">
               <TimesheetSheetRowActions
                 canEditRow={canEditRow}
@@ -529,6 +613,41 @@ function TimesheetSheetDisplayRows({
         </TableRow>
       ) : null}
     </>
+  );
+}
+
+function UserTabs({
+  activeUserId,
+  users,
+  onChange,
+}: {
+  activeUserId: string;
+  users: TimesheetUser[];
+  onChange: (userId: string) => void;
+}) {
+  return (
+    <Tabs value={activeUserId} onValueChange={onChange}>
+      <div className="border-t border-border bg-muted/20 px-2 py-2">
+        <TabsList className="flex h-auto w-full justify-start overflow-x-auto rounded-none bg-transparent p-0">
+          {users.map((user, index) => (
+            <div key={user.id} className="flex items-center">
+              <TabsTrigger
+                value={user.id}
+                className="h-8 max-w-56 shrink-0 gap-2 rounded-md border border-transparent px-3 text-[12px] data-[state=active]:border-border data-[state=active]:bg-background"
+                title={`${user.name} (${user.email})`}
+              >
+                <span className="truncate">{user.name}</span>
+                <RoleBadge role={user.role} />
+              </TabsTrigger>
+
+              {index !== users.length - 1 && (
+                <div className="mx-1 h-4 w-px bg-border shrink-0" />
+              )}
+            </div>
+          ))}
+        </TabsList>
+      </div>
+    </Tabs>
   );
 }
 
@@ -745,9 +864,9 @@ function TimesheetSheetRowEditor({
   }, [canSave, isSaving, onCancel, handleSave]);
 
   return (
-    <div className="border-t border-dashed border-border bg-background p-3">
+    <div className="bg-background p-3">
       <div className="space-y-3">
-        <div className="space-y-2">
+        <div className="space-y-2 border border-border bg-card">
           {lines.map((line, index) => (
             <TaskLineEditor
               key={line.id}
@@ -756,10 +875,12 @@ function TimesheetSheetRowEditor({
               timesheetId={timesheetId}
               rowKey={row.rowKey}
               canRemove={lines.length > 1}
+              isLastLine={index === lines.length - 1}
               onCancel={onCancel}
               onSave={() => {
                 if (canSave) handleSave();
               }}
+              onAdd={addLine}
               onChange={(nextLine) => updateLine(line.id, nextLine)}
               onRemove={() => removeLine(line.id)}
             />
@@ -767,24 +888,13 @@ function TimesheetSheetRowEditor({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-[12px]"
-            onClick={addLine}
-          >
-            <AppIcon name="Plus" className="size-3.5" />
-            Add task
-          </Button>
-
-          <div className="flex flex-wrap justify-end gap-2">
-            <div className="rounded-md border border-border bg-muted/20 px-3 py-1.5 text-[12px]">
+            <div className="py-1.5 text-[12px]">
               <span className="text-[11px] text-muted-foreground">
-                Selected time{" "}
+                Selected time:{" "}
               </span>
               <span>{formatSpentTime(totalMinutes)}</span>
             </div>
+          <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"
               variant="outline"
@@ -819,8 +929,10 @@ function TaskLineEditor({
   timesheetId,
   rowKey,
   canRemove,
+  isLastLine,
   onCancel,
   onSave,
+  onAdd,
   onChange,
   onRemove,
 }: {
@@ -829,8 +941,10 @@ function TaskLineEditor({
   timesheetId: number;
   rowKey: string;
   canRemove: boolean;
+  isLastLine: boolean;
   onCancel: () => void;
   onSave: () => void;
+  onAdd: () => void;
   onChange: (line: TaskLineState) => void;
   onRemove: () => void;
 }) {
@@ -929,8 +1043,8 @@ function TaskLineEditor({
   };
 
   return (
-    <div className="grid gap-2 rounded-md border border-border bg-card p-2 lg:grid-cols-[minmax(0,1fr)_120px_96px_104px_32px]">
-      <div className="relative min-w-0">
+    <div className="gap-2 rounded-md p-2 flex">
+      <div className="relative flex-1">
         <Input
           value={line.taskTitle}
           variant="search"
@@ -1020,7 +1134,7 @@ function TaskLineEditor({
           })
         }
       >
-        <SelectTrigger className="h-8 text-[12px]">
+        <SelectTrigger className="h-8 max-w-[8rem] text-[12px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -1040,7 +1154,7 @@ function TaskLineEditor({
           })
         }
       >
-        <SelectTrigger className="h-8 text-[12px]">
+        <SelectTrigger className="h-8 max-w-fit text-[12px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -1057,7 +1171,7 @@ function TaskLineEditor({
         onValueChange={(value) => onChange({ ...line, minutes: value })}
         disabled={line.hours === "24"}
       >
-        <SelectTrigger className="h-8 text-[12px]">
+        <SelectTrigger className="h-8 max-w-fit text-[12px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -1069,17 +1183,31 @@ function TaskLineEditor({
         </SelectContent>
       </Select>
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0"
-        disabled={!canRemove}
-        aria-label={`Remove task ${lineIndex + 1}`}
-        onClick={onRemove}
-      >
-        <AppIcon name="Trash2" className="size-3.5" />
-      </Button>
+      <div className="flex items-center justify-end gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          disabled={!canRemove}
+          aria-label={`Remove task ${lineIndex + 1}`}
+          onClick={onRemove}
+        >
+          <AppIcon name="Trash2" className="size-3.5" />
+        </Button>
+        {isLastLine ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Add task"
+            onClick={onAdd}
+          >
+            <AppIcon name="Plus" className="size-3.5" />
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -1234,8 +1362,49 @@ function LeaveBadge({ row }: { row: TimesheetSheetRow }) {
   );
 }
 
+function VerificationBadge({ row }: { row: TimesheetSheetRow }) {
+  if (!row.verification.isVerified) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
+        <span className="size-1.5 rounded-full bg-muted-foreground/50" />
+        Pending
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className="inline-flex max-w-full items-center gap-1.5 text-[12px]"
+      title={
+        row.verification.verifier
+          ? `Verified by ${row.verification.verifier.name}`
+          : "Verified"
+      }
+    >
+      <span className="size-1.5 rounded-full bg-success" />
+      <span className="truncate">Verified</span>
+    </span>
+  );
+}
+
+function RoleBadge({ role }: { role: TimesheetSheetRow["user"]["role"] }) {
+  if (!role) return null;
+
+  const label =
+    role === "manager" ? "Manager" : role === "lead" ? "Lead" : "Member";
+
+  return (
+    <Badge
+      variant="outline"
+      className="shrink-0 rounded-sm px-1.5 py-0 text-[10px]"
+    >
+      {label}
+    </Badge>
+  );
+}
+
 function formatSpentTime(minutesSpent: number) {
-  if (minutesSpent <= 0) return "-";
+  if (minutesSpent <= 0) return "0m";
 
   const hours = Math.floor(minutesSpent / 60);
   const minutes = minutesSpent % 60;

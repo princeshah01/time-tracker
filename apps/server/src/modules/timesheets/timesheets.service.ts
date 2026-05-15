@@ -1,3 +1,6 @@
+import { permissionsService } from "@/modules/permissions/permissions.service";
+import { permissionKeys } from "@/shared/constants/role-permission";
+import type { AccessScope } from "@/shared/types";
 import { AppError } from "@/shared/utils";
 import { TimesheetsRepository } from "./timesheets.repository";
 import type {
@@ -6,6 +9,7 @@ import type {
   ListTimesheetsInput,
   SearchTimesheetTasksInput,
   SetTimesheetSheetLeaveInput,
+  SetTimesheetSheetVerificationInput,
   UpdateTimesheetInput,
   UpsertTimesheetSheetInput,
 } from "./timesheets.validation";
@@ -15,6 +19,7 @@ type TimesheetRecord = NonNullable<
 >;
 
 type TimesheetUser = TimesheetRecord["users"][number];
+type ProjectMemberRole = NonNullable<TimesheetUser["role"]>;
 type SheetEntryRecord = Awaited<
   ReturnType<TimesheetsRepository["listSheetEntriesForRows"]>
 >[number];
@@ -33,7 +38,7 @@ export class TimesheetsService {
   ) {}
 
   async createTimesheet(input: CreateTimesheetInput, requesterId: string) {
-    await this.requireProjectCreatorRole(input.projectId, requesterId);
+    await this.requireProjectCreateAccess(input.projectId, requesterId);
     await this.assertUsersBelongToProject(input.projectId, input.userIds);
 
     const timesheet = await this.timesheetsRepository.createTimesheet({
@@ -57,9 +62,11 @@ export class TimesheetsService {
   }
 
   async listTimesheets(input: ListTimesheetsInput, requesterId: string) {
+    const scope = await this.resolveViewScope(requesterId);
     const result = await this.timesheetsRepository.listTimesheetsPaginated({
       ...input,
       requesterId,
+      scope,
     });
 
     return {
@@ -96,7 +103,7 @@ export class TimesheetsService {
       });
     }
 
-    await this.requireProjectCreatorRole(projectId, requesterId);
+    await this.requireProjectCreateAccess(projectId, requesterId);
 
     if (input.userIds !== undefined) {
       await this.assertUsersBelongToProject(projectId, input.userIds);
@@ -122,14 +129,23 @@ export class TimesheetsService {
       timesheetId,
       requesterId
     );
-    const canManageAllUsers = await this.canManageTimesheetUsers(
+    const visibility = await this.resolveSheetVisibility(
       timesheet,
       requesterId
     );
-    const visibleUsers = this.resolveVisibleSheetUsers({
+    const canApprove = await permissionsService.checkPermission(
+      requesterId,
+      permissionKeys.timesheetApprove
+    );
+    const selectableUsers = this.getVisibleSheetUsers({
       timesheet,
       requesterId,
-      canManageAllUsers,
+      visibility,
+    });
+    const visibleUsers = this.resolveVisibleSheetUsers({
+      requesterId,
+      visibility,
+      visibleUsers: selectableUsers,
       selectedUserId: input.userId,
     });
     const dates = this.buildSheetDates(timesheet.startDate, timesheet.endDate);
@@ -150,16 +166,17 @@ export class TimesheetsService {
       userIds: entryUsers,
       entryDates,
     });
-    const dayLeaves = await this.timesheetsRepository.listSheetDayLeavesForRows(
-      {
-        timesheetId,
-        userIds: entryUsers,
-        leaveDates: entryDates,
-      }
-    );
+    const selectedUser = visibleUsers[0] ?? null;
+    const selectedUserLeaves = selectedUser
+      ? await this.timesheetsRepository.listSheetDayLeavesForRows({
+          timesheetId,
+          userIds: [selectedUser.id],
+          leaveDates: dates,
+        })
+      : [];
     const entriesByKey = new Map<string, SheetEntryRecord[]>();
     const leaveByKey = new Map(
-      dayLeaves.map((leave) => [
+      selectedUserLeaves.map((leave) => [
         this.getSheetEntryKey(leave.userId, leave.leaveDate),
         leave,
       ])
@@ -178,6 +195,12 @@ export class TimesheetsService {
         this.toSheetRow({
           date: coordinate.date,
           user: coordinate.user,
+          canVerify: this.canVerifyTimesheetUser({
+            requesterId,
+            requesterRole: visibility.projectRole,
+            targetUser: coordinate.user,
+            canApprove,
+          }),
           entries: entriesByKey.get(
             this.getSheetEntryKey(coordinate.user.id, coordinate.date)
           ),
@@ -186,8 +209,22 @@ export class TimesheetsService {
           ),
         })
       ),
-      users: timesheet.users,
-      canManageAllUsers,
+      users: selectableUsers,
+      selectedSheet: selectedUser
+        ? this.buildSelectedSheetSummary({
+            dates,
+            user: selectedUser,
+            explicitLeaves: selectedUserLeaves,
+            canVerify: this.canVerifyTimesheetUser({
+              requesterId,
+              requesterRole: visibility.projectRole,
+              targetUser: selectedUser,
+              canApprove,
+            }),
+          })
+        : null,
+      canManageAllUsers: visibility.canViewMultipleUsers,
+      canVerifySheets: canApprove,
       page: input.page,
       limit: input.limit,
       total,
@@ -222,13 +259,28 @@ export class TimesheetsService {
       timesheetId,
       requesterId
     );
-    const canManageAllUsers = await this.canManageTimesheetUsers(
+    const visibility = await this.resolveSheetVisibility(
       timesheet,
       requesterId
     );
     const targetUserId = input.userId ?? requesterId;
 
-    if (!canManageAllUsers && targetUserId !== requesterId) {
+    const selectableUsers = this.getVisibleSheetUsers({
+      timesheet,
+      requesterId,
+      visibility,
+    });
+    const visibleTargetUsers = this.resolveVisibleSheetUsers({
+      requesterId,
+      visibility,
+      visibleUsers: selectableUsers,
+      selectedUserId: targetUserId,
+    });
+
+    if (
+      targetUserId !== requesterId &&
+      !visibleTargetUsers.some((user) => user.id === targetUserId)
+    ) {
       throw new AppError({
         message: "You can only fill your own timesheet rows",
         code: "FORBIDDEN",
@@ -286,6 +338,10 @@ export class TimesheetsService {
       userId: targetUserId,
       entryDate,
       entries: sheetEntries,
+    });
+    await this.timesheetsRepository.clearTimesheetUserVerification({
+      timesheetId,
+      userId: targetUserId,
     });
 
     const entries = await this.timesheetsRepository.listSheetEntriesForRows({
@@ -351,6 +407,10 @@ export class TimesheetsService {
         leaveDate,
       });
     }
+    await this.timesheetsRepository.clearTimesheetUserVerification({
+      timesheetId,
+      userId: requesterId,
+    });
 
     const entries = await this.timesheetsRepository.listSheetEntriesForRows({
       timesheetId,
@@ -371,7 +431,64 @@ export class TimesheetsService {
     });
   }
 
-  private async requireProjectCreatorRole(
+  async setSheetVerification(
+    timesheetId: number,
+    input: SetTimesheetSheetVerificationInput,
+    requesterId: string
+  ) {
+    const timesheet = await this.requireTimesheetAccess(
+      timesheetId,
+      requesterId
+    );
+    const targetUser = timesheet.users.find((user) => user.id === input.userId);
+
+    if (!targetUser) {
+      throw new AppError({
+        message: "Selected user does not belong to this timesheet",
+        code: "VALIDATION_ERROR",
+      });
+    }
+
+    const requesterRole = await this.timesheetsRepository.findProjectMemberRole(
+      timesheet.projectId,
+      requesterId
+    );
+    const canApprove = await permissionsService.checkPermission(
+      requesterId,
+      permissionKeys.timesheetApprove
+    );
+
+    if (
+      !this.canVerifyTimesheetUser({
+        requesterId,
+        requesterRole,
+        targetUser,
+        canApprove,
+      })
+    ) {
+      throw new AppError({
+        message: "You cannot verify this user's timesheet sheet",
+        code: "FORBIDDEN",
+      });
+    }
+
+    await this.timesheetsRepository.setTimesheetUserVerification({
+      timesheetId,
+      userId: targetUser.id,
+      verifiedBy: input.isVerified ? requesterId : null,
+      verifiedAt: input.isVerified ? new Date() : null,
+    });
+
+    const updatedTimesheet =
+      await this.timesheetsRepository.findTimesheetById(timesheetId);
+
+    return (
+      updatedTimesheet?.users.find((user) => user.id === targetUser.id) ??
+      targetUser
+    );
+  }
+
+  private async requireProjectCreateAccess(
     projectId: number,
     requesterId: string
   ) {
@@ -384,15 +501,19 @@ export class TimesheetsService {
       });
     }
 
-    const role = await this.timesheetsRepository.findProjectMemberRole(
-      projectId,
-      requesterId
-    );
+    if (project.createdBy === requesterId) return;
 
-    if (role === "manager" || role === "lead") return;
+    if (
+      await this.timesheetsRepository.findProjectMemberRole(
+        projectId,
+        requesterId
+      )
+    ) {
+      return;
+    }
 
     throw new AppError({
-      message: "Only project leads and managers can create timesheets",
+      message: "You can create timesheets only for your own projects",
       code: "FORBIDDEN",
     });
   }
@@ -423,6 +544,7 @@ export class TimesheetsService {
     timesheetId: number,
     requesterId: string
   ): Promise<TimesheetRecord> {
+    const scope = await this.resolveViewScope(requesterId);
     const timesheet =
       await this.timesheetsRepository.findTimesheetById(timesheetId);
 
@@ -433,21 +555,9 @@ export class TimesheetsService {
       });
     }
 
-    if (timesheet.createdBy === requesterId) return timesheet;
+    if (scope === "all") return timesheet;
 
-    const role = await this.timesheetsRepository.findProjectMemberRole(
-      timesheet.projectId,
-      requesterId
-    );
-
-    if (role === "manager" || role === "lead") return timesheet;
-
-    const isTimesheetUser = await this.timesheetsRepository.hasTimesheetUser(
-      timesheetId,
-      requesterId
-    );
-
-    if (!isTimesheetUser) {
+    if (!(await this.hasOwnTimesheetAccess(timesheet, requesterId))) {
       throw new AppError({
         message: "Timesheet not found",
         code: "NOT_FOUND",
@@ -457,29 +567,64 @@ export class TimesheetsService {
     return timesheet;
   }
 
-  private async canManageTimesheetUsers(
+  private async hasOwnTimesheetAccess(
     timesheet: TimesheetRecord,
     requesterId: string
   ) {
     if (timesheet.createdBy === requesterId) return true;
+    if (timesheet.project.createdBy === requesterId) return true;
 
-    const role = await this.timesheetsRepository.findProjectMemberRole(
+    if (
+      await this.timesheetsRepository.hasTimesheetUser(
+        timesheet.id,
+        requesterId
+      )
+    ) {
+      return true;
+    }
+
+    return Boolean(
+      await this.timesheetsRepository.findProjectMemberRole(
+        timesheet.projectId,
+        requesterId
+      )
+    );
+  }
+
+  private async resolveSheetVisibility(
+    timesheet: TimesheetRecord,
+    requesterId: string
+  ) {
+    const scope = await this.resolveViewScope(requesterId);
+    const projectRole = await this.timesheetsRepository.findProjectMemberRole(
       timesheet.projectId,
       requesterId
     );
+    const canViewAllRows = scope === "all" || projectRole === "manager";
+    const canViewMultipleUsers = canViewAllRows || projectRole === "lead";
 
-    return role === "manager" || role === "lead";
+    return {
+      scope,
+      projectRole,
+      canViewAllRows,
+      canViewMultipleUsers,
+    };
   }
 
   private resolveVisibleSheetUsers(input: {
-    timesheet: TimesheetRecord;
     requesterId: string;
-    canManageAllUsers: boolean;
+    visibility: {
+      scope: AccessScope;
+      projectRole: ProjectMemberRole | null;
+      canViewAllRows: boolean;
+      canViewMultipleUsers: boolean;
+    };
+    visibleUsers: TimesheetUser[];
     selectedUserId?: string;
   }) {
     const selectedUserId = input.selectedUserId?.trim();
 
-    if (!input.canManageAllUsers) {
+    if (!input.visibility.canViewMultipleUsers) {
       if (selectedUserId && selectedUserId !== input.requesterId) {
         throw new AppError({
           message: "You can only view your own timesheet rows",
@@ -487,9 +632,7 @@ export class TimesheetsService {
         });
       }
 
-      const ownUser = input.timesheet.users.find(
-        (user) => user.id === input.requesterId
-      );
+      const ownUser = input.visibleUsers[0];
 
       if (!ownUser) {
         throw new AppError({
@@ -501,9 +644,16 @@ export class TimesheetsService {
       return [ownUser];
     }
 
-    if (!selectedUserId) return input.timesheet.users;
+    if (!selectedUserId) {
+      const currentUser = input.visibleUsers.find(
+        (user) => user.id === input.requesterId
+      );
+      const fallbackUser = input.visibleUsers[0];
 
-    const selectedUser = input.timesheet.users.find(
+      return currentUser ? [currentUser] : fallbackUser ? [fallbackUser] : [];
+    }
+
+    const selectedUser = input.visibleUsers.find(
       (user) => user.id === selectedUserId
     );
 
@@ -515,6 +665,56 @@ export class TimesheetsService {
     }
 
     return [selectedUser];
+  }
+
+  private getVisibleSheetUsers(input: {
+    timesheet: TimesheetRecord;
+    requesterId: string;
+    visibility: {
+      scope: AccessScope;
+      projectRole: ProjectMemberRole | null;
+      canViewAllRows: boolean;
+      canViewMultipleUsers: boolean;
+    };
+  }) {
+    if (input.visibility.canViewAllRows) return input.timesheet.users;
+
+    if (input.visibility.projectRole === "lead") {
+      return input.timesheet.users.filter(
+        (user) => user.role === "lead" || user.role === "member"
+      );
+    }
+
+    return input.timesheet.users.filter(
+      (user) => user.id === input.requesterId
+    );
+  }
+
+  private canVerifyTimesheetUser(input: {
+    requesterId: string;
+    requesterRole: ProjectMemberRole | null;
+    targetUser: TimesheetUser;
+    canApprove: boolean;
+  }) {
+    if (!input.canApprove) {
+      return false;
+    }
+
+    if (input.targetUser.id === input.requesterId) {
+      return input.requesterRole === "manager";
+    }
+
+    if (input.requesterRole === "manager") {
+      return (
+        input.targetUser.role === "lead" || input.targetUser.role === "member"
+      );
+    }
+
+    if (input.requesterRole === "lead") {
+      return input.targetUser.role === "member";
+    }
+
+    return false;
   }
 
   private async resolveSheetEntries(input: {
@@ -655,6 +855,7 @@ export class TimesheetsService {
   private toSheetRow(input: {
     date: Date;
     user: TimesheetUser;
+    canVerify?: boolean;
     entries?: SheetEntryRecord[];
     explicitLeave?: SheetDayLeaveRecord;
   }) {
@@ -694,6 +895,13 @@ export class TimesheetsService {
       isExplicitLeave,
       isLeave: isWeekend || isExplicitLeave,
       leaveType: isWeekend ? "weekly_off" : isExplicitLeave ? "leave" : null,
+      verification: {
+        isVerified: Boolean(input.user.verifiedAt),
+        verifiedAt: input.user.verifiedAt,
+        verifiedBy: input.user.verifiedBy,
+        verifier: input.user.verifier,
+        canVerify: input.canVerify ?? false,
+      },
       entryId: firstEntry?.entryId ?? null,
       task: firstEntry?.task ?? null,
       entries: rowEntries,
@@ -701,6 +909,38 @@ export class TimesheetsService {
       hours: Math.floor(minutesSpent / 60),
       minutes: minutesSpent % 60,
       updatedAt: firstEntry?.updatedAt ?? null,
+    };
+  }
+
+  private buildSelectedSheetSummary(input: {
+    dates: Date[];
+    user: TimesheetUser;
+    explicitLeaves: SheetDayLeaveRecord[];
+    canVerify: boolean;
+  }) {
+    const weekendDays = input.dates.filter((date) => this.isWeekend(date));
+    const weekendDayKeys = new Set(
+      weekendDays.map((date) => this.toDateKey(date))
+    );
+    const explicitLeaveDays = input.explicitLeaves.filter(
+      (leave) => !weekendDayKeys.has(this.toDateKey(leave.leaveDate))
+    );
+    const availableDays =
+      input.dates.length - weekendDays.length - explicitLeaveDays.length;
+
+    return {
+      user: input.user,
+      totalDays: input.dates.length,
+      weekendDays: weekendDays.length,
+      explicitLeaveDays: explicitLeaveDays.length,
+      availableDays,
+      verification: {
+        isVerified: Boolean(input.user.verifiedAt),
+        verifiedAt: input.user.verifiedAt,
+        verifiedBy: input.user.verifiedBy,
+        verifier: input.user.verifier,
+        canVerify: input.canVerify,
+      },
     };
   }
 
@@ -733,6 +973,13 @@ export class TimesheetsService {
     const day = this.normalizeSheetDate(date).getUTCDay();
 
     return day === 0 || day === 6;
+  }
+
+  private resolveViewScope(userId: string) {
+    return permissionsService.requireAccessScope(userId, {
+      all: permissionKeys.timesheetViewAll,
+      own: permissionKeys.timesheetViewOwn,
+    });
   }
 }
 

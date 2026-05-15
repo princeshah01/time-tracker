@@ -9,6 +9,7 @@ import {
   listTimesheetsSchema,
   searchTimesheetTasksSchema,
   setTimesheetSheetLeaveSchema,
+  setTimesheetSheetVerificationSchema,
   timesheetIdParamSchema,
   updateTimesheetSchema,
   upsertTimesheetSheetSchema,
@@ -20,6 +21,10 @@ timesheetsRouter.use(requireAuth);
 
 timesheetsRouter.get(
   "/",
+  requirePermission([
+    permissionKeys.timesheetViewAll,
+    permissionKeys.timesheetViewOwn,
+  ]),
   validate(listTimesheetsSchema),
   timesheetsController.list
 );
@@ -34,9 +39,8 @@ timesheetsRouter.post(
 timesheetsRouter.get(
   "/:timesheetId/sheets",
   requirePermission([
-    permissionKeys.timesheetFill,
-    permissionKeys.timesheetApprove,
-    permissionKeys.timesheetSubmit,
+    permissionKeys.timesheetViewAll,
+    permissionKeys.timesheetViewOwn,
   ]),
   validate(listTimesheetSheetsSchema),
   timesheetsController.listSheets
@@ -56,6 +60,13 @@ timesheetsRouter.patch(
   timesheetsController.setSheetLeave
 );
 
+timesheetsRouter.patch(
+  "/:timesheetId/sheets/verification",
+  requirePermission(permissionKeys.timesheetApprove),
+  validate(setTimesheetSheetVerificationSchema),
+  timesheetsController.setSheetVerification
+);
+
 timesheetsRouter.get(
   "/:timesheetId/tasks/search",
   requirePermission(permissionKeys.timesheetFill),
@@ -65,6 +76,10 @@ timesheetsRouter.get(
 
 timesheetsRouter.get(
   "/:timesheetId",
+  requirePermission([
+    permissionKeys.timesheetViewAll,
+    permissionKeys.timesheetViewOwn,
+  ]),
   validate(timesheetIdParamSchema),
   timesheetsController.view
 );

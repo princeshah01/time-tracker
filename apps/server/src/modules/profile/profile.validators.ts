@@ -52,5 +52,16 @@ export const setPasswordSchema = z.object({
   params: z.object({}).optional(),
 });
 
+export const verifyPasswordSchema = z.object({
+  body: z
+    .object({
+      password: z.string().min(1, "Password is required"),
+    })
+    .strict(),
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
+});
+
 export type UpdateProfileSchema = z.infer<typeof updateProfileSchema>;
 export type SetPasswordSchema = z.infer<typeof setPasswordSchema>;
+export type VerifyPasswordSchema = z.infer<typeof verifyPasswordSchema>;

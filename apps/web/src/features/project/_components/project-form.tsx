@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { AppIcon } from "@/shared/components/app-icon";
+import { SensitiveContentGate } from "@/shared/components/sensitive-content-gate";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Calendar } from "@workspace/ui/components/calendar";
@@ -196,7 +197,8 @@ function toBillingPayload(
   }
 
   const userIds =
-    billingUserIds ?? selectedTeamMembers(values).map((member) => member.userId);
+    billingUserIds ??
+    selectedTeamMembers(values).map((member) => member.userId);
 
   return {
     teamMembers: userIds.map((userId) => ({
@@ -247,7 +249,7 @@ function ProjectForm({
     () => teamRows.map((row) => row.userId).filter(Boolean),
     [teamRows]
   );
-  
+
   const persistedTeamUserIds = useMemo(
     () => new Set(project?.teamMembers.map((member) => member.userId) ?? []),
     [project?.teamMembers]
@@ -571,131 +573,135 @@ function ProjectForm({
 
           {canManageFinance && project ? (
             <TabsContent value="billing" className="m-0">
-              <section className="space-y-4 p-4">
-                {billingType === "fixed_bill" ? (
-                  <FormField
-                    control={form.control}
-                    name="totalProjectIncome"
-                    render={({ field }) => (
-                      <FormItem className="max-w-sm">
-                        <FormLabel className="text-[12px]">
-                          Total project income
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            value={field.value ?? ""}
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            className="h-8 text-[13px]"
-                            disabled={billingReadOnly || isBillingSubmitting}
-                            onChange={(event) =>
-                              field.onChange(
-                                event.target.value === ""
-                                  ? null
-                                  : Number(event.target.value)
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage className="text-[12px]" />
-                      </FormItem>
-                    )}
-                  />
-                ) : null}
-
-                <div className="overflow-hidden rounded-md border">
-                  <div
-                    className={
-                      isHourlyBilling
-                        ? "grid grid-cols-[1fr_140px_140px] border-b bg-muted/40 px-3 py-2 text-[12px] font-medium"
-                        : "grid grid-cols-[1fr_140px] border-b bg-muted/40 px-3 py-2 text-[12px] font-medium"
-                    }
-                  >
-                    <div>Member</div>
-                    <div>Role</div>
-                    {isHourlyBilling ? <div>Rate/hr</div> : null}
-                  </div>
-
-                  {billingRows.length > 0 ? (
-                    billingRows.map((row) => (
-                      <div
-                        key={row.rowId}
-                        className={
-                          isHourlyBilling
-                            ? "grid grid-cols-[1fr_140px_140px] items-center border-b px-3 py-2 last:border-b-0"
-                            : "grid grid-cols-[1fr_140px] items-center border-b px-3 py-2 last:border-b-0"
-                        }
-                      >
-                        <div className="min-w-0">
-                          <div
-                            className="truncate text-[13px] font-medium"
-                            title={row.userName}
-                          >
-                            {row.userName}
-                          </div>
-                          <div
-                            className="truncate text-[12px] text-muted-foreground"
-                            title={row.userEmail}
-                          >
-                            {row.userEmail}
-                          </div>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className="w-fit rounded-md text-[10px]"
-                        >
-                          {roleLabel(row.role)}
-                        </Badge>
-                        {isHourlyBilling ? (
-                          readOnly ? (
-                            <div className="text-[12px] font-medium">
-                              {formatMoney(
-                                form.watch("billingRates")[row.userId]
-                              )}
-                            </div>
-                          ) : (
+              <SensitiveContentGate title="Verify first to see billing">
+                <section className="space-y-4 p-4">
+                  {billingType === "fixed_bill" ? (
+                    <FormField
+                      control={form.control}
+                      name="totalProjectIncome"
+                      render={({ field }) => (
+                        <FormItem className="max-w-sm">
+                          <FormLabel className="text-[12px]">
+                            Total project income
+                          </FormLabel>
+                          <FormControl>
                             <Input
-                              value={
-                                form.watch("billingRates")[row.userId] ?? ""
-                              }
+                              value={field.value ?? ""}
                               type="number"
                               min={0}
                               step="0.01"
-                              className="h-8 text-[12px]"
+                              className="h-8 text-[13px]"
                               disabled={billingReadOnly || isBillingSubmitting}
                               onChange={(event) =>
-                                updateBillingRate(
-                                  row.userId,
-                                  event.target.value
+                                field.onChange(
+                                  event.target.value === ""
+                                    ? null
+                                    : Number(event.target.value)
                                 )
                               }
                             />
-                          )
-                        ) : null}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="px-3 py-8 text-center text-[13px] text-muted-foreground">
-                      Save team members before setting billing rates
-                    </div>
-                  )}
-                </div>
+                          </FormControl>
+                          <FormMessage className="text-[12px]" />
+                        </FormItem>
+                      )}
+                    />
+                  ) : null}
 
-                {!billingReadOnly ? (
-                  <div className="flex justify-end">
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-8 text-[12px]"
-                      disabled={isBillingSubmitting}
-                      onClick={handleBillingSubmit}
+                  <div className="overflow-hidden rounded-md border">
+                    <div
+                      className={
+                        isHourlyBilling
+                          ? "grid grid-cols-[1fr_140px_140px] border-b bg-muted/40 px-3 py-2 text-[12px] font-medium"
+                          : "grid grid-cols-[1fr_140px] border-b bg-muted/40 px-3 py-2 text-[12px] font-medium"
+                      }
                     >
-                      {isBillingSubmitting ? "Saving..." : "Save billing"}
-                    </Button>
+                      <div>Member</div>
+                      <div>Role</div>
+                      {isHourlyBilling ? <div>Rate/hr</div> : null}
+                    </div>
+
+                    {billingRows.length > 0 ? (
+                      billingRows.map((row) => (
+                        <div
+                          key={row.rowId}
+                          className={
+                            isHourlyBilling
+                              ? "grid grid-cols-[1fr_140px_140px] items-center border-b px-3 py-2 last:border-b-0"
+                              : "grid grid-cols-[1fr_140px] items-center border-b px-3 py-2 last:border-b-0"
+                          }
+                        >
+                          <div className="min-w-0">
+                            <div
+                              className="truncate text-[13px] font-medium"
+                              title={row.userName}
+                            >
+                              {row.userName}
+                            </div>
+                            <div
+                              className="truncate text-[12px] text-muted-foreground"
+                              title={row.userEmail}
+                            >
+                              {row.userEmail}
+                            </div>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className="w-fit rounded-md text-[10px]"
+                          >
+                            {roleLabel(row.role)}
+                          </Badge>
+                          {isHourlyBilling ? (
+                            readOnly ? (
+                              <div className="text-[12px] font-medium">
+                                {formatMoney(
+                                  form.watch("billingRates")[row.userId]
+                                )}
+                              </div>
+                            ) : (
+                              <Input
+                                value={
+                                  form.watch("billingRates")[row.userId] ?? ""
+                                }
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                className="h-8 text-[12px]"
+                                disabled={
+                                  billingReadOnly || isBillingSubmitting
+                                }
+                                onChange={(event) =>
+                                  updateBillingRate(
+                                    row.userId,
+                                    event.target.value
+                                  )
+                                }
+                              />
+                            )
+                          ) : null}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-3 py-8 text-center text-[13px] text-muted-foreground">
+                        Save team members before setting billing rates
+                      </div>
+                    )}
                   </div>
-                ) : null}
-              </section>
+
+                  {!billingReadOnly ? (
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 text-[12px]"
+                        disabled={isBillingSubmitting}
+                        onClick={handleBillingSubmit}
+                      >
+                        {isBillingSubmitting ? "Saving..." : "Save billing"}
+                      </Button>
+                    </div>
+                  ) : null}
+                </section>
+              </SensitiveContentGate>
             </TabsContent>
           ) : null}
         </Tabs>
@@ -794,24 +800,29 @@ function TeamTable({
   onRoleChange: (rowId: string, role: ProjectTeamRole) => void;
   onUserSelect: (rowId: string, user: UserOption) => void;
 }) {
-  const canManageProjectReqPermissions = [permissions.projectManageAll, permissions.projectManageOwn];
+  const canManageProjectReqPermissions = [
+    permissions.projectManageAll,
+    permissions.projectManageOwn,
+  ];
   return (
     <div className="relative h-fit overflow-visible rounded-md border">
       <div className="grid grid-cols-[150px_1fr_40px] rounded-t-md border-b bg-muted/40 px-3 py-2 text-[12px] font-medium md:grid-cols-[170px_1fr_48px]">
         <div>Role</div>
         <div>User</div>
         <div className="flex justify-end">
-          <PermissionsWrapper requiredPermissions={canManageProjectReqPermissions}>
-            <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            disabled={disabled}
-            onClick={onAddRow}
+          <PermissionsWrapper
+            requiredPermissions={canManageProjectReqPermissions}
           >
-            <AppIcon name="Plus" className="size-3.5" />
-          </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              disabled={disabled}
+              onClick={onAddRow}
+            >
+              <AppIcon name="Plus" className="size-3.5" />
+            </Button>
           </PermissionsWrapper>
         </div>
       </div>
@@ -860,19 +871,21 @@ function TeamTable({
               </div>
             ) : null}
           </div>
-          <PermissionsWrapper requiredPermissions={canManageProjectReqPermissions}>
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              disabled={disabled || rows.length <= 1}
-              onClick={() => onRemoveRow(row.rowId)}
-            >
-              <AppIcon name="X" className="size-3.5" />
-            </Button>
-          </div>
+          <PermissionsWrapper
+            requiredPermissions={canManageProjectReqPermissions}
+          >
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                disabled={disabled || rows.length <= 1}
+                onClick={() => onRemoveRow(row.rowId)}
+              >
+                <AppIcon name="X" className="size-3.5" />
+              </Button>
+            </div>
           </PermissionsWrapper>
         </div>
       ))}

@@ -189,6 +189,7 @@ export const appRoutes: AppRoute[] = [
     element: <TimesheetMainPage />,
     showInSidebar: true,
     sideBarGroup: "Management",
+    permissions: [permissions.timesheetViewAll, permissions.timesheetViewOwn],
   },
   {
     path: "/timesheet/new",
@@ -200,42 +201,13 @@ export const appRoutes: AppRoute[] = [
     path: "/timesheet/:timesheetId/sheets",
     label: "Timesheet Sheets",
     element: <TimesheetSheetsPage />,
-    permissions: [
-      permissions.timesheetFill,
-      permissions.timesheetSubmit,
-      permissions.timesheetApprove,
-    ],
+    permissions: [permissions.timesheetViewAll, permissions.timesheetViewOwn],
   },
   {
     path: "/timesheet/:timesheetId",
     label: "Timesheet Details",
     element: <TimesheetDetailsPage />,
-  },
-  {
-    path: "/timesheets",
-    label: "Timesheets",
-    element: <TimesheetMainPage />,
-  },
-  {
-    path: "/timesheets/new",
-    label: "Create Timesheet",
-    element: <CreateTimesheetPage />,
-    permissions: [permissions.timesheetCreate],
-  },
-  {
-    path: "/timesheets/:timesheetId/sheets",
-    label: "Timesheet Sheets",
-    element: <TimesheetSheetsPage />,
-    permissions: [
-      permissions.timesheetFill,
-      permissions.timesheetSubmit,
-      permissions.timesheetApprove,
-    ],
-  },
-  {
-    path: "/timesheets/:timesheetId",
-    label: "Timesheet Details",
-    element: <TimesheetDetailsPage />,
+    permissions: [permissions.timesheetViewAll, permissions.timesheetViewOwn],
   },
   // --------------------
   // ANALYTICS
