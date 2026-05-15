@@ -59,7 +59,21 @@ export type TimesheetSheetRow = {
   rowKey: string;
   date: string;
   user: TimesheetUser;
+  isWeekend: boolean;
+  isExplicitLeave: boolean;
+  isLeave: boolean;
+  leaveType: "weekly_off" | "leave" | null;
   entryId: number | null;
+  task: TimesheetTaskSuggestion | null;
+  entries: TimesheetSheetEntry[];
+  minutesSpent: number;
+  hours: number;
+  minutes: number;
+  updatedAt: string | null;
+};
+
+export type TimesheetSheetEntry = {
+  entryId: number;
   task: TimesheetTaskSuggestion | null;
   minutesSpent: number;
   hours: number;
@@ -83,6 +97,19 @@ export type UpsertTimesheetSheetInput = {
   userId?: string;
   taskId?: number | null;
   taskTitle?: string;
-  hours: number;
-  minutes: number;
+  taskStatus?: TimesheetTaskSuggestion["status"];
+  hours?: number;
+  minutes?: number;
+  entries?: {
+    taskId?: number | null;
+    taskTitle?: string;
+    taskStatus?: TimesheetTaskSuggestion["status"];
+    hours: number;
+    minutes: number;
+  }[];
+};
+
+export type SetTimesheetSheetLeaveInput = {
+  entryDate: string;
+  isLeave: boolean;
 };

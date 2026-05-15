@@ -227,15 +227,38 @@ export const timesheetEntries = pgTable(
       .notNull(),
   },
   (table) => [
-    unique("timesheet_entries_timesheet_user_date_unique").on(
-      table.timesheetId,
-      table.userId,
-      table.entryDate
-    ),
     index("timesheet_entries_timesheet_id_idx").on(table.timesheetId),
     index("timesheet_entries_user_id_idx").on(table.userId),
     index("timesheet_entries_entry_date_idx").on(table.entryDate),
     index("timesheet_entries_task_id_idx").on(table.taskId),
+  ]
+);
+
+export const timesheetDayLeaves = pgTable(
+  "timesheet_day_leaves",
+  {
+    id: serial("id").primaryKey(),
+    timesheetId: integer("timesheet_id")
+      .notNull()
+      .references(() => timesheets.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    leaveDate: timestamp("leave_date").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("timesheet_day_leaves_timesheet_user_date_unique").on(
+      table.timesheetId,
+      table.userId,
+      table.leaveDate
+    ),
+    index("timesheet_day_leaves_timesheet_id_idx").on(table.timesheetId),
+    index("timesheet_day_leaves_user_id_idx").on(table.userId),
+    index("timesheet_day_leaves_leave_date_idx").on(table.leaveDate),
   ]
 );
 
@@ -297,6 +320,7 @@ export const timesheetsRelations = relations(timesheets, ({ one, many }) => ({
   }),
   users: many(timesheetUsers),
   entries: many(timesheetEntries),
+  dayLeaves: many(timesheetDayLeaves),
 }));
 
 export const timesheetUsersRelations = relations(timesheetUsers, ({ one }) => ({
@@ -327,6 +351,24 @@ export const timesheetEntriesRelations = relations(
     }),
     creator: one(user, {
       fields: [timesheetEntries.createdBy],
+      references: [user.id],
+    }),
+  })
+);
+
+export const timesheetDayLeavesRelations = relations(
+  timesheetDayLeaves,
+  ({ one }) => ({
+    timesheet: one(timesheets, {
+      fields: [timesheetDayLeaves.timesheetId],
+      references: [timesheets.id],
+    }),
+    user: one(user, {
+      fields: [timesheetDayLeaves.userId],
+      references: [user.id],
+    }),
+    creator: one(user, {
+      fields: [timesheetDayLeaves.createdBy],
       references: [user.id],
     }),
   })

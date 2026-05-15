@@ -3,6 +3,7 @@ import type {
   CreateTimesheetInput,
   ListTimesheetSheetsResponse,
   ListTimesheetsResponse,
+  SetTimesheetSheetLeaveInput,
   TimesheetListItem,
   TimesheetSheetRow,
   TimesheetTaskSuggestion,
@@ -84,6 +85,14 @@ export const timesheetService = {
     return apiFetch<TimesheetSheetRow>({
       method: "PATCH",
       url: `/timesheets/${timesheetId}/sheets`,
+      data: input,
+    });
+  },
+
+  setSheetLeave(timesheetId: number, input: SetTimesheetSheetLeaveInput) {
+    return apiFetch<TimesheetSheetRow>({
+      method: "PATCH",
+      url: `/timesheets/${timesheetId}/sheets/leave`,
       data: input,
     });
   },

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const taskStatusSchema = z.enum(["todo", "inprogress", "completed"]);
+
 const userIdsSchema = z
   .array(z.string().trim().min(1))
   .min(1, "At least one user must be added to the timesheet")
@@ -123,6 +125,35 @@ export const searchTimesheetTasksSchema = z.object({
   }),
 });
 
+const sheetEntrySchema = z
+  .object({
+    taskId: z.coerce.number().int().positive().nullable().optional(),
+    taskTitle: z.string().trim().min(2).max(160).optional(),
+    taskStatus: taskStatusSchema.optional().default("todo"),
+    hours: z.coerce.number().int().min(0).max(24).default(0),
+    minutes: z.coerce.number().int().min(0).max(59).default(0),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    const totalMinutes = value.hours * 60 + value.minutes;
+
+    if (value.hours === 24 && value.minutes > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["minutes"],
+        message: "Minutes must be 0 when hours is 24",
+      });
+    }
+
+    if (totalMinutes > 0 && !value.taskId && !value.taskTitle?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["taskTitle"],
+        message: "Task is required when time spent is greater than 0",
+      });
+    }
+  });
+
 export const upsertTimesheetSheetSchema = z.object({
   params: z.object({
     timesheetId: z.coerce.number().int().positive(),
@@ -132,16 +163,22 @@ export const upsertTimesheetSheetSchema = z.object({
     .object({
       entryDate: z.coerce.date(),
       userId: z.string().trim().min(1).optional(),
+      entries: z.array(sheetEntrySchema).max(20).optional(),
       taskId: z.coerce.number().int().positive().nullable().optional(),
       taskTitle: z.string().trim().min(2).max(160).optional(),
-      hours: z.coerce.number().int().min(0).max(24).default(0),
-      minutes: z.coerce.number().int().min(0).max(59).default(0),
+      taskStatus: taskStatusSchema.optional().default("todo"),
+      hours: z.coerce.number().int().min(0).max(24).optional(),
+      minutes: z.coerce.number().int().min(0).max(59).optional(),
     })
     .strict()
     .superRefine((value, ctx) => {
-      const totalMinutes = value.hours * 60 + value.minutes;
+      if (value.entries !== undefined) return;
 
-      if (value.hours === 24 && value.minutes > 0) {
+      const hours = value.hours ?? 0;
+      const minutes = value.minutes ?? 0;
+      const totalMinutes = hours * 60 + minutes;
+
+      if (hours === 24 && minutes > 0) {
         ctx.addIssue({
           code: "custom",
           path: ["minutes"],
@@ -159,6 +196,19 @@ export const upsertTimesheetSheetSchema = z.object({
     }),
 });
 
+export const setTimesheetSheetLeaveSchema = z.object({
+  params: z.object({
+    timesheetId: z.coerce.number().int().positive(),
+  }),
+  query: z.object({}),
+  body: z
+    .object({
+      entryDate: z.coerce.date(),
+      isLeave: z.boolean(),
+    })
+    .strict(),
+});
+
 export type CreateTimesheetInput = z.infer<
   typeof createTimesheetSchema
 >["body"];
@@ -174,4 +224,7 @@ export type SearchTimesheetTasksInput = z.infer<
 >["query"];
 export type UpsertTimesheetSheetInput = z.infer<
   typeof upsertTimesheetSheetSchema
+>["body"];
+export type SetTimesheetSheetLeaveInput = z.infer<
+  typeof setTimesheetSheetLeaveSchema
 >["body"];

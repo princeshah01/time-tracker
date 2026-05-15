@@ -16,6 +16,7 @@ import {
   projects,
   projectTeamMembers,
   tasks,
+  timesheetDayLeaves,
   timesheetEntries,
   timesheets,
   timesheetUsers,
@@ -43,6 +44,23 @@ type UpsertSheetEntryRecordInput = Pick<UpsertTimesheetSheetInput, "taskId"> & {
   entryDate: Date;
   minutesSpent: number;
   createdBy: string;
+};
+
+type ReplaceSheetEntryRecordInput = {
+  timesheetId: number;
+  userId: string;
+  entryDate: Date;
+  entries: {
+    taskId: number | null;
+    minutesSpent: number;
+    createdBy: string;
+  }[];
+};
+
+type SheetDayLeaveRecordInput = {
+  timesheetId: number;
+  userId: string;
+  leaveDate: Date;
 };
 
 type ScopedTimesheetInput = ListTimesheetsInput & {
@@ -287,6 +305,104 @@ export class TimesheetsRepository {
       );
   }
 
+  async listSheetDayLeavesForRows(input: {
+    timesheetId: number;
+    userIds: string[];
+    leaveDates: Date[];
+  }) {
+    if (input.userIds.length === 0 || input.leaveDates.length === 0) {
+      return [];
+    }
+
+    return db
+      .select({
+        id: timesheetDayLeaves.id,
+        timesheetId: timesheetDayLeaves.timesheetId,
+        userId: timesheetDayLeaves.userId,
+        leaveDate: timesheetDayLeaves.leaveDate,
+        createdBy: timesheetDayLeaves.createdBy,
+        createdAt: timesheetDayLeaves.createdAt,
+      })
+      .from(timesheetDayLeaves)
+      .where(
+        and(
+          eq(timesheetDayLeaves.timesheetId, input.timesheetId),
+          inArray(timesheetDayLeaves.userId, input.userIds),
+          inArray(timesheetDayLeaves.leaveDate, input.leaveDates)
+        )
+      );
+  }
+
+  async findSheetDayLeave(input: SheetDayLeaveRecordInput) {
+    const [record] = await db
+      .select({
+        id: timesheetDayLeaves.id,
+        timesheetId: timesheetDayLeaves.timesheetId,
+        userId: timesheetDayLeaves.userId,
+        leaveDate: timesheetDayLeaves.leaveDate,
+        createdBy: timesheetDayLeaves.createdBy,
+        createdAt: timesheetDayLeaves.createdAt,
+      })
+      .from(timesheetDayLeaves)
+      .where(
+        and(
+          eq(timesheetDayLeaves.timesheetId, input.timesheetId),
+          eq(timesheetDayLeaves.userId, input.userId),
+          eq(timesheetDayLeaves.leaveDate, input.leaveDate)
+        )
+      )
+      .limit(1);
+
+    return record ?? null;
+  }
+
+  async markSheetDayLeave(
+    input: SheetDayLeaveRecordInput & { createdBy: string }
+  ) {
+    return db.transaction(async (tx) => {
+      await tx
+        .delete(timesheetEntries)
+        .where(
+          and(
+            eq(timesheetEntries.timesheetId, input.timesheetId),
+            eq(timesheetEntries.userId, input.userId),
+            eq(timesheetEntries.entryDate, input.leaveDate)
+          )
+        );
+
+      const [record] = await tx
+        .insert(timesheetDayLeaves)
+        .values({
+          timesheetId: input.timesheetId,
+          userId: input.userId,
+          leaveDate: input.leaveDate,
+          createdBy: input.createdBy,
+        })
+        .onConflictDoNothing({
+          target: [
+            timesheetDayLeaves.timesheetId,
+            timesheetDayLeaves.userId,
+            timesheetDayLeaves.leaveDate,
+          ],
+        })
+        .returning({ id: timesheetDayLeaves.id });
+
+      return record ?? null;
+    });
+  }
+
+  async unmarkSheetDayLeave(input: SheetDayLeaveRecordInput) {
+    await db
+      .delete(timesheetDayLeaves)
+      .where(
+        and(
+          eq(timesheetDayLeaves.timesheetId, input.timesheetId),
+          eq(timesheetDayLeaves.userId, input.userId),
+          eq(timesheetDayLeaves.leaveDate, input.leaveDate)
+        )
+      );
+  }
+
   async findSheetEntry(input: {
     timesheetId: number;
     userId: string;
@@ -323,31 +439,67 @@ export class TimesheetsRepository {
   }
 
   async upsertSheetEntry(input: UpsertSheetEntryRecordInput) {
+    await this.replaceSheetEntries({
+      timesheetId: input.timesheetId,
+      userId: input.userId,
+      entryDate: input.entryDate,
+      entries:
+        input.minutesSpent > 0
+          ? [
+              {
+                taskId: input.taskId ?? null,
+                minutesSpent: input.minutesSpent,
+                createdBy: input.createdBy,
+              },
+            ]
+          : [],
+    });
+
     const [entry] = await db
-      .insert(timesheetEntries)
-      .values({
-        timesheetId: input.timesheetId,
-        userId: input.userId,
-        entryDate: input.entryDate,
-        taskId: input.taskId ?? null,
-        minutesSpent: input.minutesSpent,
-        createdBy: input.createdBy,
-      })
-      .onConflictDoUpdate({
-        target: [
-          timesheetEntries.timesheetId,
-          timesheetEntries.userId,
-          timesheetEntries.entryDate,
-        ],
-        set: {
-          taskId: input.taskId ?? null,
-          minutesSpent: input.minutesSpent,
-          updatedAt: new Date(),
-        },
-      })
-      .returning({ id: timesheetEntries.id });
+      .select({ id: timesheetEntries.id })
+      .from(timesheetEntries)
+      .where(
+        and(
+          eq(timesheetEntries.timesheetId, input.timesheetId),
+          eq(timesheetEntries.userId, input.userId),
+          eq(timesheetEntries.entryDate, input.entryDate)
+        )
+      )
+      .limit(1);
 
     return entry ?? null;
+  }
+
+  async replaceSheetEntries(input: ReplaceSheetEntryRecordInput) {
+    return db.transaction(async (tx) => {
+      await tx
+        .delete(timesheetEntries)
+        .where(
+          and(
+            eq(timesheetEntries.timesheetId, input.timesheetId),
+            eq(timesheetEntries.userId, input.userId),
+            eq(timesheetEntries.entryDate, input.entryDate)
+          )
+        );
+
+      const entries = input.entries.filter((entry) => entry.minutesSpent > 0);
+
+      if (entries.length === 0) return [];
+
+      return tx
+        .insert(timesheetEntries)
+        .values(
+          entries.map((entry) => ({
+            timesheetId: input.timesheetId,
+            userId: input.userId,
+            entryDate: input.entryDate,
+            taskId: entry.taskId,
+            minutesSpent: entry.minutesSpent,
+            createdBy: entry.createdBy,
+          }))
+        )
+        .returning({ id: timesheetEntries.id });
+    });
   }
 
   async searchProjectTasks(input: {
@@ -355,10 +507,7 @@ export class TimesheetsRepository {
     q: string;
     limit: number;
   }) {
-    const conditions: SQL[] = [
-      eq(tasks.projectId, input.projectId),
-      inArray(tasks.status, ["todo", "inprogress"]),
-    ];
+    const conditions: SQL[] = [eq(tasks.projectId, input.projectId)];
     const q = input.q.trim();
 
     if (q) {
@@ -383,7 +532,7 @@ export class TimesheetsRepository {
       .limit(input.limit);
   }
 
-  async findFillableTaskById(taskId: number, projectId: number) {
+  async findProjectTaskById(taskId: number, projectId: number) {
     const [task] = await db
       .select({
         id: tasks.id,
@@ -392,21 +541,40 @@ export class TimesheetsRepository {
         status: tasks.status,
       })
       .from(tasks)
-      .where(
-        and(
-          eq(tasks.id, taskId),
-          eq(tasks.projectId, projectId),
-          inArray(tasks.status, ["todo", "inprogress"])
-        )
-      )
+      .where(and(eq(tasks.id, taskId), eq(tasks.projectId, projectId)))
       .limit(1);
 
     return task ?? null;
   }
 
-  async createTodoTask(input: {
+  async updateTaskStatus(input: {
+    taskId: number;
+    projectId: number;
+    status: "todo" | "inprogress" | "completed";
+  }) {
+    const [task] = await db
+      .update(tasks)
+      .set({
+        status: input.status,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(tasks.id, input.taskId), eq(tasks.projectId, input.projectId))
+      )
+      .returning({
+        id: tasks.id,
+        projectId: tasks.projectId,
+        title: tasks.title,
+        status: tasks.status,
+      });
+
+    return task ?? null;
+  }
+
+  async createSheetTask(input: {
     projectId: number;
     title: string;
+    status: "todo" | "inprogress" | "completed";
     createdBy: string;
   }) {
     const [task] = await db
@@ -414,7 +582,7 @@ export class TimesheetsRepository {
       .values({
         projectId: input.projectId,
         title: input.title,
-        status: "todo",
+        status: input.status,
         createdBy: input.createdBy,
       })
       .returning({

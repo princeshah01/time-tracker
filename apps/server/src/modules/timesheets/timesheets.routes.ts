@@ -8,6 +8,7 @@ import {
   listTimesheetSheetsSchema,
   listTimesheetsSchema,
   searchTimesheetTasksSchema,
+  setTimesheetSheetLeaveSchema,
   timesheetIdParamSchema,
   updateTimesheetSchema,
   upsertTimesheetSheetSchema,
@@ -46,6 +47,13 @@ timesheetsRouter.patch(
   requirePermission(permissionKeys.timesheetFill),
   validate(upsertTimesheetSheetSchema),
   timesheetsController.upsertSheet
+);
+
+timesheetsRouter.patch(
+  "/:timesheetId/sheets/leave",
+  requirePermission(permissionKeys.timesheetFill),
+  validate(setTimesheetSheetLeaveSchema),
+  timesheetsController.setSheetLeave
 );
 
 timesheetsRouter.get(

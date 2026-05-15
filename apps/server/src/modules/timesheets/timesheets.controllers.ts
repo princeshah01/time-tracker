@@ -9,6 +9,7 @@ import type {
   listTimesheetSheetsSchema,
   listTimesheetsSchema,
   searchTimesheetTasksSchema,
+  setTimesheetSheetLeaveSchema,
   timesheetIdParamSchema,
   updateTimesheetSchema,
   upsertTimesheetSheetSchema,
@@ -127,6 +128,26 @@ export class TimesheetsController {
       res,
       data: sheet,
       message: "Timesheet sheet saved successfully",
+    });
+  }
+
+  async setSheetLeave(req: Request, res: Response) {
+    const { params, body } = (
+      req as ValidatedRequest<typeof setTimesheetSheetLeaveSchema>
+    ).validated;
+    const user = requireRouteUser(req);
+    const sheet = await timesheetsService.setSheetDayLeave(
+      params.timesheetId,
+      body,
+      user.id
+    );
+
+    return sendSuccess({
+      res,
+      data: sheet,
+      message: body.isLeave
+        ? "Timesheet day marked as leave"
+        : "Timesheet day unmarked as leave",
     });
   }
 }

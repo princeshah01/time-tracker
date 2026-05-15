@@ -5,6 +5,7 @@ import type {
   ListTimesheetSheetsInput,
   ListTimesheetsInput,
   SearchTimesheetTasksInput,
+  SetTimesheetSheetLeaveInput,
   UpdateTimesheetInput,
   UpsertTimesheetSheetInput,
 } from "./timesheets.validation";
@@ -14,6 +15,15 @@ type TimesheetRecord = NonNullable<
 >;
 
 type TimesheetUser = TimesheetRecord["users"][number];
+type SheetEntryRecord = Awaited<
+  ReturnType<TimesheetsRepository["listSheetEntriesForRows"]>
+>[number];
+type SheetDayLeaveRecord = Awaited<
+  ReturnType<TimesheetsRepository["listSheetDayLeavesForRows"]>
+>[number];
+type SheetEntryInput = NonNullable<
+  UpsertTimesheetSheetInput["entries"]
+>[number];
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -140,19 +150,38 @@ export class TimesheetsService {
       userIds: entryUsers,
       entryDates,
     });
-    const entryByKey = new Map(
-      entries.map((entry) => [
-        this.getSheetEntryKey(entry.userId, entry.entryDate),
-        entry,
+    const dayLeaves = await this.timesheetsRepository.listSheetDayLeavesForRows(
+      {
+        timesheetId,
+        userIds: entryUsers,
+        leaveDates: entryDates,
+      }
+    );
+    const entriesByKey = new Map<string, SheetEntryRecord[]>();
+    const leaveByKey = new Map(
+      dayLeaves.map((leave) => [
+        this.getSheetEntryKey(leave.userId, leave.leaveDate),
+        leave,
       ])
     );
+
+    for (const entry of entries) {
+      const key = this.getSheetEntryKey(entry.userId, entry.entryDate);
+      const rowEntries = entriesByKey.get(key) ?? [];
+
+      rowEntries.push(entry);
+      entriesByKey.set(key, rowEntries);
+    }
 
     return {
       items: pageCoordinates.map((coordinate) =>
         this.toSheetRow({
           date: coordinate.date,
           user: coordinate.user,
-          entry: entryByKey.get(
+          entries: entriesByKey.get(
+            this.getSheetEntryKey(coordinate.user.id, coordinate.date)
+          ),
+          explicitLeave: leaveByKey.get(
             this.getSheetEntryKey(coordinate.user.id, coordinate.date)
           ),
         })
@@ -226,33 +255,119 @@ export class TimesheetsService {
       });
     }
 
-    const minutesSpent = input.hours * 60 + input.minutes;
-    const taskId = await this.resolveSheetTaskId({
+    if (this.isWeekend(entryDate)) {
+      throw new AppError({
+        message: "Weekend rows are mandatory weekly off days",
+        code: "VALIDATION_ERROR",
+      });
+    }
+
+    const explicitLeave = await this.timesheetsRepository.findSheetDayLeave({
+      timesheetId,
+      userId: targetUserId,
+      leaveDate: entryDate,
+    });
+
+    if (explicitLeave) {
+      throw new AppError({
+        message: "Leave rows cannot be filled",
+        code: "VALIDATION_ERROR",
+      });
+    }
+
+    const sheetEntries = await this.resolveSheetEntries({
       input,
       projectId: timesheet.projectId,
-      minutesSpent,
       requesterId,
     });
 
-    await this.timesheetsRepository.upsertSheetEntry({
+    await this.timesheetsRepository.replaceSheetEntries({
       timesheetId,
       userId: targetUserId,
       entryDate,
-      taskId,
-      minutesSpent,
-      createdBy: requesterId,
+      entries: sheetEntries,
     });
 
-    const entry = await this.timesheetsRepository.findSheetEntry({
+    const entries = await this.timesheetsRepository.listSheetEntriesForRows({
       timesheetId,
-      userId: targetUserId,
-      entryDate,
+      userIds: [targetUserId],
+      entryDates: [entryDate],
     });
 
     return this.toSheetRow({
       date: entryDate,
       user: targetUser,
-      entry: entry ?? undefined,
+      entries,
+    });
+  }
+
+  async setSheetDayLeave(
+    timesheetId: number,
+    input: SetTimesheetSheetLeaveInput,
+    requesterId: string
+  ) {
+    const timesheet = await this.requireTimesheetAccess(
+      timesheetId,
+      requesterId
+    );
+    const targetUser = timesheet.users.find((user) => user.id === requesterId);
+
+    if (!targetUser) {
+      throw new AppError({
+        message: "Timesheet not found",
+        code: "NOT_FOUND",
+      });
+    }
+
+    const leaveDate = this.normalizeSheetDate(input.entryDate);
+
+    if (
+      !this.isDateInRange(leaveDate, timesheet.startDate, timesheet.endDate)
+    ) {
+      throw new AppError({
+        message: "Leave date must be inside the timesheet date range",
+        code: "VALIDATION_ERROR",
+      });
+    }
+
+    if (this.isWeekend(leaveDate)) {
+      throw new AppError({
+        message: "Weekend rows are mandatory weekly off days",
+        code: "VALIDATION_ERROR",
+      });
+    }
+
+    if (input.isLeave) {
+      await this.timesheetsRepository.markSheetDayLeave({
+        timesheetId,
+        userId: requesterId,
+        leaveDate,
+        createdBy: requesterId,
+      });
+    } else {
+      await this.timesheetsRepository.unmarkSheetDayLeave({
+        timesheetId,
+        userId: requesterId,
+        leaveDate,
+      });
+    }
+
+    const entries = await this.timesheetsRepository.listSheetEntriesForRows({
+      timesheetId,
+      userIds: [requesterId],
+      entryDates: [leaveDate],
+    });
+    const explicitLeave = await this.timesheetsRepository.findSheetDayLeave({
+      timesheetId,
+      userId: requesterId,
+      leaveDate,
+    });
+
+    return this.toSheetRow({
+      date: leaveDate,
+      user: targetUser,
+      entries,
+      explicitLeave: explicitLeave ?? undefined,
     });
   }
 
@@ -402,8 +517,47 @@ export class TimesheetsService {
     return [selectedUser];
   }
 
-  private async resolveSheetTaskId(input: {
+  private async resolveSheetEntries(input: {
     input: UpsertTimesheetSheetInput;
+    projectId: number;
+    requesterId: string;
+  }) {
+    const entries = input.input.entries ?? [
+      {
+        taskId: input.input.taskId,
+        taskTitle: input.input.taskTitle,
+        taskStatus: input.input.taskStatus,
+        hours: input.input.hours ?? 0,
+        minutes: input.input.minutes ?? 0,
+      },
+    ];
+
+    const resolvedEntries = [];
+
+    for (const entry of entries) {
+      const minutesSpent = entry.hours * 60 + entry.minutes;
+
+      if (minutesSpent === 0) continue;
+
+      const taskId = await this.resolveSheetTaskId({
+        input: entry,
+        projectId: input.projectId,
+        minutesSpent,
+        requesterId: input.requesterId,
+      });
+
+      resolvedEntries.push({
+        taskId,
+        minutesSpent,
+        createdBy: input.requesterId,
+      });
+    }
+
+    return resolvedEntries;
+  }
+
+  private async resolveSheetTaskId(input: {
+    input: SheetEntryInput;
     projectId: number;
     minutesSpent: number;
     requesterId: string;
@@ -411,7 +565,7 @@ export class TimesheetsService {
     if (input.minutesSpent === 0) return null;
 
     if (input.input.taskId) {
-      const task = await this.timesheetsRepository.findFillableTaskById(
+      const task = await this.timesheetsRepository.findProjectTaskById(
         input.input.taskId,
         input.projectId
       );
@@ -420,6 +574,14 @@ export class TimesheetsService {
         throw new AppError({
           message: "Selected task is not available for this timesheet",
           code: "VALIDATION_ERROR",
+        });
+      }
+
+      if (input.input.taskStatus && input.input.taskStatus !== task.status) {
+        await this.timesheetsRepository.updateTaskStatus({
+          taskId: task.id,
+          projectId: input.projectId,
+          status: input.input.taskStatus,
         });
       }
 
@@ -435,9 +597,10 @@ export class TimesheetsService {
       });
     }
 
-    const task = await this.timesheetsRepository.createTodoTask({
+    const task = await this.timesheetsRepository.createSheetTask({
       projectId: input.projectId,
       title: taskTitle,
+      status: input.input.taskStatus ?? "todo",
       createdBy: input.requesterId,
     });
 
@@ -492,29 +655,52 @@ export class TimesheetsService {
   private toSheetRow(input: {
     date: Date;
     user: TimesheetUser;
-    entry?: Awaited<
-      ReturnType<TimesheetsRepository["listSheetEntriesForRows"]>
-    >[number];
+    entries?: SheetEntryRecord[];
+    explicitLeave?: SheetDayLeaveRecord;
   }) {
-    const minutesSpent = input.entry?.minutesSpent ?? 0;
-    const task = input.entry?.task?.id
-      ? {
-          id: input.entry.task.id,
-          title: input.entry.task.title ?? "",
-          status: input.entry.task.status ?? "todo",
-        }
-      : null;
+    const entries = input.entries ?? [];
+    const rowEntries = entries.map((entry) => {
+      const minutesSpent = entry.minutesSpent ?? 0;
+      const task = entry.task?.id
+        ? {
+            id: entry.task.id,
+            title: entry.task.title ?? "",
+            status: entry.task.status ?? "todo",
+          }
+        : null;
+
+      return {
+        entryId: entry.id,
+        task,
+        minutesSpent,
+        hours: Math.floor(minutesSpent / 60),
+        minutes: minutesSpent % 60,
+        updatedAt: entry.updatedAt,
+      };
+    });
+    const minutesSpent = rowEntries.reduce(
+      (total, entry) => total + entry.minutesSpent,
+      0
+    );
+    const firstEntry = rowEntries[0];
+    const isWeekend = this.isWeekend(input.date);
+    const isExplicitLeave = Boolean(input.explicitLeave);
 
     return {
       rowKey: `${input.user.id}:${this.toDateKey(input.date)}`,
       date: input.date,
       user: input.user,
-      entryId: input.entry?.id ?? null,
-      task,
+      isWeekend,
+      isExplicitLeave,
+      isLeave: isWeekend || isExplicitLeave,
+      leaveType: isWeekend ? "weekly_off" : isExplicitLeave ? "leave" : null,
+      entryId: firstEntry?.entryId ?? null,
+      task: firstEntry?.task ?? null,
+      entries: rowEntries,
       minutesSpent,
       hours: Math.floor(minutesSpent / 60),
       minutes: minutesSpent % 60,
-      updatedAt: input.entry?.updatedAt ?? null,
+      updatedAt: firstEntry?.updatedAt ?? null,
     };
   }
 
@@ -541,6 +727,12 @@ export class TimesheetsService {
       value >= this.normalizeSheetDate(startDate).getTime() &&
       value <= this.normalizeSheetDate(endDate).getTime()
     );
+  }
+
+  private isWeekend(date: Date) {
+    const day = this.normalizeSheetDate(date).getUTCDay();
+
+    return day === 0 || day === 6;
   }
 }
 

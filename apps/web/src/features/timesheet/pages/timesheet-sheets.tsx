@@ -34,30 +34,7 @@ function TimesheetSheetsPage() {
       <PageContent.Header
         title="Timesheet Sheets"
         className="sticky top-0 z-10"
-      >
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-[12px]"
-            onClick={() => navigate(`/timesheet/${timesheetId}`)}
-          >
-            <AppIcon name="Eye" className="size-3.5" />
-            View / edit
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-[12px]"
-            onClick={() => navigate("/timesheet")}
-          >
-            <AppIcon name="ChevronLeft" className="size-3.5" />
-            Back
-          </Button>
-        </div>
-      </PageContent.Header>
+      />
 
       <PageContent.Body className="min-h-0 overflow-auto">
         {timesheetQuery.isLoading ? (
@@ -78,27 +55,61 @@ function TimesheetSheetsPage() {
                   <p className="mt-0.5 text-[12px] text-muted-foreground">
                     Timesheet #{timesheetQuery.data.id}
                   </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <AppIcon name="CalendarDays" className="size-3.5" />
+                      {formatDate(timesheetQuery.data.startDate)} -{" "}
+                      {formatDate(timesheetQuery.data.endDate)}
+                    </span>
+                    <span>
+                      {countDays(
+                        timesheetQuery.data.startDate,
+                        timesheetQuery.data.endDate
+                      )}{" "}
+                      total days
+                    </span>
+                    <span>
+                      {countWorkingDays(
+                        timesheetQuery.data.startDate,
+                        timesheetQuery.data.endDate
+                      )}{" "}
+                      working days
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <AppIcon name="FolderKanban" className="size-3.5" />
-                    {timesheetQuery.data.project.name}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <AppIcon name="Users" className="size-3.5" />
-                    {timesheetQuery.data.userCount} users
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid gap-px bg-border text-[12px] md:grid-cols-2">
-                <div className="bg-background px-4 py-3">
-                  <p className="text-[11px] text-muted-foreground">Start</p>
-                  <p>{formatDate(timesheetQuery.data.startDate)}</p>
-                </div>
-                <div className="bg-background px-4 py-3">
-                  <p className="text-[11px] text-muted-foreground">End</p>
-                  <p>{formatDate(timesheetQuery.data.endDate)}</p>
+                <div className="flex flex-col items-start gap-2 sm:items-end">
+                  <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 text-[12px]"
+                      onClick={() => navigate(`/timesheet/${timesheetId}`)}
+                    >
+                      <AppIcon name="Eye" className="size-3.5" />
+                      View / edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 text-[12px]"
+                      onClick={() => navigate("/timesheet")}
+                    >
+                      <AppIcon name="ChevronLeft" className="size-3.5" />
+                      Back
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <AppIcon name="FolderKanban" className="size-3.5" />
+                      {timesheetQuery.data.project.name}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <AppIcon name="Users" className="size-3.5" />
+                      {timesheetQuery.data.userCount} users
+                    </span>
+                  </div>
                 </div>
               </div>
             </section>
@@ -108,6 +119,39 @@ function TimesheetSheetsPage() {
         ) : null}
       </PageContent.Body>
     </PageContent.Root>
+  );
+}
+
+function countDays(startDate: string, endDate: string) {
+  const start = toUtcDate(startDate);
+  const end = toUtcDate(endDate);
+  const diff = end.getTime() - start.getTime();
+
+  if (diff < 0) return 0;
+
+  return Math.floor(diff / 86_400_000) + 1;
+}
+
+function countWorkingDays(startDate: string, endDate: string) {
+  const totalDays = countDays(startDate, endDate);
+  const start = toUtcDate(startDate);
+  let workingDays = 0;
+
+  for (let index = 0; index < totalDays; index += 1) {
+    const date = new Date(start.getTime() + index * 86_400_000);
+    const day = date.getUTCDay();
+
+    if (day !== 0 && day !== 6) workingDays += 1;
+  }
+
+  return workingDays;
+}
+
+function toUtcDate(value: string) {
+  const date = new Date(value);
+
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
   );
 }
 
