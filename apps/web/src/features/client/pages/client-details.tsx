@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { PageContent } from "@/shared/components/page-content";
 import { AppIcon } from "@/shared/components/app-icon";
@@ -8,6 +9,12 @@ import { useAppSelector } from "@/app/store/hooks";
 import { formatDate, hasPermission } from "@/shared/lib";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { toast } from "@workspace/ui/components/sonner";
 import { cn } from "@workspace/ui/lib/utils";
@@ -16,8 +23,14 @@ import { ClientForm, ClientProjects } from "../_components";
 import { clientService } from "../service";
 import type { CreateClientInput, UpdateClientInput } from "../client.types";
 
+type ClientDetailsMode = "edit" | "view";
+type ClientDetailsLocationState = {
+  mode?: ClientDetailsMode;
+} | null;
+
 function ClientDetailsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams();
   const queryClient = useQueryClient();
   const clientId = Number(params.clientId);
@@ -26,6 +39,17 @@ function ClientDetailsPage() {
     permissions.clientManageAll,
     permissions.clientManageOwn,
   ]);
+  const locationState = location.state as ClientDetailsLocationState;
+  const [mode, setMode] = useState<ClientDetailsMode>("view");
+
+  useEffect(() => {
+    if (locationState?.mode === "edit" && canManageClient) {
+      setMode("edit");
+      return;
+    }
+
+    setMode("view");
+  }, [canManageClient, clientId, locationState?.mode]);
 
   const clientQuery = useQuery({
     queryKey: [QUERY_KEYS.CLIENT_DETAIL, clientId],
@@ -60,6 +84,7 @@ function ClientDetailsPage() {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.CLIENT_DETAIL, client.id],
       });
+      setMode("view");
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -74,70 +99,111 @@ function ClientDetailsPage() {
         title="Client Details"
         className="sticky top-0 z-10"
       />
-      <PageContent.Body className="min-h-0 max-w-4xl border-r border-b border-border overflow-y-auto">
-        {clientQuery.isLoading ? (
-          <ClientDetailsSkeleton />
-        ) : clientQuery.isError ? (
-          <ClientDetailsError onRetry={() => void clientQuery.refetch()} />
-        ) : client ? (
-          <div className="bg-background">
-            <section className="border-b p-4">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h2
-                      className="truncate text-base font-semibold"
-                      title={client.name}
-                    >
-                      {client.name}
-                    </h2>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "rounded-md text-[10px]",
-                        client.isActive
-                          ? "border-success bg-success/10 text-success"
-                          : "border-muted bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {client.isActive ? "Active" : "Inactive"}
-                    </Badge>
+      <PageContent.Body className="min-h-0 overflow-y-auto">
+        <div className="min-h-full max-w-4xl border-border border-r border-b bg-background">
+          {clientQuery.isLoading ? (
+            <ClientDetailsSkeleton />
+          ) : clientQuery.isError ? (
+            <ClientDetailsError onRetry={() => void clientQuery.refetch()} />
+          ) : client ? (
+            <>
+              <section className="border-b">
+                <div className="flex flex-col gap-3 p-4 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h2
+                        className="truncate text-base font-semibold"
+                        title={client.name}
+                      >
+                        {client.name}
+                      </h2>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "rounded-md text-[10px]",
+                          client.isActive
+                            ? "border-success bg-success/10 text-success"
+                            : "border-muted bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {client.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 truncate text-sm text-muted-foreground">
+                      {client.company ?? client.email}
+                    </p>
                   </div>
-                  <p className="mt-1 truncate text-sm text-muted-foreground">
-                    {client.company ?? client.email}
-                  </p>
+
+                  <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md bg-border text-[12px] md:min-w-72">
+                    <InfoTile
+                      label="Projects"
+                      value={String(client.projectTotal ?? 0)}
+                    />
+                    <InfoTile
+                      label="Created"
+                      value={formatDate(client.createdAt)}
+                    />
+                    <InfoTile
+                      label="Updated"
+                      value={formatDate(client.updatedAt)}
+                    />
+                    <InfoTile
+                      label="Owner"
+                      value={client.creator?.name ?? "-"}
+                    />
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md bg-border text-[12px] md:min-w-72">
-                  <InfoTile
-                    label="Projects"
-                    value={String(client.projectTotal ?? 0)}
-                  />
-                  <InfoTile
-                    label="Created"
-                    value={formatDate(client.createdAt)}
-                  />
-                  <InfoTile
-                    label="Updated"
-                    value={formatDate(client.updatedAt)}
-                  />
-                  <InfoTile label="Owner" value={client.creator?.name ?? "-"} />
+                <div className="flex justify-end gap-2 border-t border-border py-2 pr-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[12px]"
+                    onClick={() => navigate("/clients")}
+                  >
+                    <AppIcon name="ChevronLeft" className="size-3.5" />
+                    Back to list
+                  </Button>
+                  {mode === "view" && canManageClient ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label="Open client actions"
+                        >
+                          <AppIcon name="MoreHorizontal" className="size-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem
+                          className="gap-2 text-[12px]"
+                          onSelect={() => setMode("edit")}
+                        >
+                          <AppIcon name="Pencil" className="size-3.5" />
+                          Edit client
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : null}
                 </div>
-              </div>
-            </section>
+              </section>
 
-            <ClientForm
-              client={client}
-              mode="edit"
-              canSubmit={canManageClient}
-              isSubmitting={updateClientMutation.isPending}
-              onCancel={() => navigate("/clients")}
-              onSubmit={(input) => updateClientMutation.mutate(input)}
-            />
+              <ClientForm
+                client={client}
+                mode={mode}
+                canSubmit={canManageClient}
+                isSubmitting={updateClientMutation.isPending}
+                onCancel={() => setMode("view")}
+                onSubmit={(input) => updateClientMutation.mutate(input)}
+              />
 
-            <ClientProjects projects={client.projects ?? []} />
-          </div>
-        ) : null}
+              <ClientProjects projects={client.projects ?? []} />
+            </>
+          ) : null}
+        </div>
       </PageContent.Body>
     </PageContent.Root>
   );

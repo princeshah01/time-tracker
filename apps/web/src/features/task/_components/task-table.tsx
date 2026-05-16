@@ -126,7 +126,7 @@ function TaskTable({
           canMutate ? (
             <Select
               value={row.original.status}
-              disabled={updatingStatus}
+              disabled={updatingStatus && updatingTaskId === row.original.id}
               onValueChange={(value) =>
                 onStatusChange(row.original, value as TaskStatus)
               }
@@ -151,7 +151,7 @@ function TaskTable({
         size: 160,
       },
     ],
-    [canMutate, onStatusChange, updatingTaskId]
+    [canMutate, onStatusChange, updatingStatus, updatingTaskId]
   );
 
   return (

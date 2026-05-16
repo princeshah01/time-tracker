@@ -174,9 +174,9 @@ export const appRoutes: AppRoute[] = [
   },
   {
     path: "/tasks/:taskId",
-    label: "Edit Task",
+    label: "Task Details",
     element: <TaskDetailsPage />,
-    permissions: [permissions.taskCreate],
+    permissions: [permissions.taskViewAll, permissions.taskViewOwn],
   },
 
   // --------------------

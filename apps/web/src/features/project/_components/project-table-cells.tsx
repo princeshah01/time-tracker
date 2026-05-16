@@ -92,34 +92,37 @@ function ProjectActionsCell({
             variant="ghost"
             size="icon"
             className="size-7 text-muted-foreground"
-        title="Edit project"
-        aria-label="Edit project"
-        onClick={(event) => {
-          event.stopPropagation();
-          onEdit(project);
-        }}
-      >
-        <AppIcon name="Pencil" className="size-3.5" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-7 text-muted-foreground"
-        disabled={!canManage}
-        title={project.isActive ? "Disable project" : "Activate project"}
-        aria-label={project.isActive ? "Disable project" : "Activate project"}
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggleStatus(project);
-        }}
-      >
-        <AppIcon
-          name={project.isActive ? "CircleOff" : "CheckCircle2"}
-          className="size-3.5"
-        />
-      </Button>
-      </>)}
+            title="Edit project"
+            aria-label="Edit project"
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit(project);
+            }}
+          >
+            <AppIcon name="Pencil" className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground"
+            disabled={!canManage}
+            title={project.isActive ? "Disable project" : "Activate project"}
+            aria-label={
+              project.isActive ? "Disable project" : "Activate project"
+            }
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleStatus(project);
+            }}
+          >
+            <AppIcon
+              name={project.isActive ? "CircleOff" : "CheckCircle2"}
+              className="size-3.5"
+            />
+          </Button>
+        </>
+      )}
     </div>
   );
 }

@@ -66,8 +66,8 @@ export class TasksService {
     input: UpdateTaskInput,
     requesterId: string
   ) {
-    const task = await this.requireExistingTask(taskId);
-    await this.requireProjectMembership(task.projectId, requesterId);
+    const scope = await this.resolveManageScope(requesterId);
+    await this.requireTaskAccess(taskId, requesterId, scope);
 
     await this.tasksRepository.updateTask(taskId, {
       ...input,
@@ -138,23 +138,17 @@ export class TasksService {
     return task;
   }
 
-  private async requireExistingTask(taskId: number) {
-    const task = await this.tasksRepository.findTaskById(taskId);
-
-    if (!task) {
-      throw new AppError({
-        message: "Task not found",
-        code: "NOT_FOUND",
-      });
-    }
-
-    return task;
-  }
-
   private resolveViewScope(userId: string) {
     return permissionsService.requireAccessScope(userId, {
       all: permissionKeys.taskViewAll,
       own: permissionKeys.taskViewOwn,
+    });
+  }
+
+  private resolveManageScope(userId: string) {
+    return permissionsService.requireAccessScope(userId, {
+      all: permissionKeys.taskManageAll,
+      own: permissionKeys.taskManageOwn,
     });
   }
 }

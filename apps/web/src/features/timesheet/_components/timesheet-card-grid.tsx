@@ -316,7 +316,7 @@ function TimesheetCardGrid({
   return (
     <div
       ref={containerRef}
-      className="relative h-[calc(100vh-145px)] overflow-auto rounded-md border border-border bg-muted/20 p-3"
+      className="relative h-[calc(100vh-120px)] overflow-auto rounded-md border border-border bg-muted/20 p-3"
       onScroll={handleScroll}
     >
       <div className="flex flex-wrap content-start gap-3">

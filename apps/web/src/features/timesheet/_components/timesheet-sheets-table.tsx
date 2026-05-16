@@ -502,9 +502,12 @@ function TimesheetSheetDisplayRows({
   onSave: (input: UpsertTimesheetSheetInput) => void;
 }) {
   const entries = getDisplayEntries(row);
-  const canEditRow = canFillTimesheet && !row.isLeave;
-  const canToggleLeave =
-    canFillTimesheet && currentUserId === row.user.id && !row.isWeekend;
+  const isOwnRow = currentUserId === row.user.id;
+  const canEditRow = canFillTimesheet && isOwnRow && !row.isLeave;
+  const canToggleLeave = canFillTimesheet && isOwnRow && !row.isWeekend;
+  const emptyTaskText = canEditRow
+    ? "Select task"
+    : "Timesheet for this date is not filled";
 
   return (
     <>
@@ -565,7 +568,7 @@ function TimesheetSheetDisplayRows({
                   ))
                 ) : (
                   <span className="text-[12px] text-muted-foreground">
-                    Select task
+                    {emptyTaskText}
                   </span>
                 )}
               </button>
@@ -888,12 +891,12 @@ function TimesheetSheetRowEditor({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-            <div className="py-1.5 text-[12px]">
-              <span className="text-[11px] text-muted-foreground">
-                Selected time:{" "}
-              </span>
-              <span>{formatSpentTime(totalMinutes)}</span>
-            </div>
+          <div className="py-1.5 text-[12px]">
+            <span className="text-[11px] text-muted-foreground">
+              Selected time:{" "}
+            </span>
+            <span>{formatSpentTime(totalMinutes)}</span>
+          </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"

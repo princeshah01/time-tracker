@@ -23,7 +23,7 @@ function UsersContextMenu({
   resetPasswordMutation,
 }: UsersContextMenuProps) {
   if (!menuState) return null;
-  
+
   const menuRef = useDismiss<HTMLDivElement>({
     enabled: !!menuState,
     onDismiss: () => setMenuState(null),

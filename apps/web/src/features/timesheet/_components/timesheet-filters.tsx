@@ -33,7 +33,6 @@ function TimesheetFilters({
   onSearchChange,
   onProjectChange,
 }: TimesheetFiltersProps) {
-
   return (
     <div className="flex w-full flex-col justify-between gap-2 sm:flex-row sm:items-center">
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">

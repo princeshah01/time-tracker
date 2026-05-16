@@ -60,11 +60,13 @@ function Body({ children, className }: BodyProps) {
   return (
     <div
       className={cn(
-        "flex-1 overflow-y-auto min-h-0",
+        "relative flex-1 overflow-y-auto min-h-0 ",
+        "bg-[linear-gradient(45deg,hsl(var(--border)/0.2)_12.5%,transparent_12.5%,transparent_50%,hsl(var(--border)/0.2)_50%,hsl(var(--border)/0.2)_62.5%,transparent_62.5%,transparent_100%)]",
+        "bg-size-[0.3rem_0.3rem]",
         className
       )}
     >
-      {children}
+      <div className="relative min-h-full">{children}</div>
     </div>
   );
 }

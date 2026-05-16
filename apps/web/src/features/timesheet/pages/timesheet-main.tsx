@@ -94,7 +94,7 @@ function TimesheetMainPage() {
     <PageContent.Root className="h-full min-h-0">
       <PageContent.Header title="Timesheets" className="sticky top-0 z-10" />
       <PageContent.Body className="min-h-0 overflow-hidden">
-        <div className="space-y-3 p-4">
+        <div className="space-y-3 p-4 bg-background">
           <TimesheetFilters
             search={search}
             selectedProjectId={selectedProjectId}

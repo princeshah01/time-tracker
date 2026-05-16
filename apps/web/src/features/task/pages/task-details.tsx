@@ -1,25 +1,52 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { toast } from "@workspace/ui/components/sonner";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { useAppSelector } from "@/app/store/hooks";
 import { AppIcon } from "@/shared/components/app-icon";
 import { PageContent } from "@/shared/components/page-content";
 import { permissions, QUERY_KEYS } from "@/shared/constants";
-import { hasPermission } from "@/shared/lib";
-import { TaskForm } from "../_components";
+import { formatDate, hasPermission } from "@/shared/lib";
+import { TaskForm, TaskStatusBadge } from "../_components";
 import { taskService } from "../service";
 import type { CreateTaskInput, UpdateTaskInput } from "../task.types";
 
+type TaskDetailsMode = "edit" | "view";
+type TaskDetailsLocationState = {
+  mode?: TaskDetailsMode;
+} | null;
+
 function TaskDetailsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams();
   const queryClient = useQueryClient();
   const taskId = Number(params.taskId);
   const userPermissions = useAppSelector((state) => state.user.permissions);
-  const canEditTask = hasPermission(userPermissions, [permissions.taskCreate]);
+  const canManageTask = hasPermission(userPermissions, [
+    permissions.taskManageAll,
+    permissions.taskManageOwn,
+  ]);
+  const locationState = location.state as TaskDetailsLocationState;
+  const [mode, setMode] = useState<TaskDetailsMode>("view");
+
+  useEffect(() => {
+    if (locationState?.mode === "edit" && canManageTask) {
+      setMode("edit");
+      return;
+    }
+
+    setMode("view");
+  }, [canManageTask, locationState?.mode, taskId]);
 
   const taskQuery = useQuery({
     queryKey: [QUERY_KEYS.TASK_DETAIL, taskId],
@@ -54,6 +81,7 @@ function TaskDetailsPage() {
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_DETAIL, task.id],
       });
+      setMode("view");
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -62,47 +90,111 @@ function TaskDetailsPage() {
 
   return (
     <PageContent.Root className="h-full min-h-0">
-      <PageContent.Header title="Edit Task" className="sticky top-0 z-10">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 text-[12px]"
-          onClick={() => navigate("/tasks")}
-        >
-          <AppIcon name="X" className="size-3.5" />
-          Close
-        </Button>
-      </PageContent.Header>
+      <PageContent.Header title="Task Details" className="sticky top-0 z-10" />
 
-      <PageContent.Body className="min-h-0 max-w-4xl overflow-y-auto border-r border-border">
-        {taskQuery.isLoading ? (
-          <TaskDetailsSkeleton />
-        ) : taskQuery.isError ? (
-          <TaskDetailsError onRetry={() => void taskQuery.refetch()} />
-        ) : taskQuery.data ? (
-          <section className="bg-background">
-            <div className="border-b p-4">
-              <h2 className="text-base font-semibold">
-                {taskQuery.data.title}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {taskQuery.data.project.name}
-              </p>
-            </div>
+      <PageContent.Body className="min-h-0 overflow-y-auto">
+        <div className="min-h-full max-w-4xl border-border border-r border-b bg-background">
+          {taskQuery.isLoading ? (
+            <TaskDetailsSkeleton />
+          ) : taskQuery.isError ? (
+            <TaskDetailsError onRetry={() => void taskQuery.refetch()} />
+          ) : taskQuery.data ? (
+            <>
+              <section className="border-b">
+                <div className="flex flex-col gap-3 p-4 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h2
+                        className="truncate text-base font-semibold"
+                        title={taskQuery.data.title}
+                      >
+                        {taskQuery.data.title}
+                      </h2>
+                      <TaskStatusBadge status={taskQuery.data.status} />
+                    </div>
+                    <p className="mt-1 truncate text-sm text-muted-foreground">
+                      {taskQuery.data.project.name}
+                    </p>
+                  </div>
 
-            <TaskForm
-              task={taskQuery.data}
-              mode="edit"
-              canSubmit={canEditTask}
-              isSubmitting={updateTaskMutation.isPending}
-              onCancel={() => navigate("/tasks")}
-              onSubmit={(input) => updateTaskMutation.mutate(input)}
-            />
-          </section>
-        ) : null}
+                  <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md bg-border text-[12px] md:min-w-72">
+                    <InfoTile label="Task ID" value={`#${taskQuery.data.id}`} />
+                    <InfoTile
+                      label="Created"
+                      value={formatDate(taskQuery.data.createdAt)}
+                    />
+                    <InfoTile
+                      label="Updated"
+                      value={formatDate(taskQuery.data.updatedAt)}
+                    />
+                    <InfoTile
+                      label="Owner"
+                      value={taskQuery.data.creator.name}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 border-border border-t py-2 pr-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[12px]"
+                    onClick={() => navigate("/tasks")}
+                  >
+                    <AppIcon name="ChevronLeft" className="size-3.5" />
+                    Back to list
+                  </Button>
+                  {mode === "view" && canManageTask ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label="Open task actions"
+                        >
+                          <AppIcon name="MoreHorizontal" className="size-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem
+                          className="gap-2 text-[12px]"
+                          onSelect={() => setMode("edit")}
+                        >
+                          <AppIcon name="Pencil" className="size-3.5" />
+                          Edit task
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : null}
+                </div>
+              </section>
+
+              <TaskForm
+                task={taskQuery.data}
+                mode={mode}
+                canSubmit={canManageTask}
+                isSubmitting={updateTaskMutation.isPending}
+                onCancel={() => setMode("view")}
+                onSubmit={(input) => updateTaskMutation.mutate(input)}
+              />
+            </>
+          ) : null}
+        </div>
       </PageContent.Body>
     </PageContent.Root>
+  );
+}
+
+function InfoTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 bg-background px-3 py-2">
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className="truncate text-[13px] font-medium" title={value}>
+        {value}
+      </div>
+    </div>
   );
 }
 

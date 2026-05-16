@@ -29,12 +29,12 @@ function ClientProjects({ projects }: ClientProjectsProps) {
       </div>
 
       {projects.length > 0 ? (
-        <div className="grid gap-px bg-border p-px md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-px bg-accent p-px md:grid-cols-2 xl:grid-cols-3">
           {projects.map((project) => (
             <button
               key={project.id}
               type="button"
-              className="min-w-0 bg-background p-4 text-left hover:bg-muted/40"
+              className="min-w-0 bg-background hover:bg-background/40 p-4 text-left"
               onClick={() => navigate(`/projects/${project.id}`)}
             >
               <div className="flex items-start justify-between gap-2">
@@ -64,10 +64,7 @@ function ClientProjects({ projects }: ClientProjectsProps) {
         </div>
       ) : (
         <div className="flex min-h-40 flex-col items-center justify-center px-4 text-center">
-          <AppIcon
-            name="Inbox"
-            className="mb-2 size-9 text-muted-foreground"
-          />
+          <AppIcon name="Inbox" className="mb-2 size-9 text-muted-foreground" />
           <div className="text-[13px] font-medium">No projects found</div>
           <p className="mt-1 max-w-sm text-[12px] text-muted-foreground">
             Projects connected to this client will appear here.

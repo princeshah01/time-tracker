@@ -265,27 +265,23 @@ export class TimesheetsService {
     );
     const targetUserId = input.userId ?? requesterId;
 
-    const selectableUsers = this.getVisibleSheetUsers({
-      timesheet,
-      requesterId,
-      visibility,
-    });
-    const visibleTargetUsers = this.resolveVisibleSheetUsers({
-      requesterId,
-      visibility,
-      visibleUsers: selectableUsers,
-      selectedUserId: targetUserId,
-    });
-
-    if (
-      targetUserId !== requesterId &&
-      !visibleTargetUsers.some((user) => user.id === targetUserId)
-    ) {
+    if (targetUserId !== requesterId) {
       throw new AppError({
         message: "You can only fill your own timesheet rows",
         code: "FORBIDDEN",
       });
     }
+
+    this.resolveVisibleSheetUsers({
+      requesterId,
+      visibility,
+      visibleUsers: this.getVisibleSheetUsers({
+        timesheet,
+        requesterId,
+        visibility,
+      }),
+      selectedUserId: targetUserId,
+    });
 
     const targetUser = timesheet.users.find((user) => user.id === targetUserId);
 

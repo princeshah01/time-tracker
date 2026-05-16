@@ -16,12 +16,14 @@ const rolesRouter = Router();
 
 rolesRouter.use(requireAuth);
 
-rolesRouter.get("/", 
+rolesRouter.get(
+  "/",
   requirePermission(permissionKeys.roleView),
-  validate(listRolesSchema), 
-  rolesController.list);
+  validate(listRolesSchema),
+  rolesController.list
+);
 
-// TODO: need to have based on Role Level,  
+// TODO: need to have based on Role Level,
 rolesRouter.get("/assignable", rolesController.listAssignable);
 
 rolesRouter.get(
@@ -31,16 +33,20 @@ rolesRouter.get(
   rolesController.listPermissions
 );
 
-rolesRouter.get("/:roleId", 
+rolesRouter.get(
+  "/:roleId",
   requirePermission(permissionKeys.roleView),
-  validate(roleIdParamSchema), 
-  rolesController.view);
+  validate(roleIdParamSchema),
+  rolesController.view
+);
 
-rolesRouter.post("/", 
+rolesRouter.post(
+  "/",
   requirePermission(permissionKeys.roleManage),
-  validate(createRoleSchema), 
-  rolesController.create);
-  
+  validate(createRoleSchema),
+  rolesController.create
+);
+
 rolesRouter.patch(
   "/:roleId",
   requirePermission(permissionKeys.roleManage),

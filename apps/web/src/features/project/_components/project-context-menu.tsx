@@ -46,37 +46,37 @@ function ProjectContextMenu({
         View project
       </button>
 
-     {canManage && (
-      <>
-      <button
-        type="button"
-        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] hover:bg-accent disabled:opacity-50"
-        disabled={!canManage}
-        onClick={() => {
-          onEdit(project);
-          setMenuState(null);
-        }}
-      >
-        <AppIcon name="Pencil" className="size-3.5" />
-        Edit project
-      </button>
+      {canManage && (
+        <>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] hover:bg-accent disabled:opacity-50"
+            disabled={!canManage}
+            onClick={() => {
+              onEdit(project);
+              setMenuState(null);
+            }}
+          >
+            <AppIcon name="Pencil" className="size-3.5" />
+            Edit project
+          </button>
 
-      <button
-        type="button"
-        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] hover:bg-accent disabled:opacity-50"
-        disabled={!canManage}
-        onClick={() => {
-          onToggleStatus(project);
-          setMenuState(null);
-        }}
-      >
-        <AppIcon
-          name={project.isActive ? "CircleOff" : "CheckCircle2"}
-          className="size-3.5"
-        />
-        {project.isActive ? "Disable project" : "Activate project"}
-      </button>
-      </>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] hover:bg-accent disabled:opacity-50"
+            disabled={!canManage}
+            onClick={() => {
+              onToggleStatus(project);
+              setMenuState(null);
+            }}
+          >
+            <AppIcon
+              name={project.isActive ? "CircleOff" : "CheckCircle2"}
+              className="size-3.5"
+            />
+            {project.isActive ? "Disable project" : "Activate project"}
+          </button>
+        </>
       )}
     </div>
   );

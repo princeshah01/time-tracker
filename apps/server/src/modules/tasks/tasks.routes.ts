@@ -37,7 +37,10 @@ tasksRouter.get(
 
 tasksRouter.patch(
   "/:taskId",
-  requirePermission(permissionKeys.taskCreate),
+  requirePermission([
+    permissionKeys.taskManageAll,
+    permissionKeys.taskManageOwn,
+  ]),
   validate(updateTaskSchema),
   tasksController.update
 );

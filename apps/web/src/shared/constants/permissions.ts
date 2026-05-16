@@ -27,6 +27,8 @@ const permissions = {
   taskViewAll: "task:view:all",
   taskViewOwn: "task:view:own",
   taskCreate: "task:create",
+  taskManageAll: "task:manage:all",
+  taskManageOwn: "task:manage:own",
   // Timesheet management permissions
   timesheetViewAll: "timesheet:view:all",
   timesheetViewOwn: "timesheet:view:own",

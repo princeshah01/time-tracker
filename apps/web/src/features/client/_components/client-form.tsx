@@ -43,7 +43,7 @@ export type ClientFormValues = z.infer<typeof clientFormSchema>;
 
 type ClientFormProps = {
   client?: ClientDetail | null;
-  mode: "create" | "edit";
+  mode: "create" | "edit" | "view";
   canSubmit: boolean;
   isSubmitting: boolean;
   onCancel: () => void;
@@ -85,6 +85,8 @@ function ClientForm({
   onCancel,
   onSubmit,
 }: ClientFormProps) {
+  const readOnly = mode === "view";
+  const disabled = readOnly || !canSubmit || isSubmitting;
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
     defaultValues: toFormValues(client),
@@ -95,6 +97,7 @@ function ClientForm({
   }, [client, form]);
 
   function handleSubmit(values: ClientFormValues) {
+    if (readOnly) return;
     onSubmit(toPayload(values));
   }
 
@@ -111,16 +114,16 @@ function ClientForm({
             render={({ field }) => (
               <FormItem>
                 <div className="flex flex-col gap-2">
-                <FormLabel className="text-[12px]">Client name</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    className="h-8 text-[13px]"
-                    placeholder="Acme Operations"
-                    disabled={!canSubmit || isSubmitting}
-                  />
-                </FormControl>
-                <FormMessage className="text-[12px]" />
+                  <FormLabel className="text-[12px]">Client name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      className="h-8 text-[13px]"
+                      placeholder="Acme Operations"
+                      disabled={disabled}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-[12px]" />
                 </div>
               </FormItem>
             )}
@@ -139,7 +142,7 @@ function ClientForm({
                       className="h-8 text-[13px]"
                       placeholder="Acme Inc"
                       required
-                      disabled={!canSubmit || isSubmitting}
+                      disabled={disabled}
                     />
                   </FormControl>
                   <FormMessage className="text-[12px]" />
@@ -160,7 +163,7 @@ function ClientForm({
                       {...field}
                       className="h-8 text-[13px]"
                       placeholder="client@company.com"
-                      disabled={!canSubmit || isSubmitting}
+                      disabled={disabled}
                     />
                   </FormControl>
                   <FormMessage className="text-[12px]" />
@@ -181,7 +184,7 @@ function ClientForm({
                       {...field}
                       className="h-8 text-[13px]"
                       placeholder="+1 555 0100"
-                      disabled={!canSubmit || isSubmitting}
+                      disabled={disabled}
                     />
                   </FormControl>
                   <FormMessage className="text-[12px]" />
@@ -198,16 +201,16 @@ function ClientForm({
                 <div className="flex flex-col gap-2">
                   <FormLabel className="text-[12px]">Status</FormLabel>
                   <div className="flex h-8 items-center justify-between rounded-md border px-3">
-                  <span className="text-[13px]">
-                    {field.value ? "Active" : "Inactive"}
-                  </span>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={!canSubmit || isSubmitting}
-                    />
-                  </FormControl>
+                    <span className="text-[13px]">
+                      {field.value ? "Active" : "Inactive"}
+                    </span>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={disabled}
+                      />
+                    </FormControl>
                   </div>
                   <FormMessage className="text-[12px]" />
                 </div>
@@ -229,7 +232,7 @@ function ClientForm({
                       {...field}
                       className="min-h-24 resize-none text-[13px]"
                       placeholder="Billing or office address"
-                      disabled={!canSubmit || isSubmitting}
+                      disabled={disabled}
                     />
                   </FormControl>
                   <FormMessage className="text-[12px]" />
@@ -239,30 +242,32 @@ function ClientForm({
           />
         </section>
 
-        <footer className="flex justify-end gap-2 p-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 text-[12px]"
-            disabled={isSubmitting}
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            size="sm"
-            className="h-8 text-[12px]"
-            disabled={!canSubmit || isSubmitting}
-          >
-            {isSubmitting
-              ? "Saving..."
-              : mode === "create"
-                ? "Create client"
-                : "Save changes"}
-          </Button>
-        </footer>
+        {mode !== "view" ? (
+          <footer className="flex justify-end gap-2 p-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-[12px]"
+              disabled={isSubmitting}
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className="h-8 text-[12px]"
+              disabled={!canSubmit || isSubmitting}
+            >
+              {isSubmitting
+                ? "Saving..."
+                : mode === "create"
+                  ? "Create client"
+                  : "Save changes"}
+            </Button>
+          </footer>
+        ) : null}
       </form>
     </Form>
   );

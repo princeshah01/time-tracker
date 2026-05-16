@@ -12,7 +12,13 @@ import {
 } from "drizzle-orm";
 
 import { db } from "@/db";
-import { clients, projectTeamMembers, projects, tasks, user } from "@/db/schema";
+import {
+  clients,
+  projectTeamMembers,
+  projects,
+  tasks,
+  user,
+} from "@/db/schema";
 import type { AccessScope } from "@/shared/types";
 import type {
   CreateProjectInput,

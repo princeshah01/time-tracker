@@ -132,32 +132,33 @@ function ProjectMainPage() {
 
   return (
     <PageContent.Root className="h-full min-h-0">
-      <PageContent.Header title="Projects" className="sticky top-0 z-10"/>
+      <PageContent.Header title="Projects" className="sticky top-0 z-10" />
       <PageContent.Body className="min-h-0 overflow-y-auto">
-        <div className="space-y-4 p-4">
+        <div className="space-y-4 p-4 bg-background">
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
-
-          <ProjectFilters
-            search={search}
-            status={status}
-            priority={priority}
-            billingType={billingType}
-            onSearchChange={setSearch}
-            onStatusChange={setStatus}
-            onPriorityChange={setPriority}
-            onBillingTypeChange={setBillingType}
+            <ProjectFilters
+              search={search}
+              status={status}
+              priority={priority}
+              billingType={billingType}
+              onSearchChange={setSearch}
+              onStatusChange={setStatus}
+              onPriorityChange={setPriority}
+              onBillingTypeChange={setBillingType}
             />
-        <PermissionsWrapper requiredPermissions={[permissions.projectCreate]}>
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 text-[12px]"
-            onClick={() => navigate("/project/new")}
-          >
-            <AppIcon name="Plus" className="size-3.5" />
-            Add Project
-          </Button>
-        </PermissionsWrapper>
-            </div>
+            <PermissionsWrapper
+              requiredPermissions={[permissions.projectCreate]}
+            >
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 text-[12px]"
+                onClick={() => navigate("/project/new")}
+              >
+                <AppIcon name="Plus" className="size-3.5" />
+                Add Project
+              </Button>
+            </PermissionsWrapper>
+          </div>
           <ProjectTable
             data={projectsQuery.data}
             isLoading={projectsQuery.isLoading}

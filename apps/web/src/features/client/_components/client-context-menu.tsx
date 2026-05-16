@@ -7,6 +7,7 @@ type ClientContextMenuProps = {
   canManage: boolean;
   setMenuState: (state: ClientMenuState) => void;
   onView: (client: ClientListItem) => void;
+  onEdit: (client: ClientListItem) => void;
   onToggleStatus: (client: ClientListItem) => void;
 };
 
@@ -15,6 +16,7 @@ function ClientContextMenu({
   canManage,
   setMenuState,
   onView,
+  onEdit,
   onToggleStatus,
 }: ClientContextMenuProps) {
   const menuRef = useDismiss<HTMLDivElement>({
@@ -40,9 +42,24 @@ function ClientContextMenu({
           setMenuState(null);
         }}
       >
-        <AppIcon name="Pencil" className="size-3.5" />
-        View and edit
+        <AppIcon name="Eye" className="size-3.5" />
+        View client
       </button>
+
+      {canManage ? (
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] hover:bg-accent disabled:opacity-50"
+          disabled={!canManage}
+          onClick={() => {
+            onEdit(client);
+            setMenuState(null);
+          }}
+        >
+          <AppIcon name="Pencil" className="size-3.5" />
+          Edit client
+        </button>
+      ) : null}
 
       <button
         type="button"

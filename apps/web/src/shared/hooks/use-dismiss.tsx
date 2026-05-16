@@ -19,10 +19,7 @@ function useDismiss<T extends HTMLElement>({
     if (!enabled) return;
 
     function handleClickOutside(event: MouseEvent) {
-      if (
-        ref.current &&
-        !ref.current.contains(event.target as Node)
-      ) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
         onDismiss();
       }
     }

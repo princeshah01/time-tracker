@@ -152,7 +152,7 @@ export const SettingsBody = () => {
   return (
     <Tabs
       value={activeTab}
-      className="flex h-full min-h-0 flex-col md:flex-row"
+      className="flex h-full min-h-[calc(100vh-45px)] bg-background flex-col md:flex-row"
       onValueChange={handleTabChange}
     >
       <aside className="shrink-0 border-b bg-background md:w-42 md:border-b-0 md:border-r">

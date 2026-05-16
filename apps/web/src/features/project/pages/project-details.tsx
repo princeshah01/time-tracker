@@ -9,6 +9,12 @@ import { permissions, QUERY_KEYS } from "@/shared/constants";
 import { formatDate, hasPermission } from "@/shared/lib";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { toast } from "@workspace/ui/components/sonner";
 import { cn } from "@workspace/ui/lib/utils";
@@ -42,7 +48,7 @@ function ProjectDetailsPage() {
   const locationState = location.state as ProjectDetailsLocationState;
   const [mode, setMode] = useState<ProjectDetailsMode>("view");
   const [pendingInput, setPendingInput] = useState<UpdateProjectInput | null>(
-    null,
+    null
   );
   const [pendingBillingInput, setPendingBillingInput] =
     useState<UpdateProjectBillingInput | null>(null);
@@ -77,7 +83,7 @@ function ProjectDetailsPage() {
     mutationFn: async (input: CreateProjectInput | UpdateProjectInput) => {
       const response = await projectService.updateProject(
         projectId,
-        input as UpdateProjectInput,
+        input as UpdateProjectInput
       );
 
       if (!response.success || !response.data) {
@@ -104,7 +110,7 @@ function ProjectDetailsPage() {
     mutationFn: async (input: UpdateProjectBillingInput) => {
       const response = await projectService.updateProjectBilling(
         projectId,
-        input,
+        input
       );
 
       if (!response.success || !response.data) {
@@ -134,124 +140,145 @@ function ProjectDetailsPage() {
         title="Project Details"
         className="sticky top-0 z-10"
       />
-      <PageContent.Body className="min-h-0 overflow-y-auto border-border border-r max-w-4xl">
-        {projectQuery.isLoading ? (
-          <ProjectDetailsSkeleton />
-        ) : projectQuery.isError ? (
-          <ProjectDetailsError onRetry={() => void projectQuery.refetch()} />
-        ) : project ? (
-          <div className="bg-background">
-            <section className="border-b">
-              <>
-                <div className="flex flex-col gap-3 p-4 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h2
-                        className="truncate text-base font-semibold"
-                        title={project.name}
-                      >
-                        {project.name}
-                      </h2>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "rounded-md text-[10px]",
-                          project.isActive
-                            ? "border-success bg-success/10 text-success"
-                            : "border-muted bg-muted text-muted-foreground",
-                        )}
-                      >
-                        {project.isActive ? "Active" : "Inactive"}
-                      </Badge>
+      <PageContent.Body className="min-h-0 overflow-y-auto">
+        <div className="min-h-full max-w-4xl border-border border-r border-b bg-background">
+          {projectQuery.isLoading ? (
+            <ProjectDetailsSkeleton />
+          ) : projectQuery.isError ? (
+            <ProjectDetailsError onRetry={() => void projectQuery.refetch()} />
+          ) : project ? (
+            <>
+              <section className="border-b">
+                <>
+                  <div className="flex flex-col gap-3 p-4 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h2
+                          className="truncate text-base font-semibold"
+                          title={project.name}
+                        >
+                          {project.name}
+                        </h2>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "rounded-md text-[10px]",
+                            project.isActive
+                              ? "border-success bg-success/10 text-success"
+                              : "border-muted bg-muted text-muted-foreground"
+                          )}
+                        >
+                          {project.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 truncate text-sm text-muted-foreground">
+                        {project.client.name}
+                      </p>
                     </div>
-                    <p className="mt-1 truncate text-sm text-muted-foreground">
-                      {project.client.name}
-                    </p>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md bg-border text-[12px] md:min-w-72">
-                    <InfoTile
-                      label="Billing"
-                      value={
-                        project.billingType === "fixed_bill"
-                          ? "Fixed bill"
-                          : "Hours worked"
-                      }
-                    />
-                    <InfoTile label="Priority" value={project.priority} />
-                    <InfoTile
-                      label="Created"
-                      value={formatDate(project.createdAt)}
-                    />
-                    <InfoTile
-                      label="Updated"
-                      value={formatDate(project.updatedAt)}
-                    />
+                    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md bg-border text-[12px] md:min-w-72">
+                      <InfoTile
+                        label="Billing"
+                        value={
+                          project.billingType === "fixed_bill"
+                            ? "Fixed bill"
+                            : "Hours worked"
+                        }
+                      />
+                      <InfoTile label="Priority" value={project.priority} />
+                      <InfoTile
+                        label="Created"
+                        value={formatDate(project.createdAt)}
+                      />
+                      <InfoTile
+                        label="Updated"
+                        value={formatDate(project.updatedAt)}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-end gap-2 py-2 pr-4 border-t border-border">
-                  {mode === "view" && (canManageProject || canManageFinance) ? (
+                  <div className="flex justify-end gap-2 py-2 pr-4 border-t border-border">
                     <Button
                       type="button"
+                      variant="outline"
                       size="sm"
                       className="h-8 text-[12px]"
-                      onClick={() => setMode("edit")}
+                      onClick={() => navigate("/project")}
                     >
-                      <AppIcon name="Pencil" className="size-3.5" />
-                      Edit
+                      <AppIcon name="ChevronLeft" className="size-3.5" />
+                      Back to list
                     </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-[12px]"
-                    onClick={() => navigate("/project")}
-                  >
-                    <AppIcon name="ChevronLeft" className="size-3.5" />
-                    Back to list
-                  </Button>
-                </div>
-              </>
-            </section>
-            <ProjectForm
-              project={project}
-              mode={mode}
-              canSubmit={canManageProject}
-              canManageFinance={canManageFinance}
-              isSubmitting={updateProjectMutation.isPending}
-              isBillingSubmitting={updateBillingMutation.isPending}
-              onCancel={() => setMode("view")}
-              onSubmit={(input) => setPendingInput(input as UpdateProjectInput)}
-              onBillingSubmit={setPendingBillingInput}
-            />
-          </div>
-        ) : null}
+                    {mode === "view" &&
+                    (canManageProject || canManageFinance) ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            aria-label="Open project actions"
+                          >
+                            <AppIcon
+                              name="MoreHorizontal"
+                              className="size-3.5"
+                            />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            className="gap-2 text-[12px]"
+                            onSelect={() => setMode("edit")}
+                          >
+                            <AppIcon name="Pencil" className="size-3.5" />
+                            Edit project
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
+                  </div>
+                </>
+              </section>
+              <ProjectForm
+                project={project}
+                mode={mode}
+                canSubmit={canManageProject}
+                canManageFinance={canManageFinance}
+                isSubmitting={updateProjectMutation.isPending}
+                isBillingSubmitting={updateBillingMutation.isPending}
+                onCancel={() => setMode("view")}
+                onSubmit={(input) =>
+                  setPendingInput(input as UpdateProjectInput)
+                }
+                onBillingSubmit={setPendingBillingInput}
+              />
+            </>
+          ) : null}
 
-        <ProjectSaveDialog
-          open={Boolean(pendingInput)}
-          isPending={updateProjectMutation.isPending}
-          mode="edit"
-          onOpenChange={(open) => {
-            if (!open) setPendingInput(null);
-          }}
-          onConfirm={() => {
-            if (pendingInput) updateProjectMutation.mutate(pendingInput);
-          }}
-        />
-        <ProjectSaveDialog
-          open={Boolean(pendingBillingInput)}
-          isPending={updateBillingMutation.isPending}
-          mode="edit"
-          onOpenChange={(open) => {
-            if (!open) setPendingBillingInput(null);
-          }}
-          onConfirm={() => {
-            if (pendingBillingInput) {
-              updateBillingMutation.mutate(pendingBillingInput);
-            }
-          }}
-        />
+          <ProjectSaveDialog
+            open={Boolean(pendingInput)}
+            isPending={updateProjectMutation.isPending}
+            mode="edit"
+            onOpenChange={(open) => {
+              if (!open) setPendingInput(null);
+            }}
+            onConfirm={() => {
+              if (pendingInput) updateProjectMutation.mutate(pendingInput);
+            }}
+          />
+          <ProjectSaveDialog
+            open={Boolean(pendingBillingInput)}
+            isPending={updateBillingMutation.isPending}
+            mode="edit"
+            onOpenChange={(open) => {
+              if (!open) setPendingBillingInput(null);
+            }}
+            onConfirm={() => {
+              if (pendingBillingInput) {
+                updateBillingMutation.mutate(pendingBillingInput);
+              }
+            }}
+          />
+        </div>
       </PageContent.Body>
     </PageContent.Root>
   );

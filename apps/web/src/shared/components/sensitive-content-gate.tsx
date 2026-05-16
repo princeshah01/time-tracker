@@ -128,7 +128,6 @@ function SensitiveContentGate({
     <section className="rounded-md border border-border bg-card text-card-foreground">
       <div className="border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <AppIcon name="Shield" className="size-4 text-muted-foreground" />
           <h2 className="text-[13px] font-medium">{title}</h2>
         </div>
         <p className="mt-1 text-[12px] text-muted-foreground">

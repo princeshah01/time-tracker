@@ -25,8 +25,9 @@ function TaskMainPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const userPermissions = useAppSelector((state) => state.user.permissions);
-  const canMutateTasks = hasPermission(userPermissions, [
-    permissions.taskCreate,
+  const canManageTasks = hasPermission(userPermissions, [
+    permissions.taskManageAll,
+    permissions.taskManageOwn,
   ]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -120,7 +121,6 @@ function TaskMainPage() {
   });
 
   function editTask(task: TaskListItem) {
-    if (!canMutateTasks) return;
     navigate(`/tasks/${task.id}`);
   }
 
@@ -128,7 +128,7 @@ function TaskMainPage() {
     <PageContent.Root className="h-full min-h-0">
       <PageContent.Header title="Tasks" className="sticky top-0 z-10" />
       <PageContent.Body className="min-h-0 overflow-y-auto">
-        <div className="space-y-4 p-4">
+        <div className="space-y-4 p-4 bg-background">
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
             <TaskFilters
               search={search}
@@ -160,7 +160,7 @@ function TaskMainPage() {
             isFetchingNextPage={tasksQuery.isFetchingNextPage}
             fetchNextPage={() => void tasksQuery.fetchNextPage()}
             setRowLimit={setRowLimit}
-            canMutate={canMutateTasks}
+            canMutate={canManageTasks}
             updatingTaskId={updateStatusMutation.variables?.task.id ?? null}
             updatingStatus={updateStatusMutation.isPending}
             onEdit={editTask}

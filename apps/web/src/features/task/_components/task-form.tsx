@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Textarea } from "@workspace/ui/components/textarea";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -41,7 +42,7 @@ type TaskFormValues = z.infer<typeof taskFormSchema>;
 
 type TaskFormProps = {
   task?: TaskDetail | null;
-  mode: "create" | "edit";
+  mode: "create" | "edit" | "view";
   canSubmit: boolean;
   isSubmitting: boolean;
   onCancel: () => void;
@@ -65,10 +66,16 @@ function TaskForm({
   onCancel,
   onSubmit,
 }: TaskFormProps) {
+  const readOnly = mode === "view";
+  const disabled = readOnly || !canSubmit || isSubmitting;
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: toFormValues(task),
   });
+
+  useEffect(() => {
+    form.reset(toFormValues(task));
+  }, [form, task]);
 
   const projectsQuery = useQuery({
     queryKey: [QUERY_KEYS.PROJECTS, "task-form-projects"],
@@ -88,6 +95,8 @@ function TaskForm({
   });
 
   function handleSubmit(values: TaskFormValues) {
+    if (readOnly) return;
+
     const payload = {
       title: values.title.trim(),
       description: values.description?.trim() || null,
@@ -108,7 +117,7 @@ function TaskForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <section className="grid gap-4 border-b p-4 md:grid-cols-2">
+        <section className="grid gap-4 p-4 md:grid-cols-2">
           <FormField
             control={form.control}
             name="projectId"
@@ -118,7 +127,7 @@ function TaskForm({
                 <Select
                   value={field.value ? String(field.value) : ""}
                   onValueChange={(value) => field.onChange(Number(value))}
-                  disabled={mode === "edit" || isSubmitting}
+                  disabled={mode !== "create" || disabled}
                 >
                   <FormControl>
                     <SelectTrigger className="h-8 text-[13px]">
@@ -147,7 +156,7 @@ function TaskForm({
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
-                  disabled={isSubmitting}
+                  disabled={disabled}
                 >
                   <FormControl>
                     <SelectTrigger className="h-8 text-[13px]">
@@ -168,7 +177,7 @@ function TaskForm({
           />
         </section>
 
-        <section className="space-y-4 border-b p-4">
+        <section className="space-y-4 p-4">
           <FormField
             control={form.control}
             name="title"
@@ -179,7 +188,7 @@ function TaskForm({
                   <Input
                     {...field}
                     className="h-8 text-[13px]"
-                    disabled={isSubmitting}
+                    disabled={disabled}
                   />
                 </FormControl>
                 <FormMessage className="text-[12px]" />
@@ -197,7 +206,7 @@ function TaskForm({
                   <Textarea
                     {...field}
                     className="min-h-28 resize-none text-[13px]"
-                    disabled={isSubmitting}
+                    disabled={disabled}
                   />
                 </FormControl>
                 <FormMessage className="text-[12px]" />
@@ -206,30 +215,32 @@ function TaskForm({
           />
         </section>
 
-        <footer className="flex justify-end gap-2 p-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 text-[12px]"
-            disabled={isSubmitting}
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            size="sm"
-            className="h-8 text-[12px]"
-            disabled={!canSubmit || isSubmitting}
-          >
-            {isSubmitting
-              ? "Saving..."
-              : mode === "create"
-                ? "Create task"
-                : "Save changes"}
-          </Button>
-        </footer>
+        {mode !== "view" ? (
+          <footer className="flex justify-end gap-2 p-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-[12px]"
+              disabled={isSubmitting}
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className="h-8 text-[12px]"
+              disabled={!canSubmit || isSubmitting}
+            >
+              {isSubmitting
+                ? "Saving..."
+                : mode === "create"
+                  ? "Create task"
+                  : "Save changes"}
+            </Button>
+          </footer>
+        ) : null}
       </form>
     </Form>
   );

@@ -47,21 +47,21 @@ function CreateTimesheetPage() {
       />
       <PageContent.Body className="min-h-0 max-w-4xl border-r border-border overflow-y-auto">
         <div className="flex flex-col">
-       <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1.5 m-2 text-[12px] self-end"
-          onClick={() => navigate("/timesheet")}
-        >
-          <AppIcon name="ChevronLeft" className="size-3.5" />
-          Back
-        </Button>
-        <TimesheetForm
-          mode="create"
-          isSubmitting={createTimesheetMutation.isPending}
-          onCancel={() => navigate("/timesheet")}
-          onSubmit={(input) => createTimesheetMutation.mutate(input)}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 m-2 text-[12px] self-end"
+            onClick={() => navigate("/timesheet")}
+          >
+            <AppIcon name="ChevronLeft" className="size-3.5" />
+            Back
+          </Button>
+          <TimesheetForm
+            mode="create"
+            isSubmitting={createTimesheetMutation.isPending}
+            onCancel={() => navigate("/timesheet")}
+            onSubmit={(input) => createTimesheetMutation.mutate(input)}
           />
         </div>
       </PageContent.Body>

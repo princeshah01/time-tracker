@@ -558,6 +558,7 @@ function ProjectForm({
                 rows={teamRows}
                 selectedUserIds={selectedUserIds}
                 disabled={projectReadOnly || isSubmitting}
+                showActions={!projectReadOnly}
                 onAddRow={addRow}
                 onRemoveRow={removeRow}
                 onRoleChange={changeRowRole}
@@ -787,6 +788,7 @@ function TeamTable({
   rows,
   selectedUserIds,
   disabled,
+  showActions,
   onAddRow,
   onRemoveRow,
   onRoleChange,
@@ -795,6 +797,7 @@ function TeamTable({
   rows: ProjectFormValues["teamRows"];
   selectedUserIds: string[];
   disabled?: boolean;
+  showActions: boolean;
   onAddRow: () => void;
   onRemoveRow: (rowId: string) => void;
   onRoleChange: (rowId: string, role: ProjectTeamRole) => void;
@@ -806,31 +809,43 @@ function TeamTable({
   ];
   return (
     <div className="relative h-fit overflow-visible rounded-md border">
-      <div className="grid grid-cols-[150px_1fr_40px] rounded-t-md border-b bg-muted/40 px-3 py-2 text-[12px] font-medium md:grid-cols-[170px_1fr_48px]">
+      <div
+        className={
+          showActions
+            ? "grid grid-cols-[150px_1fr_40px] rounded-t-md border-b bg-muted/40 px-3 py-2 text-[12px] font-medium md:grid-cols-[170px_1fr_48px]"
+            : "grid grid-cols-[150px_1fr] rounded-t-md border-b bg-muted/40 px-3 py-2 text-[12px] font-medium md:grid-cols-[170px_1fr]"
+        }
+      >
         <div>Role</div>
         <div>User</div>
-        <div className="flex justify-end">
-          <PermissionsWrapper
-            requiredPermissions={canManageProjectReqPermissions}
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              disabled={disabled}
-              onClick={onAddRow}
+        {showActions ? (
+          <div className="flex justify-end">
+            <PermissionsWrapper
+              requiredPermissions={canManageProjectReqPermissions}
             >
-              <AppIcon name="Plus" className="size-3.5" />
-            </Button>
-          </PermissionsWrapper>
-        </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                disabled={disabled}
+                onClick={onAddRow}
+              >
+                <AppIcon name="Plus" className="size-3.5" />
+              </Button>
+            </PermissionsWrapper>
+          </div>
+        ) : null}
       </div>
 
       {rows.map((row) => (
         <div
           key={row.rowId}
-          className="relative grid grid-cols-[150px_1fr_40px] items-start gap-2 border-b bg-background px-3 py-2 last:rounded-b-md last:border-b-0 focus-within:z-30 md:grid-cols-[170px_1fr_48px]"
+          className={
+            showActions
+              ? "relative grid grid-cols-[150px_1fr_40px] items-start gap-2 border-b bg-background px-3 py-2 last:rounded-b-md last:border-b-0 focus-within:z-30 md:grid-cols-[170px_1fr_48px]"
+              : "relative grid grid-cols-[150px_1fr] items-start gap-2 border-b bg-background px-3 py-2 last:rounded-b-md last:border-b-0 focus-within:z-30 md:grid-cols-[170px_1fr]"
+          }
         >
           <Select
             value={row.role}
@@ -871,22 +886,24 @@ function TeamTable({
               </div>
             ) : null}
           </div>
-          <PermissionsWrapper
-            requiredPermissions={canManageProjectReqPermissions}
-          >
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                disabled={disabled || rows.length <= 1}
-                onClick={() => onRemoveRow(row.rowId)}
-              >
-                <AppIcon name="X" className="size-3.5" />
-              </Button>
-            </div>
-          </PermissionsWrapper>
+          {showActions ? (
+            <PermissionsWrapper
+              requiredPermissions={canManageProjectReqPermissions}
+            >
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  disabled={disabled || rows.length <= 1}
+                  onClick={() => onRemoveRow(row.rowId)}
+                >
+                  <AppIcon name="X" className="size-3.5" />
+                </Button>
+              </div>
+            </PermissionsWrapper>
+          ) : null}
         </div>
       ))}
     </div>

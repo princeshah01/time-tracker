@@ -108,29 +108,39 @@ function ClientMainPage() {
     },
   });
 
+  function viewClient(client: ClientListItem) {
+    navigate(`/clients/${client.id}`);
+  }
+
+  function editClient(client: ClientListItem) {
+    navigate(`/clients/${client.id}`, { state: { mode: "edit" } });
+  }
+
   return (
     <PageContent.Root className="h-full min-h-0">
-      <PageContent.Header title="Clients" className="sticky top-0 z-10"/>
+      <PageContent.Header title="Clients" className="sticky top-0 z-10" />
       <PageContent.Body className="min-h-0 overflow-y-auto">
-        <div className="space-y-4 p-4">
-        <div className="flex items-center justify-between">
-          <ClientFilters
-            search={search}
-            status={status}
-            onSearchChange={setSearch}
-            onStatusChange={setStatus}
-          />
-        <PermissionsWrapper requiredPermissions={[permissions.clientCreate]}>
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 text-[12px]"
-            onClick={() => navigate("/clients/new")}
-          >
-            <AppIcon name="Plus" className="size-3.5" />
-            Add Client
-          </Button>
-        </PermissionsWrapper>
-        </div>
+        <div className="space-y-4 p-4 bg-background">
+          <div className="flex items-center justify-between">
+            <ClientFilters
+              search={search}
+              status={status}
+              onSearchChange={setSearch}
+              onStatusChange={setStatus}
+            />
+            <PermissionsWrapper
+              requiredPermissions={[permissions.clientCreate]}
+            >
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 text-[12px]"
+                onClick={() => navigate("/clients/new")}
+              >
+                <AppIcon name="Plus" className="size-3.5" />
+                Add Client
+              </Button>
+            </PermissionsWrapper>
+          </div>
           <ClientTable
             data={clientsQuery.data}
             isLoading={clientsQuery.isLoading}
@@ -139,7 +149,7 @@ function ClientMainPage() {
             fetchNextPage={() => void clientsQuery.fetchNextPage()}
             setRowLimit={setRowLimit}
             canManage={canManageClients}
-            onOpen={(client) => navigate(`/clients/${client.id}`)}
+            onOpen={viewClient}
             onToggleStatus={setStatusClient}
             setMenuState={setMenuState}
           />
@@ -149,7 +159,8 @@ function ClientMainPage() {
           menuState={menuState}
           canManage={canManageClients}
           setMenuState={setMenuState}
-          onView={(client) => navigate(`/clients/${client.id}`)}
+          onView={viewClient}
+          onEdit={editClient}
           onToggleStatus={setStatusClient}
         />
 

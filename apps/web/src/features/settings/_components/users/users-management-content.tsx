@@ -150,13 +150,13 @@ function UsersManagementContent() {
         resetPasswordMutation={resetPasswordMutation}
       />
       <PermissionsWrapper requiredPermissions={[permissions.userInvite]}>
-      <UsersContextMenu
-        menuState={menuState}
-        setMenuState={setMenuState}
-        openEdit={setSelectedUser}
-        updateUserMutation={updateUserMutation}
-        resetPasswordMutation={resetPasswordMutation}
-      />
+        <UsersContextMenu
+          menuState={menuState}
+          setMenuState={setMenuState}
+          openEdit={setSelectedUser}
+          updateUserMutation={updateUserMutation}
+          resetPasswordMutation={resetPasswordMutation}
+        />
       </PermissionsWrapper>
       <PermissionsWrapper requiredPermissions={[permissions.profileView]}>
         <UserDetailDialog

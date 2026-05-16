@@ -261,7 +261,12 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   userRoles: many(userRoles),
   skills: many(userSkills),
-  salaryHistory: many(userSalaryHistory),
+  salaryHistory: many(userSalaryHistory, {
+    relationName: "salary_history_user",
+  }),
+  salaryHistoryCreatedBy: many(userSalaryHistory, {
+    relationName: "salary_history_created_by",
+  }),
   invitesSent: many(userInvites),
 }));
 
@@ -334,10 +339,12 @@ export const userSalaryHistoryRelations = relations(
     user: one(user, {
       fields: [userSalaryHistory.userId],
       references: [user.id],
+      relationName: "salary_history_user",
     }),
     createdByUser: one(user, {
       fields: [userSalaryHistory.createdBy],
       references: [user.id],
+      relationName: "salary_history_created_by",
     }),
   })
 );
