@@ -15,6 +15,8 @@ import {
 import { PageLoader } from "./loaders";
 import { userService } from "@/features/user/user.service";
 import { toast } from "@workspace/ui/components/sonner";
+import { NotificationDrawer } from "./notification-drawer";
+import { ThemeToggle } from "./theme-toggle";
 
 const AppLayout = () => {
   const [open, setOpen] = useState(false);
@@ -40,7 +42,12 @@ const AppLayout = () => {
     <div className="flex h-screen overflow-hidden">
       <AppSideBar items={sideBarItems} onLogout={handleLogout} />
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="fixed top-2 right-8 z-50 flex h-7 items-center gap-4">
+          <ThemeToggle />
+          <NotificationDrawer />
+        </div>
+
         <header className="sticky top-0 z-40 flex h-11 shrink-0 items-center justify-between border-b border-border bg-background px-3 md:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>

@@ -174,6 +174,13 @@ export class TimesheetsService {
           leaveDates: dates,
         })
       : [];
+    const selectedUserEntries = selectedUser
+      ? await this.timesheetsRepository.listSheetEntriesForRows({
+          timesheetId,
+          userIds: [selectedUser.id],
+          entryDates: dates,
+        })
+      : [];
     const entriesByKey = new Map<string, SheetEntryRecord[]>();
     const leaveByKey = new Map(
       selectedUserLeaves.map((leave) => [
@@ -214,6 +221,7 @@ export class TimesheetsService {
         ? this.buildSelectedSheetSummary({
             dates,
             user: selectedUser,
+            entries: selectedUserEntries,
             explicitLeaves: selectedUserLeaves,
             canVerify: this.canVerifyTimesheetUser({
               requesterId,
@@ -911,6 +919,7 @@ export class TimesheetsService {
   private buildSelectedSheetSummary(input: {
     dates: Date[];
     user: TimesheetUser;
+    entries: SheetEntryRecord[];
     explicitLeaves: SheetDayLeaveRecord[];
     canVerify: boolean;
   }) {
@@ -921,8 +930,25 @@ export class TimesheetsService {
     const explicitLeaveDays = input.explicitLeaves.filter(
       (leave) => !weekendDayKeys.has(this.toDateKey(leave.leaveDate))
     );
+    const explicitLeaveDayKeys = new Set(
+      explicitLeaveDays.map((leave) => this.toDateKey(leave.leaveDate))
+    );
+    const availableDayKeys = input.dates
+      .map((date) => this.toDateKey(date))
+      .filter(
+        (dateKey) =>
+          !weekendDayKeys.has(dateKey) && !explicitLeaveDayKeys.has(dateKey)
+      );
+    const filledDayKeys = new Set(
+      input.entries
+        .filter((entry) => (entry.minutesSpent ?? 0) > 0)
+        .map((entry) => this.toDateKey(entry.entryDate))
+    );
     const availableDays =
       input.dates.length - weekendDays.length - explicitLeaveDays.length;
+    const filledAvailableDays = availableDayKeys.filter((dateKey) =>
+      filledDayKeys.has(dateKey)
+    ).length;
 
     return {
       user: input.user,
@@ -930,6 +956,8 @@ export class TimesheetsService {
       weekendDays: weekendDays.length,
       explicitLeaveDays: explicitLeaveDays.length,
       availableDays,
+      filledAvailableDays,
+      unfilledAvailableDays: availableDays - filledAvailableDays,
       verification: {
         isVerified: Boolean(input.user.verifiedAt),
         verifiedAt: input.user.verifiedAt,

@@ -22,11 +22,13 @@ import {
   type LucideIcon,
   Mail,
   MoreHorizontal,
+  Moon,
   Pencil,
   Plus,
   Search,
   Settings,
   Shield,
+  Sun,
   Trash2,
   User,
   Users,
@@ -65,6 +67,8 @@ export const ICON_REGISTRY = {
   ChevronLeft,
   MoreHorizontal,
   FileSpreadsheet,
+  Moon,
+  Sun,
 } as const satisfies Record<string, LucideIcon>;
 
 export type AppIconName = keyof typeof ICON_REGISTRY;

@@ -107,6 +107,8 @@ export type ListTimesheetSheetsResponse = {
     weekendDays: number;
     explicitLeaveDays: number;
     availableDays: number;
+    filledAvailableDays: number;
+    unfilledAvailableDays: number;
     verification: TimesheetSheetRow["verification"];
   } | null;
   canManageAllUsers: boolean;

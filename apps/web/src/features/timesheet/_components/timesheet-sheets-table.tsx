@@ -92,6 +92,10 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
   const [editingRow, setEditingRow] = useState<TimesheetSheetRow | null>(null);
   const [leaveConfirmRow, setLeaveConfirmRow] =
     useState<TimesheetSheetRow | null>(null);
+  const [verificationConfirm, setVerificationConfirm] = useState<{
+    userId: string;
+    unfilledAvailableDays: number;
+  } | null>(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -255,6 +259,7 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
           ? "Timesheet sheet verified"
           : "Timesheet sheet verification removed"
       );
+      setVerificationConfirm(null);
       void queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TIMESHEET_SHEETS, timesheetId],
       });
@@ -314,12 +319,26 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
                 size="sm"
                 className="h-7 gap-1.5 text-[10px]"
                 disabled={verificationMutation.isPending}
-                onClick={() =>
+                onClick={() => {
+                  const nextIsVerified = !selectedSheet.verification.isVerified;
+
+                  if (
+                    nextIsVerified &&
+                    selectedSheet.unfilledAvailableDays > 0
+                  ) {
+                    setVerificationConfirm({
+                      userId: selectedSheet.user.id,
+                      unfilledAvailableDays:
+                        selectedSheet.unfilledAvailableDays,
+                    });
+                    return;
+                  }
+
                   verificationMutation.mutate({
                     userId: selectedSheet.user.id,
-                    isVerified: !selectedSheet.verification.isVerified,
-                  })
-                }
+                    isVerified: nextIsVerified,
+                  });
+                }}
               >
                 <AppIcon name="CheckCircle2" className="size-3" />
                 {selectedSheet.verification.isVerified
@@ -468,6 +487,53 @@ function TimesheetSheetsTable({ timesheetId }: TimesheetSheetsTableProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(verificationConfirm)}
+        onOpenChange={(open) => {
+          if (!open && !verificationMutation.isPending) {
+            setVerificationConfirm(null);
+          }
+        }}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[15px]">
+              Verify incomplete timesheet?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[13px]">
+              This sheet has {verificationConfirm?.unfilledAvailableDays ?? 0}{" "}
+              available{" "}
+              {(verificationConfirm?.unfilledAvailableDays ?? 0) === 1
+                ? "day"
+                : "days"}{" "}
+              without filled time entries. Weekly off and explicit leave days
+              are excluded from this count.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="h-8 text-[12px]"
+              disabled={verificationMutation.isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="h-8 text-[12px]"
+              disabled={verificationMutation.isPending || !verificationConfirm}
+              onClick={() => {
+                if (!verificationConfirm) return;
+                verificationMutation.mutate({
+                  userId: verificationConfirm.userId,
+                  isVerified: true,
+                });
+              }}
+            >
+              Verify anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
@@ -541,9 +607,10 @@ function TimesheetSheetDisplayRows({
             <TableCell className="px-3 py-2">
               <button
                 type="button"
-                className="flex min-h-7 w-full min-w-0 flex-col items-start gap-1 rounded-sm px-1 text-left hover:bg-muted/50 disabled:cursor-default disabled:hover:bg-transparent"
+                className="flex min-h-7 w-full min-w-0 flex-col items-start gap-1 rounded-sm px-1 text-left hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
                 disabled={!canEditRow}
                 onClick={onEdit}
+                title={canEditRow ? "Edit timesheet entry" : undefined}
               >
                 {row.isLeave ? (
                   <span className="text-[12px] text-muted-foreground">
