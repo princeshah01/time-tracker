@@ -1,4 +1,5 @@
 import { permissionsService } from "@/modules/permissions/permissions.service";
+import { notificationsService } from "@/modules/notifications/notifications.service";
 import { permissionKeys } from "@/shared/constants/role-permission";
 import type { AccessScope } from "@/shared/types";
 import { AppError } from "@/shared/utils";
@@ -41,6 +42,12 @@ export class ProjectsService {
         isOperational: false,
       });
     }
+
+    await notificationsService.notifyProjectAssigned({
+      projectId: project.id,
+      projectName: project.name,
+      userIds: teamMembers.map((member) => member.userId),
+    });
 
     return this.getProject(project.id, requesterId);
   }
@@ -87,6 +94,11 @@ export class ProjectsService {
   ) {
     const scope = await this.resolveManageScope(requesterId);
     await this.requireProjectAccess(projectId, requesterId, scope);
+    const existingTeamMembers =
+      await this.projectsRepository.listTeamMembers(projectId);
+    const existingTeamUserIds = new Set(
+      existingTeamMembers.map((member) => member.userId)
+    );
     if (input.clientId !== undefined) {
       await this.assertClientCanBeUsed(input.clientId);
     }
@@ -104,6 +116,24 @@ export class ProjectsService {
           ? undefined
           : this.normalizeTeamMembers(teamMembers),
     });
+
+    if (teamMembers !== undefined) {
+      const addedUserIds = teamMembers
+        .map((member) => member.userId)
+        .filter((userId) => !existingTeamUserIds.has(userId));
+
+      if (addedUserIds.length > 0) {
+        const project = await this.projectsRepository.findProjectById(
+          projectId
+        );
+
+        await notificationsService.notifyProjectAssigned({
+          projectId,
+          projectName: project?.name ?? "project",
+          userIds: addedUserIds,
+        });
+      }
+    }
 
     return this.getProject(projectId, requesterId);
   }

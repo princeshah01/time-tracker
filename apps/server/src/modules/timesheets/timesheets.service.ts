@@ -1,4 +1,5 @@
 import { permissionsService } from "@/modules/permissions/permissions.service";
+import { notificationsService } from "@/modules/notifications/notifications.service";
 import { permissionKeys } from "@/shared/constants/role-permission";
 import type { AccessScope } from "@/shared/types";
 import { AppError } from "@/shared/utils";
@@ -58,6 +59,12 @@ export class TimesheetsService {
       });
     }
 
+    await notificationsService.notifyTimesheetAssigned({
+      timesheetId: timesheet.id,
+      timesheetName: timesheet.timesheetName,
+      userIds: input.userIds,
+    });
+
     return this.getTimesheet(timesheet.id, requesterId);
   }
 
@@ -92,6 +99,9 @@ export class TimesheetsService {
       timesheetId,
       requesterId
     );
+    const existingUserIds = new Set(
+      timesheet.users.map((user) => user.id)
+    );
     const projectId = input.projectId ?? timesheet.projectId;
     const startDate = input.startDate ?? timesheet.startDate;
     const endDate = input.endDate ?? timesheet.endDate;
@@ -116,6 +126,20 @@ export class TimesheetsService {
       endDate,
       timesheetName: input.timesheetName?.trim(),
     });
+
+    if (input.userIds !== undefined) {
+      const addedUserIds = input.userIds.filter(
+        (userId) => !existingUserIds.has(userId)
+      );
+
+      if (addedUserIds.length > 0) {
+        await notificationsService.notifyTimesheetAssigned({
+          timesheetId,
+          timesheetName: input.timesheetName?.trim() ?? timesheet.timesheetName,
+          userIds: addedUserIds,
+        });
+      }
+    }
 
     return this.getTimesheet(timesheetId, requesterId);
   }

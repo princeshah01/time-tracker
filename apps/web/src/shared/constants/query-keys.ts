@@ -17,6 +17,8 @@ const QUERY_KEYS = {
   TIMESHEET_DETAIL: "timesheet-detail",
   TIMESHEET_SHEETS: "timesheet-sheets",
   TIMESHEET_TASK_SUGGESTIONS: "timesheet-task-suggestions",
+  NOTIFICATIONS: "notifications",
+  NOTIFICATION_UNREAD_COUNT: "notification-unread-count",
 };
 
 export { QUERY_KEYS };

@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -266,6 +267,83 @@ export const timesheetDayLeaves = pgTable(
   ]
 );
 
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    href: text("href"),
+    entityType: text("entity_type"),
+    entityId: text("entity_id"),
+    metadata: jsonb("metadata"),
+    isRead: boolean("is_read").default(false).notNull(),
+    readAt: timestamp("read_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("notifications_user_id_created_at_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+    index("notifications_user_id_is_read_idx").on(table.userId, table.isRead),
+  ]
+);
+
+export const notificationDeduplication = pgTable(
+  "notification_deduplication",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    dedupeKey: text("dedupe_key").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("notification_deduplication_user_dedupe_unique").on(
+      table.userId,
+      table.dedupeKey
+    ),
+    index("notification_deduplication_user_id_dedupe_key_idx").on(
+      table.userId,
+      table.dedupeKey
+    ),
+  ]
+);
+
+export const notificationDeliveries = pgTable(
+  "notification_deliveries",
+  {
+    id: serial("id").primaryKey(),
+    notificationId: integer("notification_id")
+      .notNull()
+      .references(() => notifications.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    channel: text("channel").notNull(),
+    status: text("status").notNull(),
+    error: text("error"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    sentAt: timestamp("sent_at"),
+  },
+  (table) => [
+    index("notification_deliveries_notification_id_idx").on(
+      table.notificationId
+    ),
+    index("notification_deliveries_user_id_idx").on(table.userId),
+  ]
+);
+
 export const clientsRelations = relations(clients, ({ one, many }) => ({
   createdByUser: one(user, {
     fields: [clients.createdBy],
@@ -377,6 +455,27 @@ export const timesheetDayLeavesRelations = relations(
     }),
     creator: one(user, {
       fields: [timesheetDayLeaves.createdBy],
+      references: [user.id],
+    }),
+  })
+);
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(user, {
+    fields: [notifications.userId],
+    references: [user.id],
+  }),
+}));
+
+export const notificationDeliveriesRelations = relations(
+  notificationDeliveries,
+  ({ one }) => ({
+    notification: one(notifications, {
+      fields: [notificationDeliveries.notificationId],
+      references: [notifications.id],
+    }),
+    user: one(user, {
+      fields: [notificationDeliveries.userId],
       references: [user.id],
     }),
   })
