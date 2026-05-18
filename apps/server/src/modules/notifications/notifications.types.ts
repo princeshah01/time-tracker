@@ -19,6 +19,7 @@ export type CreateNotificationInput = {
   entityType?: string | null;
   entityId?: string | null;
   metadata?: Record<string, unknown> | null;
+  dedupeKey?: string | null;
 };
 
 export type NotificationCursor = {

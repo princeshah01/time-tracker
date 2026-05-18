@@ -1,23 +1,17 @@
 import {
   and,
-  asc,
   count,
   desc,
   eq,
-  gt,
   gte,
-  inArray,
   lte,
   lt,
   or,
-  sql,
   sum,
 } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
-  notificationDeduplication,
-  notificationDeliveries,
   notifications,
   projects,
   projectTeamMembers,
@@ -30,6 +24,22 @@ import type {
   CreateNotificationInput,
   NotificationCursor,
 } from "./notifications.types";
+
+const notificationFields = {
+  id: notifications.id,
+  userId: notifications.userId,
+  type: notifications.type,
+  title: notifications.title,
+  description: notifications.description,
+  href: notifications.href,
+  entityType: notifications.entityType,
+  entityId: notifications.entityId,
+  metadata: notifications.metadata,
+  isRead: notifications.isRead,
+  readAt: notifications.readAt,
+  createdAt: notifications.createdAt,
+  updatedAt: notifications.updatedAt,
+};
 
 export class NotificationsRepository {
   async createNotification(input: CreateNotificationInput) {
@@ -44,20 +54,14 @@ export class NotificationsRepository {
         entityType: input.entityType ?? null,
         entityId: input.entityId ?? null,
         metadata: input.metadata ?? null,
+        dedupeKey: input.dedupeKey ?? null,
       })
-      .returning();
+      .onConflictDoNothing({
+        target: [notifications.userId, notifications.dedupeKey],
+      })
+      .returning(notificationFields);
 
     return notification ?? null;
-  }
-
-  async createDedupeRecord(userId: string, dedupeKey: string) {
-    const [record] = await db
-      .insert(notificationDeduplication)
-      .values({ userId, dedupeKey })
-      .onConflictDoNothing()
-      .returning({ id: notificationDeduplication.id });
-
-    return record ?? null;
   }
 
   async listNotifications(input: {
@@ -78,7 +82,7 @@ export class NotificationsRepository {
         : undefined;
 
     return db
-      .select()
+      .select(notificationFields)
       .from(notifications)
       .where(
         cursorWhere
@@ -114,7 +118,7 @@ export class NotificationsRepository {
           eq(notifications.id, notificationId)
         )
       )
-      .returning();
+      .returning(notificationFields);
 
     return notification ?? null;
   }
@@ -130,22 +134,6 @@ export class NotificationsRepository {
       .where(
         and(eq(notifications.userId, userId), eq(notifications.isRead, false))
       );
-  }
-
-  async createDelivery(input: {
-    notificationId: number;
-    userId: string;
-    channel: "sse";
-    status: "sent";
-    error?: string | null;
-    sentAt?: Date | null;
-  }) {
-    const [delivery] = await db
-      .insert(notificationDeliveries)
-      .values(input)
-      .returning();
-
-    return delivery ?? null;
   }
 
   async listActiveTimesheetsForDate(date: Date) {

@@ -5,6 +5,7 @@ import {
   useNotificationFocusRefresh,
   useNotificationsInfinite,
   useUnreadNotificationCount,
+  AppNotification,
 } from "@/features/notifications";
 import { AppIcon } from "@/shared/components/app-icon";
 import { Badge } from "@workspace/ui/components/badge";
@@ -18,7 +19,6 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -38,6 +38,7 @@ function NotificationDrawer({ className }: NotificationDrawerProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [open, setOpen] = useState(false);
   const [limit, setLimit] = useState(20);
   const unreadCountQuery = useUnreadNotificationCount();
   const notificationsQuery = useNotificationsInfinite(limit);
@@ -96,8 +97,13 @@ function NotificationDrawer({ className }: NotificationDrawerProps) {
     return () => observer.disconnect();
   }, [notificationsQuery]);
 
+  function handleView(href: AppNotification["href"]) {
+    navigate(href ?? "/");
+    setOpen(false);
+  }
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
           type="button"
@@ -113,14 +119,11 @@ function NotificationDrawer({ className }: NotificationDrawerProps) {
           ) : null}
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-80 p-0 sm:max-w-sm">
+      <SheetContent side="right" className="w-96 p-0 sm:max-w-sm">
         <SheetHeader className="border-b border-border px-4 py-3 pr-10">
           <div className="flex items-start justify-between gap-3">
             <div>
               <SheetTitle className="text-[15px]">Notifications</SheetTitle>
-              <SheetDescription className="text-[12px]">
-                Recent application updates.
-              </SheetDescription>
             </div>
             {unreadCount > 0 ? (
               <Button
@@ -151,7 +154,7 @@ function NotificationDrawer({ className }: NotificationDrawerProps) {
                 <AccordionItem
                   key={notification.id}
                   value={String(notification.id)}
-                  className="border-b-0"
+                  className="border-b-px border-border/20"
                 >
                   <AccordionTrigger
                     className="px-4 py-3 text-left hover:no-underline"
@@ -188,7 +191,9 @@ function NotificationDrawer({ className }: NotificationDrawerProps) {
                           type="button"
                           size="sm"
                           className="h-7 text-[12px]"
-                          onClick={() => navigate(notification.href!)}
+                          onClick={() => {
+                            handleView(notification.href);
+                          }}
                         >
                           View
                         </Button>

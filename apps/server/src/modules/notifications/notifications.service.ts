@@ -25,6 +25,8 @@ export class NotificationsService {
       await this.notificationsRepository.createNotification(input);
 
     if (!notification) {
+      if (input.dedupeKey) return null;
+
       throw new AppError({
         message: "Failed to create notification",
         code: "INTERNAL_SERVER_ERROR",
@@ -41,14 +43,7 @@ export class NotificationsService {
     input: CreateNotificationInput,
     dedupeKey: string
   ) {
-    const dedupe = await this.notificationsRepository.createDedupeRecord(
-      input.userId,
-      dedupeKey
-    );
-
-    if (!dedupe) return null;
-
-    return this.createNotification(input);
+    return this.createNotification({ ...input, dedupeKey });
   }
 
   async listNotifications(userId: string, input: ListNotificationsInput) {
@@ -271,13 +266,6 @@ export class NotificationsService {
     if (!notificationSseManager.isUserConnected(notification.userId)) return;
 
     notificationSseManager.sendToUser(notification.userId, notification);
-    await this.notificationsRepository.createDelivery({
-      notificationId: notification.id,
-      userId: notification.userId,
-      channel: "sse",
-      status: "sent",
-      sentAt: new Date(),
-    });
   }
 
   private encodeCursor(notification: { createdAt: Date; id: number }) {

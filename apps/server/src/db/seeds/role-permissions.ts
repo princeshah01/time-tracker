@@ -31,6 +31,9 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.profileView,
       permissionKeys.profileSecurityManage,
       permissionKeys.profileUpdate,
+      // Dashboard and analytics permissions
+      permissionKeys.dashboardView,
+      permissionKeys.analyticsView,
       // User management permissions
       permissionKeys.userView,
       permissionKeys.userInvite,
@@ -74,6 +77,8 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
       permissionKeys.profileSecurityManage,
+      permissionKeys.dashboardView,
+      permissionKeys.analyticsView,
 
       // User management permissions
       permissionKeys.userView,
@@ -115,6 +120,8 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
       permissionKeys.profileSecurityManage,
+      permissionKeys.dashboardView,
+      permissionKeys.analyticsView,
       // User management permissions
 
       permissionKeys.userView,
@@ -148,6 +155,8 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
       permissionKeys.profileSecurityManage,
+      permissionKeys.dashboardView,
+      permissionKeys.analyticsView,
       permissionKeys.projectViewOwn,
       permissionKeys.taskViewOwn,
       permissionKeys.taskCreate,
@@ -166,6 +175,8 @@ const seedRoles: readonly SeedRole[] = [
       permissionKeys.profileView,
       permissionKeys.profileUpdate,
       permissionKeys.profileSecurityManage,
+      permissionKeys.dashboardView,
+      permissionKeys.analyticsView,
     ],
   },
 ];

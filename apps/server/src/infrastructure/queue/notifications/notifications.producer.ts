@@ -7,8 +7,10 @@ export async function scheduleNotificationJobs() {
     {
       jobId: "daily-missing-log-reminder",
       repeat: {
-        pattern: "30 17 * * *",
-        tz: "Asia/Kolkata",
+        every: 30 * 1000, // 30 sec
+        // TODO: Change the pattern to 30 17 * * * for production
+        // pattern: "30 17 * * *",
+        // tz: "Asia/Kolkata",
       },
     }
   );
@@ -19,8 +21,10 @@ export async function scheduleNotificationJobs() {
     {
       jobId: "timesheet-ending-reminder",
       repeat: {
-        pattern: "0 9 * * *",
-        tz: "Asia/Kolkata",
+        every: 30 * 1000, // 30 sec
+        // TODO: Change the pattern to 0 9 * * * for production
+        // pattern: "0 9 * * *",
+        // tz: "Asia/Kolkata",
       },
     }
   );

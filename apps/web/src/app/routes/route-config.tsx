@@ -4,11 +4,13 @@ import {
   ForgotPasswordPage,
   ResetPasswordPage,
 } from "@/features/auth/pages";
+import { AnalyticsPage } from "@/features/analytics";
 import {
   ClientDetailsPage,
   ClientMainPage,
   CreateClientPage,
 } from "@/features/client";
+import { DashboardPage } from "@/features/dashboard";
 import {
   CreateProjectPage,
   ProjectDetailsPage,
@@ -64,10 +66,10 @@ export const appRoutes: AppRoute[] = [
     path: "/dashboard",
     label: "Dashboard",
     icon: "LayoutDashboard",
-    element: <div>Dashboard Overview</div>,
+    element: <DashboardPage />,
     showInSidebar: true,
     sideBarGroup: "General",
-    permissions: [],
+    permissions: [permissions.dashboardView],
   },
 
   // --------------------
@@ -216,9 +218,10 @@ export const appRoutes: AppRoute[] = [
     path: "/analytics",
     label: "Analytics",
     icon: "BarChart3",
-    element: <div>Analytics Overview</div>,
+    element: <AnalyticsPage />,
     showInSidebar: true,
     sideBarGroup: "Insights",
+    permissions: [permissions.analyticsView],
   },
 
   // --------------------

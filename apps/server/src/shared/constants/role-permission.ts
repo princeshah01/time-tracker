@@ -2,6 +2,11 @@ export const permissionKeys = {
   profileView: "profile:view",
   profileUpdate: "profile:update",
   profileSecurityManage: "profile:security-manage",
+
+  // Dashboard and analytics permissions
+  dashboardView: "dashboard:view",
+  analyticsView: "analytics:view",
+
   // User management permissions
   userView: "user:view",
   userInvite: "user:invite",

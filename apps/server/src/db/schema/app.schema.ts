@@ -281,6 +281,7 @@ export const notifications = pgTable(
     entityType: text("entity_type"),
     entityId: text("entity_id"),
     metadata: jsonb("metadata"),
+    dedupeKey: text("dedupe_key"),
     isRead: boolean("is_read").default(false).notNull(),
     readAt: timestamp("read_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -295,52 +296,10 @@ export const notifications = pgTable(
       table.createdAt
     ),
     index("notifications_user_id_is_read_idx").on(table.userId, table.isRead),
-  ]
-);
-
-export const notificationDeduplication = pgTable(
-  "notification_deduplication",
-  {
-    id: serial("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    dedupeKey: text("dedupe_key").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [
-    unique("notification_deduplication_user_dedupe_unique").on(
+    unique("notifications_user_id_dedupe_key_unique").on(
       table.userId,
       table.dedupeKey
     ),
-    index("notification_deduplication_user_id_dedupe_key_idx").on(
-      table.userId,
-      table.dedupeKey
-    ),
-  ]
-);
-
-export const notificationDeliveries = pgTable(
-  "notification_deliveries",
-  {
-    id: serial("id").primaryKey(),
-    notificationId: integer("notification_id")
-      .notNull()
-      .references(() => notifications.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    channel: text("channel").notNull(),
-    status: text("status").notNull(),
-    error: text("error"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    sentAt: timestamp("sent_at"),
-  },
-  (table) => [
-    index("notification_deliveries_notification_id_idx").on(
-      table.notificationId
-    ),
-    index("notification_deliveries_user_id_idx").on(table.userId),
   ]
 );
 
@@ -466,17 +425,3 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
     references: [user.id],
   }),
 }));
-
-export const notificationDeliveriesRelations = relations(
-  notificationDeliveries,
-  ({ one }) => ({
-    notification: one(notifications, {
-      fields: [notificationDeliveries.notificationId],
-      references: [notifications.id],
-    }),
-    user: one(user, {
-      fields: [notificationDeliveries.userId],
-      references: [user.id],
-    }),
-  })
-);
