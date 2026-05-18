@@ -22,4 +22,6 @@ export const env = createNodeEnv({
   REDIS_URL: url,
   QUEUE_PREFIX: nonEmptyString,
   BETTER_AUTH_REDIS_PREFIX: nonEmptyString,
+  OLD_DB_CONNECTION_STRING: url,
+  NEW_DB_CONNECTION_STRING: url,
 });

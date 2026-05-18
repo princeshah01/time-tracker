@@ -159,7 +159,7 @@ function TimesheetSheetsPage() {
 
 function countDays(startDate: string, endDate: string) {
   const start = toUtcDate(startDate);
-  const end = toUtcDate(endDate);
+  const end = getVisibleEndDate(endDate);
   const diff = end.getTime() - start.getTime();
 
   if (diff < 0) return 0;
@@ -188,6 +188,16 @@ function toUtcDate(value: string) {
   return new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
   );
+}
+
+function getVisibleEndDate(endDate: string) {
+  const normalizedEnd = toUtcDate(endDate);
+  const now = new Date();
+  const today = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
+
+  return normalizedEnd.getTime() < today.getTime() ? normalizedEnd : today;
 }
 
 function TimesheetSheetsSkeleton() {

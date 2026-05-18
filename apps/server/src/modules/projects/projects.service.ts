@@ -123,9 +123,8 @@ export class ProjectsService {
         .filter((userId) => !existingTeamUserIds.has(userId));
 
       if (addedUserIds.length > 0) {
-        const project = await this.projectsRepository.findProjectById(
-          projectId
-        );
+        const project =
+          await this.projectsRepository.findProjectById(projectId);
 
         await notificationsService.notifyProjectAssigned({
           projectId,

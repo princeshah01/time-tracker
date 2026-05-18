@@ -99,9 +99,7 @@ export class TimesheetsService {
       timesheetId,
       requesterId
     );
-    const existingUserIds = new Set(
-      timesheet.users.map((user) => user.id)
-    );
+    const existingUserIds = new Set(timesheet.users.map((user) => user.id));
     const projectId = input.projectId ?? timesheet.projectId;
     const startDate = input.startDate ?? timesheet.startDate;
     const endDate = input.endDate ?? timesheet.endDate;
@@ -327,10 +325,11 @@ export class TimesheetsService {
     const entryDate = this.normalizeSheetDate(input.entryDate);
 
     if (
-      !this.isDateInRange(entryDate, timesheet.startDate, timesheet.endDate)
+      !this.isDateInFillRange(entryDate, timesheet.startDate, timesheet.endDate)
     ) {
       throw new AppError({
-        message: "Entry date must be inside the timesheet date range",
+        message:
+          "Entry date must be inside the timesheet date range and not in the future",
         code: "VALIDATION_ERROR",
       });
     }
@@ -406,10 +405,11 @@ export class TimesheetsService {
     const leaveDate = this.normalizeSheetDate(input.entryDate);
 
     if (
-      !this.isDateInRange(leaveDate, timesheet.startDate, timesheet.endDate)
+      !this.isDateInFillRange(leaveDate, timesheet.startDate, timesheet.endDate)
     ) {
       throw new AppError({
-        message: "Leave date must be inside the timesheet date range",
+        message:
+          "Leave date must be inside the timesheet date range and not in the future",
         code: "VALIDATION_ERROR",
       });
     }
@@ -845,12 +845,12 @@ export class TimesheetsService {
 
   private buildSheetDates(startDate: Date, endDate: Date) {
     const dates: Date[] = [];
-    let current = this.normalizeSheetDate(startDate);
-    const end = this.normalizeSheetDate(endDate);
+    const start = this.normalizeSheetDate(startDate);
+    let current = this.getVisibleSheetEndDate(endDate);
 
-    while (current.getTime() <= end.getTime()) {
+    while (current.getTime() >= start.getTime()) {
       dates.push(current);
-      current = new Date(current.getTime() + DAY_IN_MS);
+      current = new Date(current.getTime() - DAY_IN_MS);
     }
 
     return dates;
@@ -1015,6 +1015,21 @@ export class TimesheetsService {
       value >= this.normalizeSheetDate(startDate).getTime() &&
       value <= this.normalizeSheetDate(endDate).getTime()
     );
+  }
+
+  private isDateInFillRange(date: Date, startDate: Date, endDate: Date) {
+    return this.isDateInRange(
+      date,
+      startDate,
+      this.getVisibleSheetEndDate(endDate)
+    );
+  }
+
+  private getVisibleSheetEndDate(endDate: Date) {
+    const normalizedEnd = this.normalizeSheetDate(endDate);
+    const today = this.normalizeSheetDate(new Date());
+
+    return normalizedEnd.getTime() < today.getTime() ? normalizedEnd : today;
   }
 
   private isWeekend(date: Date) {

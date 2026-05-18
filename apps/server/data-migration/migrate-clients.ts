@@ -1,9 +1,6 @@
 // scripts/migrate-clients.ts
-import {config} from "dotenv";
 
-config({
-  path : "./.env"
-});
+import { env } from "../src/config/env";
 
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -13,11 +10,11 @@ import { user } from "../src/db/schema/auth.schema";
 import { clients } from "../src/db/schema";
 
 const oldPool = new Pool({
-  connectionString: process.env.OLD_DATABASE_URL,
+  connectionString: env.OLD_DB_CONNECTION_STRING,
 });
 
 const newPool = new Pool({
-  connectionString: process.env.NEW_DATABASE_URL,
+  connectionString: env.NEW_DB_CONNECTION_STRING,
 });
 
 const newDb = drizzle(newPool);
@@ -48,25 +45,31 @@ async function migrateClients() {
 
     if (!createdBy) {
       skipped++;
+
       console.warn(`Skipped client without created_by: ${oldClient.email}`);
+
       continue;
     }
 
     const [existingUser] = await newDb
-      .select({ id: user.id })
+      .select({
+        id: user.id,
+      })
       .from(user)
       .where(eq(user.id, createdBy))
       .limit(1);
 
     if (!existingUser) {
       skipped++;
+
       console.warn(
         `Skipped client "${oldClient.name}" because created_by user not found in new DB: ${createdBy}`
       );
+
       continue;
     }
 
-    const [insertedClient] = await newDb
+    await newDb
       .insert(clients)
       .values({
         name: oldClient.name,
@@ -79,10 +82,13 @@ async function migrateClients() {
         createdAt: oldClient.created_at,
         updatedAt: oldClient.updated_at,
       })
-      .returning();
+      .onConflictDoNothing();
 
-    console.log(`Migrated client: ${insertedClient.name}`);
     migrated++;
+
+    console.log(
+      `Migrated client: ${oldClient.name} | created by: ${existingUser.id}`
+    );
   }
 
   console.log({
@@ -92,9 +98,12 @@ async function migrateClients() {
   });
 }
 
+console.log("Starting client migration...");
+
 migrateClients()
   .catch((error) => {
     console.error("Client migration failed:", error);
+
     process.exit(1);
   })
   .finally(async () => {

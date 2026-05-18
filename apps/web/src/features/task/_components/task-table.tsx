@@ -56,7 +56,7 @@ function TaskTable({
         accessorKey: "id",
         header: "Task ID",
         cell: ({ row }) => `#${row.original.id}`,
-        size: 80,
+        size: 50,
       },
       {
         accessorKey: "title",
@@ -77,20 +77,17 @@ function TaskTable({
             </div>
           </div>
         ),
-        size: 300,
+        size: 350,
       },
       {
         accessorKey: "project.name",
         header: "Project",
         cell: ({ row }) => (
-          <span
-            className="truncate text-[13px]"
-            title={row.original.project.name}
-          >
+          <p className="truncate text-[13px]" title={row.original.project.name}>
             {row.original.project.name}
-          </span>
+          </p>
         ),
-        size: 220,
+        size: 200,
       },
       {
         accessorKey: "creator.name",
